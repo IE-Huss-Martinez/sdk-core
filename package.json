@@ -9,6 +9,7 @@
     "node": ">=24"
   },
   "scripts": {
+    "prepare": "husky",
     "lint": "biome check .",
     "lint:css": "stylelint \"**/*.css\" --allow-empty-input",
     "lint:deps": "depcruise packages",
@@ -24,8 +25,12 @@
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
+    "@commitlint/cli": "catalog:",
     "@hussmartinez/sdk-config": "workspace:*",
     "dependency-cruiser": "catalog:",
+    "husky": "catalog:",
+    "lint-staged": "catalog:",
+    "secretlint": "catalog:",
     "stylelint": "catalog:"
   }
 }
