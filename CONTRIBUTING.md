@@ -25,7 +25,7 @@ The git hooks run on their own: a secret scan and lint of staged files on commit
 ## Make a change
 
 - **One focused change per pull request,** on a branch from an up-to-date `main`. Small pull requests get reviewed quickly; large ones get split.
-- **Commits** follow [Conventional Commits](https://www.conventionalcommits.org/), with a lowercase subject:
+- **Commits** follow [Conventional Commits](https://www.conventionalcommits.org/), with a lowercase subject and a header of at most 72 characters:
   - **types:** `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `chore` and `revert`;
   - **scopes:** `sdk-core` and `sdk-config`, for changes to one package, such as `fix(sdk-core): keep error codes across workers`;
   - **`feat`** for any new public capability in either package. It drives the version number and the changelog;
@@ -39,7 +39,7 @@ The git hooks run on their own: a secret scan and lint of staged files on commit
 
 ## Open a pull request
 
-- **Title:** a Conventional Commit, because it becomes the commit title on `main`. The `pr-title` check enforces it.
+- **Title:** a Conventional Commit of at most 65 characters, because it becomes the commit title on `main`, followed by ` (#NNN)`, and that must fit in 72. Put explanations in the description. The `pr-title` check enforces both.
 - **Description:** fill in the template: what changed, why, and how you tested it, including the result of `pnpm verify`. Be as detailed as is useful; the description doesn't go into git history.
 - **Checks:** `verify` and `pr-title` must pass, and the branch must be up to date with `main`.
 
