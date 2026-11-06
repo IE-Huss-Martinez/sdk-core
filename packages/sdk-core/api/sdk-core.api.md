@@ -4,8 +4,29 @@
 
 ```ts
 
+// Warning: (ae-forgotten-export) The symbol "ParamNames" needs to be exported by the entry point index.d.ts
+//
+// @public
+export type CheckedOverrides<Catalogue extends MessageCatalogue, Overrides> = string extends keyof Overrides ? Overrides : {
+    readonly [Key in keyof Overrides]: Key extends keyof Catalogue ? Exclude<ParamNames<Overrides[Key]>, ParamNames<Catalogue[Key]>> extends never ? Overrides[Key] : `Unknown placeholder: ${Extract<Exclude<ParamNames<Overrides[Key]>, ParamNames<Catalogue[Key]>>, string>}` : never;
+};
+
+// @public
+export function createMessages<const Catalogue extends MessageCatalogue & {
+    readonly "errors.UNKNOWN": MessageValue;
+}, const Overrides extends MessageOverrides<Catalogue> = Record<never, never>>(catalogue: Catalogue, options?: CreateMessagesOptions<Overrides & CheckedOverrides<Catalogue, Overrides>>): Messages<Catalogue>;
+
+// @public
+export interface CreateMessagesOptions<Overrides> {
+    readonly locale?: string;
+    readonly overrides?: Overrides;
+}
+
 // @public
 export function createWorkerClient<Contract extends WorkerContract<Contract>>(options: WorkerClientOptions): WorkerClient<Contract>;
+
+// @public
+export function defineMessages<const Catalogue extends MessageCatalogue>(catalogue: Catalogue): Catalogue;
 
 // @public
 export function deserializeError(data: unknown, options?: DeserializeErrorOptions): SdkError;
@@ -39,7 +60,81 @@ export interface ExposeWorkerOptions {
 export function isSdkError<Code extends string = string>(value: unknown, code?: Code): value is SdkError<Code>;
 
 // @public
+export type MessageArgs<Message extends MessageValue> = keyof MessageParams<Message> extends never ? [] : [params: MessageParams<Message>];
+
+// @public
+export type MessageCatalogue = {
+    readonly [key: string]: MessageValue;
+};
+
+// @public
+export interface MessageFormats {
+    readonly date: Date | number;
+    readonly default: string | number;
+    readonly fileSize: number;
+    readonly number: number;
+    readonly time: Date | number;
+}
+
+// @public
+export type MessageOverrides<Catalogue extends MessageCatalogue> = {
+    readonly [Key in keyof Catalogue]?: MessageValue;
+};
+
+// Warning: (ae-forgotten-export) The symbol "TemplateParams" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "Merge" needs to be exported by the entry point index.d.ts
+// Warning: (ae-forgotten-export) The symbol "PluralForms" needs to be exported by the entry point index.d.ts
+//
+// @public
+export type MessageParams<Message extends MessageValue> = Message extends string ? TemplateParams<Message> : Message extends PluralMessage ? Merge<TemplateParams<PluralForms<Message>> | {
+    readonly [Key in Message["$plural"]]: number;
+}> : never;
+
+// @public
+export interface Messages<Catalogue extends MessageCatalogue> {
+    error(error: unknown): string;
+    readonly locale: string;
+    t<Key extends keyof Catalogue & string>(key: Key, ...args: MessageArgs<Catalogue[Key]>): string;
+}
+
+// @public
+export type MessageValue = string | PluralMessage;
+
+// @public
+export function plural<const Selector extends string, const Forms extends {
+    readonly other: string;
+} & {
+    readonly [Category in Exclude<PluralCategory, "other">]?: string;
+}>(selector: Selector, forms: Forms): {
+    readonly $plural: Selector;
+} & Forms;
+
+// @public
+export type PluralCategory = "zero" | "one" | "two" | "few" | "many" | "other";
+
+// @public
+export type PluralMessage = {
+    readonly $plural: string;
+    readonly other: string;
+} & {
+    readonly [Category in Exclude<PluralCategory, "other">]?: string;
+};
+
+// @public
 export type SdkCoreErrorCode = "UNKNOWN" | "ABORTED" | "TIMEOUT" | "WORKER_START_FAILED" | "WORKER_PROTOCOL_MISMATCH" | "WORKER_CRASHED" | "WORKER_TERMINATED" | "WORKER_METHOD_NOT_FOUND" | "WORKER_DATA_NOT_CLONEABLE";
+
+// @public
+export const sdkCoreMessages: {
+    readonly "errors.UNKNOWN": "Something went wrong. Please try again.";
+    readonly "errors.ABORTED": "The operation was cancelled.";
+    readonly "errors.TIMEOUT": "The operation took too long and was stopped.";
+    readonly "errors.WORKER_START_FAILED": "The file processor couldn't start. Reload the page and try again.";
+    readonly "errors.WORKER_PROTOCOL_MISMATCH": "The file processor is out of date. Reload the page to update it.";
+    readonly "errors.WORKER_CRASHED": "The file processor stopped unexpectedly. Please try again.";
+    readonly "errors.WORKER_TERMINATED": "The operation was stopped before it finished. Please try again.";
+    readonly "errors.WORKER_METHOD_NOT_FOUND": "This operation isn't available. Reload the page and try again.";
+    readonly "errors.WORKER_DATA_NOT_CLONEABLE": "Something went wrong while processing the file. Please try again.";
+};
 
 // @public
 export class SdkError<Code extends string = string> extends Error {
