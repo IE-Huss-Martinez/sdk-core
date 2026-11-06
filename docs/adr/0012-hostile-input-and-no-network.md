@@ -37,7 +37,7 @@ The family's promise is that files never leave the user's device, so any network
 - **Minimal dependencies.** Each new runtime dependency needs a justification in its pull request.
 - **Locked builds:** lockfiles are committed, dependency install scripts are blocked except for an explicit allowlist, and licences are checked for compatibility with Apache-2.0.
 - **Pinned GitHub Actions:** actions are pinned to a full commit SHA.
-- **Trusted publishing:** packages are published from GitHub Actions with npm provenance ([0015](0015-local-verification-and-releases.md)).
+- **Trusted publishing:** packages are published from GitHub Actions with npm provenance ([0015](0015-verification-and-releases.md)).
 - **Disclosure:** `SECURITY.md` describes private vulnerability reporting.
 
 ## Alternatives considered

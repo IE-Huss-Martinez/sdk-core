@@ -20,4 +20,5 @@ Use [`template.md`](template.md) for new records. Name files `NNNN-short-title.m
 | [0012](0012-hostile-input-and-no-network.md) | Treat every input file as hostile, and make no network requests | Accepted |
 | [0013](0013-browser-and-react-support.md) | Browser and React support | Accepted |
 | [0014](0014-accessibility-and-translatable-text.md) | Accessibility and translatable text | Accepted |
-| [0015](0015-local-verification-and-releases.md) | Local verification, release-please and trusted publishing | Accepted |
+| [0015](0015-verification-and-releases.md) | Verification, releases and trusted publishing | Accepted |
+| [0016](0016-git-hooks-and-merge-guards.md) | Git hooks and merge guards | Accepted |

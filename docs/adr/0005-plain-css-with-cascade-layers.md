@@ -28,6 +28,7 @@ Write styles in plain CSS, organised as follows:
 
 - **Tailwind CSS:** excellent for applications, but in a library its preflight reset would restyle the host page and must be disabled. Its utility classes can collide with a host's own Tailwind build, so a prefix is required, and then each SDK ships its own copy of the same utilities. Hosts also can't override markup built from utility classes. It also adds a build step to every repository.
 - **CSS Modules:** hashed class names can't be targeted by hosts.
+- **CSS Modules with stable generated names** (for example `hm-pdf-[file]-[local]`): keeps typo checking and per-file isolation, but public class names would be derived from file names, so renaming or splitting a stylesheet becomes an accidental breaking change. Global selectors, such as tokens, `[data-hm-theme]` and layer declarations, would also need `:global(…)` escape hatches. CSS Modules remain a good choice inside applications, where class names are private.
 - **CSS-in-JS at runtime:** adds bundle weight and runtime cost, complicates server rendering, and conflicts with strict Content Security Policies.
 
 ## Consequences

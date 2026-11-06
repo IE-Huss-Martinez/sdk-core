@@ -36,4 +36,4 @@ The editor builds its toolbar, menus and shortcuts from the registered tools. Th
 
 - Adding or removing a tool touches one folder, which also makes pull requests small and reviewable.
 - Turning features on or off, and building minimal editors such as "viewer plus download", is configuration rather than code.
-- The tool API becomes public surface and must evolve compatibly, so it is tracked in the API report ([0015](0015-local-verification-and-releases.md)).
+- The tool API becomes public surface and must evolve compatibly, so it is tracked in the API report ([0015](0015-verification-and-releases.md)).

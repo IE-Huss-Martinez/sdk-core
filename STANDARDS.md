@@ -209,9 +209,21 @@ Every `<kind>-sdk` repository follows this structure:
 
 Each repository extends the presets in `@hussmartinez/sdk-config` instead of copying configuration.
 
-## Workflow ([ADR 0015](docs/adr/0015-local-verification-and-releases.md))
+## Workflow ([ADR 0015](docs/adr/0015-verification-and-releases.md), [ADR 0016](docs/adr/0016-git-hooks-and-merge-guards.md))
 
-- **Before every push:** `pnpm verify` runs code checks, build, unit tests, browser tests, size budgets, the API report and package checks, locally.
+- **Verification:**
+  - `pnpm verify` runs code checks, build, unit tests, browser tests, size budgets, the API report and package checks;
+  - `pnpm verify:fast` runs the one-minute subset: types, unit tests, dependency rules and the API report.
+- **Git hooks** (Husky; budgets in ADR 0016):
+  - `pre-commit` lints staged files and scans them for secrets;
+  - `commit-msg` checks Conventional Commits;
+  - `pre-push` runs `pnpm verify:fast`;
+  - `--no-verify` is never used.
+- **Before a pull request is ready:** run `pnpm verify` locally, using Chromium, and report the result in the description.
+- **CI:**
+  - every pull request and push to `main` runs `pnpm verify`, with browser tests on Chromium, Firefox and WebKit;
+  - `verify` and `pr-title` are required checks, and branches must be up to date;
+  - actions are pinned to commit SHAs, with least-privilege permissions, `pull_request` events only, and no secrets in pull request workflows.
 - **Pull requests:**
   - every change goes through a small, focused pull request describing what changed, why, and how it was tested;
   - squash merges only, with linear history on `main`;

@@ -43,5 +43,5 @@ Getting worker and WebAssembly files into the host's build is a common integrati
 ## Consequences
 
 - Workers behave identically across SDKs, and their protocol is tested once in `sdk-core`.
-- Inlined assets increase the size of the lazily loaded chunks. Size budgets track this ([0015](0015-local-verification-and-releases.md)).
+- Inlined assets increase the size of the lazily loaded chunks. Size budgets track this ([0015](0015-verification-and-releases.md)).
 - Two asset modes must both be tested end to end.

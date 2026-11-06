@@ -18,5 +18,7 @@ This repository is part of the `@hussmartinez` SDK family and is public. Treat i
 
 ## Verifying changes
 
-- **Run `pnpm verify` locally before pushing,** and report its results in the pull request. GitHub Actions only runs for releases; it is not a substitute for local verification.
+- **Hooks:** they run automatically: linting and a secret scan on commit, commit message checks, and `pnpm verify:fast` on push. Never use `--no-verify`. If a hook is wrong or too slow, fix it in its own pull request.
+- **Before marking a pull request ready,** run the full `pnpm verify` locally and report its results in the description.
+- **CI:** it runs `pnpm verify` on Chromium, Firefox and WebKit, and checks the pull request title. Both checks must pass before merging. CI is the final gate, not a substitute for local verification.
 - **Never weaken a check to make it pass.** That includes lint rules, size budgets, the API report, accessibility checks and the no-network assertion. Fix the cause, or propose the change in its own pull request with an ADR if the rule itself is wrong.
