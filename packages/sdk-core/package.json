@@ -10,11 +10,26 @@
   },
   "type": "module",
   "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "build": "vite build && pnpm check:api",
+    "check:api": "tsc -p tsconfig.build.json && api-extractor run",
+    "api:update": "tsc -p tsconfig.build.json && api-extractor run --local"
   },
   "devDependencies": {
     "@hussmartinez/sdk-config": "workspace:*",
-    "typescript": "catalog:"
+    "@microsoft/api-extractor": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:"
   }
 }
