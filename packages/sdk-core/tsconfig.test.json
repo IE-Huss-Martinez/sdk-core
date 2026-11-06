@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // Tests run in Node; the library itself must not see Node's types.
+    "types": ["node"]
+  },
+  "exclude": []
+}

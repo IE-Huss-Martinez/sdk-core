@@ -21,15 +21,18 @@
     "dist"
   ],
   "scripts": {
-    "typecheck": "tsc",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json",
     "build": "vite build && pnpm check:api",
+    "test": "vitest run",
     "check:api": "tsc -p tsconfig.build.json && api-extractor run",
     "api:update": "tsc -p tsconfig.build.json && api-extractor run --local"
   },
   "devDependencies": {
     "@hussmartinez/sdk-config": "workspace:*",
     "@microsoft/api-extractor": "catalog:",
+    "@types/node": "catalog:",
     "typescript": "catalog:",
-    "vite": "catalog:"
+    "vite": "catalog:",
+    "vitest": "catalog:"
   }
 }
