@@ -1,0 +1,91 @@
+{
+  "name": "@hussmartinez/sdk-config",
+  "version": "0.0.0",
+  "description": "Shared development configuration for the @hussmartinez SDK family.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hussmartinez/sdk-core.git",
+    "directory": "packages/sdk-config"
+  },
+  "type": "module",
+  "exports": {
+    "./biome": "./biome/base.jsonc",
+    "./commitlint": "./src/commitlint/index.js",
+    "./dependency-cruiser": "./src/dependency-cruiser/index.js",
+    "./lint-staged": "./src/lint-staged/index.js",
+    "./package.json": "./package.json",
+    "./secretlint": "./src/secretlint/index.js",
+    "./stylelint": "./src/stylelint/index.js",
+    "./tsconfig/*": "./tsconfig/*.json"
+  },
+  "files": [
+    "biome",
+    "src",
+    "tsconfig",
+    "!src/**/*.test.js"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "typecheck": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@commitlint/config-conventional": "catalog:",
+    "@secretlint/secretlint-rule-preset-recommend": "catalog:",
+    "postcss-selector-parser": "catalog:",
+    "postcss-value-parser": "catalog:"
+  },
+  "peerDependencies": {
+    "@biomejs/biome": "catalog:",
+    "@commitlint/cli": "catalog:",
+    "dependency-cruiser": "catalog:",
+    "lint-staged": "catalog:",
+    "secretlint": "catalog:",
+    "stylelint": "catalog:",
+    "typescript": "catalog:"
+  },
+  "peerDependenciesMeta": {
+    "@biomejs/biome": {
+      "optional": true
+    },
+    "@commitlint/cli": {
+      "optional": true
+    },
+    "dependency-cruiser": {
+      "optional": true
+    },
+    "lint-staged": {
+      "optional": true
+    },
+    "secretlint": {
+      "optional": true
+    },
+    "stylelint": {
+      "optional": true
+    },
+    "typescript": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@biomejs/biome": "catalog:",
+    "@commitlint/cli": "catalog:",
+    "@commitlint/lint": "catalog:",
+    "@commitlint/load": "catalog:",
+    "@commitlint/types": "catalog:",
+    "@secretlint/node": "catalog:",
+    "@types/node": "catalog:",
+    "@types/picomatch": "catalog:",
+    "dependency-cruiser": "catalog:",
+    "lint-staged": "catalog:",
+    "picomatch": "catalog:",
+    "postcss": "catalog:",
+    "secretlint": "catalog:",
+    "stylelint": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

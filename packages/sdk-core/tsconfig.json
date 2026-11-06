@@ -1,0 +1,7 @@
+{
+  "extends": "@hussmartinez/sdk-config/tsconfig/browser",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["src"]
+}
