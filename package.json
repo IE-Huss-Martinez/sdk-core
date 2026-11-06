@@ -1,0 +1,27 @@
+{
+  "name": "sdk-core-workspace",
+  "private": true,
+  "description": "Workspace for @hussmartinez/sdk-core and @hussmartinez/sdk-config.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "packageManager": "pnpm@12.18.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "lint": "biome check .",
+    "typecheck": "pnpm -r typecheck",
+    "build": "pnpm -r --if-present build",
+    "test": "pnpm -r --if-present test",
+    "test:browser": "pnpm -r --if-present test:browser",
+    "check:size": "pnpm -r --if-present check:size",
+    "check:api": "pnpm -r --if-present check:api",
+    "check:package": "pnpm -r --if-present check:package",
+    "verify": "pnpm lint && pnpm typecheck && pnpm build && pnpm test && pnpm test:browser && pnpm check:size && pnpm check:api && pnpm check:package",
+    "verify:fast": "pnpm typecheck && pnpm test && pnpm check:api"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "catalog:",
+    "@hussmartinez/sdk-config": "workspace:*"
+  }
+}

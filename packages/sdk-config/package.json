@@ -1,0 +1,32 @@
+{
+  "name": "@hussmartinez/sdk-config",
+  "version": "0.0.0",
+  "description": "Shared development configuration for the @hussmartinez SDK family.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hussmartinez/sdk-core.git",
+    "directory": "packages/sdk-config"
+  },
+  "type": "module",
+  "exports": {
+    "./biome": "./biome/base.jsonc",
+    "./tsconfig/*": "./tsconfig/*.json",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "biome.json",
+    "tsconfig"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "peerDependencies": {
+    "@biomejs/biome": "catalog:",
+    "typescript": "catalog:"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "catalog:",
+    "typescript": "catalog:"
+  }
+}
