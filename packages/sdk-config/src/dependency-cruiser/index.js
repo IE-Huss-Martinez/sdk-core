@@ -152,8 +152,9 @@ const config = {
   ],
   options: {
     doNotFollow: { path: "(?:^|/)node_modules/" },
-    // Fixtures break the rules on purpose, to test them.
-    exclude: { path: "(?:^|/)(?:coverage|dist|fixtures)/" },
+    // Build output (dist, and temp for tsc declarations and api-extractor)
+    // and coverage aren't source. Fixtures break the rules on purpose.
+    exclude: { path: "(?:^|/)(?:coverage|dist|fixtures|temp)/" },
     tsPreCompilationDeps: true,
     combinedDependencies: false,
     enhancedResolveOptions: {
