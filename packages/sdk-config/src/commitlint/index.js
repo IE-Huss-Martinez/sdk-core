@@ -24,6 +24,18 @@ export const TYPES = [
  */
 export const SUBJECT_PATTERN = /^(?![A-Z]).+$/;
 
+/**
+ * Longest commit header, git's conventional limit for a subject line.
+ */
+export const HEADER_MAX_LENGTH = 72;
+
+/**
+ * Longest pull request title. The squash commit title is the pull request
+ * title plus " (#NNN)", which must still fit in {@link HEADER_MAX_LENGTH}.
+ * The `pr-title` workflow checks the same number.
+ */
+export const PR_TITLE_MAX_LENGTH = HEADER_MAX_LENGTH - " (#NNN)".length;
+
 /** @type {import("@commitlint/types").Rule} */
 const subjectPattern = ({ subject }) => [
   subject == null || SUBJECT_PATTERN.test(subject),
@@ -43,6 +55,7 @@ const config = {
   plugins: [{ rules: { "hm/subject-pattern": subjectPattern } }],
   rules: {
     "type-enum": [2, "always", TYPES],
+    "header-max-length": [2, "always", HEADER_MAX_LENGTH],
     // Replaced by hm/subject-pattern, which matches the pr-title check exactly.
     "subject-case": [0],
     "hm/subject-pattern": [2, "always"],
