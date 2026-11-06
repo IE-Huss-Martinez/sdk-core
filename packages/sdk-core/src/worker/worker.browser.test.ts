@@ -219,6 +219,16 @@ describe("worker RPC in a real browser", () => {
     });
   });
 
+  it("reports a crash through onCrash even when no call is pending", async () => {
+    const crashes: unknown[] = [];
+    const { client } = setup({ onCrash: (error) => crashes.push(error) });
+    await client.call("crashInTimer", undefined);
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
+    expect(crashes).toHaveLength(1);
+    expect(isSdkError(crashes[0], "WORKER_CRASHED")).toBe(true);
+  });
+
   describe("start-up failures", () => {
     it("fails with WORKER_PROTOCOL_MISMATCH when versions differ", async () => {
       const client = createWorkerClient<TestWorker>({

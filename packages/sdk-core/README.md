@@ -81,6 +81,7 @@ const bitmap = await client.call("render", { bytes, page: 1 }, { signal, onProgr
 - **Cancellation:** an aborted call rejects at once with code `ABORTED`, or `TIMEOUT` when the signal timed out, with the signal's reason as `cause`. These aren't `AbortError`s. The handler's `signal` is aborted. If the call is still running after `cancelTimeout` (1 s), the worker is terminated, and other calls on it fail with `WORKER_TERMINATED`. Nothing is retried automatically.
 - **Buffers:** inputs are copied unless you pass `transfer: true`, which detaches them. Results are transferred, so handlers must return buffers they no longer need. Views into part of a buffer, such as WebAssembly memory, are always copied, and only their bytes.
 - **Errors:** handler errors arrive rebuilt with `deserializeError`, so `PdfError` codes survive. Errors that escape the handlers, and failures to start, arrive as `WORKER_CRASHED`, `WORKER_START_FAILED` or `WORKER_PROTOCOL_MISMATCH`.
+- **Crash reporting:** pass `onCrash` to hear about those three failures even when no call is pending. SDKs should forward it to their host's `onEvent` or error reporting. Expected shutdowns, such as the idle timeout, `destroy()` or a stuck call being stopped, don't trigger it.
 
 ## API report
 

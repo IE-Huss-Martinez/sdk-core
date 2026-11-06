@@ -57,6 +57,17 @@ export interface WorkerClientOptions {
    * recreated on the next call. Defaults to 30 000; `0` keeps it forever.
    */
   readonly idleTimeout?: number;
+  /**
+   * Called once for each failure of the worker itself: `WORKER_CRASHED`,
+   * `WORKER_START_FAILED` or `WORKER_PROTOCOL_MISMATCH`. It receives the same
+   * error that pending calls reject with, and it's called even when no call
+   * is pending, which is otherwise the only way to learn about such a
+   * failure. SDKs should forward it to their host's `onEvent` or error
+   * reporting. It isn't called for expected shutdowns: the idle timeout,
+   * `destroy()`, or a worker terminated because a cancelled call didn't stop.
+   * Errors it throws are reported asynchronously and don't affect the client.
+   */
+  readonly onCrash?: (error: SdkError<SdkCoreErrorCode>) => void;
 }
 
 /**
@@ -126,6 +137,13 @@ const DEFAULT_START_TIMEOUT = 10_000;
 const DEFAULT_CANCEL_TIMEOUT = 1_000;
 const DEFAULT_IDLE_TIMEOUT = 30_000;
 
+/** Failures of the worker itself, reported through `onCrash`. */
+const CRASH_CODES: ReadonlySet<SdkCoreErrorCode> = new Set([
+  "WORKER_CRASHED",
+  "WORKER_START_FAILED",
+  "WORKER_PROTOCOL_MISMATCH",
+]);
+
 interface PendingCall {
   readonly resolve: (output: unknown) => void;
   readonly reject: (error: unknown) => void;
@@ -178,6 +196,12 @@ export function createWorkerClient<Contract extends WorkerContract<Contract>>(
   );
   const idleTimeout = timeoutOption("idleTimeout", options.idleTimeout, DEFAULT_IDLE_TIMEOUT);
   const errorClasses = options.errorClasses ?? {};
+  const { onCrash } = options;
+  const notifyCrash = (error: SdkError<SdkCoreErrorCode>): void => {
+    if (onCrash && CRASH_CODES.has(error.code)) {
+      reportSafely(onCrash, error);
+    }
+  };
 
   let connection: Connection | undefined;
   let destroyed = false;
@@ -216,7 +240,15 @@ export function createWorkerClient<Contract extends WorkerContract<Contract>>(
     try {
       worker = options.createWorker();
     } catch (cause) {
-      throw new SdkError("WORKER_START_FAILED", "The worker couldn't be created.", { cause });
+      const error = new SdkError<SdkCoreErrorCode>(
+        "WORKER_START_FAILED",
+        "The worker couldn't be created.",
+        {
+          cause,
+        },
+      );
+      notifyCrash(error);
+      throw error;
     }
 
     let markReady!: () => void;
@@ -310,6 +342,7 @@ export function createWorkerClient<Contract extends WorkerContract<Contract>>(
         current.cancelling.clear();
         const error = new SdkError(code, message, cause === undefined ? {} : { cause });
         failReady(error);
+        notifyCrash(error);
         for (const call of [...current.pending.values()]) {
           call.cleanup();
           call.reject(error);
@@ -479,10 +512,11 @@ function abortError(reason: unknown): SdkError<SdkCoreErrorCode> {
 }
 
 /**
- * Calls a progress listener without letting its errors break message
- * handling. They're rethrown asynchronously, so they still get reported.
+ * Calls a listener, such as `onProgress` or `onCrash`, without letting its
+ * errors break the client. They're rethrown asynchronously, so they still
+ * get reported.
  */
-function reportSafely(listener: (value: unknown) => void, value: unknown): void {
+function reportSafely<Value>(listener: (value: Value) => void, value: Value): void {
   try {
     listener(value);
   } catch (error) {

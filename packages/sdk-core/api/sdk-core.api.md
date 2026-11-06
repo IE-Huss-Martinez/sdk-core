@@ -103,6 +103,7 @@ export interface WorkerClientOptions {
     readonly createWorker: () => WorkerLike;
     readonly errorClasses?: DeserializeErrorOptions["errorClasses"];
     readonly idleTimeout?: number;
+    readonly onCrash?: (error: SdkError<SdkCoreErrorCode>) => void;
     readonly startTimeout?: number;
 }
 

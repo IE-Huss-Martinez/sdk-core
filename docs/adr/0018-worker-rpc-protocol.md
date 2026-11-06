@@ -65,6 +65,7 @@ sdk-core owns these codes, in `SdkCoreErrorCode`:
 - **On the page:** any `error` or `messageerror` event on the `Worker` is a crash. The worker is terminated, in-flight calls fail with `WORKER_CRASHED`, and a new worker is created on the next call. An error before `ready` is a start failure instead.
 - **In the worker:** `exposeWorker` listens for the worker's own `error` and `unhandledrejection` events and reports them in a `crash` message. Unhandled rejections never reach `Worker.onerror`, so this is the only way the page learns about them.
 - **Not crashes:** errors thrown or rejected inside handlers are ordinary `error` responses.
+- **Reporting:** the page side handles the worker's `error` events itself (`preventDefault()`), so they don't appear twice in the console. To keep crashes observable when no call is pending, `createWorkerClient` takes an `onCrash` listener. It's called once for each `WORKER_CRASHED`, `WORKER_START_FAILED` or `WORKER_PROTOCOL_MISMATCH`, with the same error that pending calls receive, whether or not any call is pending. It isn't called for expected shutdowns: the idle timeout, `destroy()`, or a termination forced by a cancelled call. SDKs forward it to the host's `onEvent` or error reporting. Errors the listener throws are reported asynchronously and don't affect the client.
 
 ### Buffers
 
@@ -102,6 +103,6 @@ sdk-core owns these codes, in `SdkCoreErrorCode`:
 ## Consequences
 
 - Every SDK's workers behave identically, and the protocol is tested once, in sdk-core, against Chromium, Firefox and WebKit.
-- Hosts and SDK UIs can tell cancellation, timeouts, crashes and start-up failures apart by code.
+- Hosts and SDK UIs can tell cancellation, timeouts, crashes and start-up failures apart by code, and crashes reach the host's error reporting even when no call is waiting.
 - A stuck call costs every other call on the same worker. SDKs that run independent long operations concurrently should use separate clients.
 - Changing the messages in a way an older peer can't handle requires a new protocol version, and page and worker must ship from the same build.

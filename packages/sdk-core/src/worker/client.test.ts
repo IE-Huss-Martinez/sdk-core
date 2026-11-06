@@ -39,7 +39,12 @@ class FakeWorker extends EventTarget implements WorkerLike {
 }
 
 function setup(
-  options: { startTimeout?: number; cancelTimeout?: number; idleTimeout?: number } = {},
+  options: {
+    startTimeout?: number;
+    cancelTimeout?: number;
+    idleTimeout?: number;
+    onCrash?: (error: unknown) => void;
+  } = {},
 ) {
   const workers: FakeWorker[] = [];
   const client = createWorkerClient<Echo>({
@@ -333,4 +338,141 @@ describe("createWorkerClient", () => {
       ).toThrow(RangeError);
     },
   );
+
+  describe("onCrash", () => {
+    const crash = {
+      protocol: "hm-rpc",
+      version: 1,
+      type: "crash",
+      error: serializeError(new Error("boom")),
+    };
+
+    it("reports a crash while no call is pending", async () => {
+      const onCrash = vi.fn();
+      const { client, workers } = setup({ onCrash });
+      const started = client.start();
+      workers[0]?.ready();
+      await started;
+
+      workers[0]?.reply(crash);
+      expect(onCrash).toHaveBeenCalledOnce();
+      expect(onCrash.mock.calls[0]?.[0]).toMatchObject({ code: "WORKER_CRASHED" });
+    });
+
+    it("passes the same error that pending calls reject with", async () => {
+      const onCrash = vi.fn();
+      const { client, workers } = setup({ onCrash });
+      const call = rejection(client.call("echo", "x"));
+      workers[0]?.ready();
+      await flush();
+      workers[0]?.reply(crash);
+
+      expect(onCrash).toHaveBeenCalledExactlyOnceWith(await call);
+    });
+
+    it.each([
+      ["WORKER_PROTOCOL_MISMATCH", (worker: FakeWorker) => worker.ready(2)],
+      ["WORKER_START_FAILED", (worker: FakeWorker) => worker.dispatchEvent(new Event("error"))],
+    ] as const)("reports %s", async (code, fail) => {
+      const onCrash = vi.fn();
+      const { client, workers } = setup({ onCrash });
+      const started = rejection(client.start());
+      const worker = workers[0];
+      if (worker) {
+        fail(worker);
+      }
+
+      expect(isSdkError(await started, code)).toBe(true);
+      expect(onCrash).toHaveBeenCalledExactlyOnceWith(await started);
+    });
+
+    it("reports an unreadable message as WORKER_CRASHED", async () => {
+      const onCrash = vi.fn();
+      const { client, workers } = setup({ onCrash });
+      const started = client.start();
+      workers[0]?.ready();
+      await started;
+      workers[0]?.dispatchEvent(new Event("messageerror"));
+
+      expect(onCrash.mock.calls[0]?.[0]).toMatchObject({ code: "WORKER_CRASHED" });
+    });
+
+    it("reports a start timeout and a worker that can't be created", async () => {
+      vi.useFakeTimers();
+      const onCrash = vi.fn();
+      const { client } = setup({ onCrash, startTimeout: 100 });
+      const started = rejection(client.start());
+      await vi.advanceTimersByTimeAsync(100);
+      expect(onCrash).toHaveBeenLastCalledWith(await started);
+
+      const failing = createWorkerClient<Echo>({
+        createWorker: () => {
+          throw new Error("blocked");
+        },
+        onCrash,
+      });
+      const error = await rejection(failing.call("echo", "x"));
+      expect(onCrash).toHaveBeenLastCalledWith(error);
+      expect(onCrash).toHaveBeenCalledTimes(2);
+    });
+
+    it("isn't called for the idle timeout, destroy() or a cancel-forced termination", async () => {
+      vi.useFakeTimers();
+      const onCrash = vi.fn();
+      const idle = setup({ onCrash, idleTimeout: 100 });
+      void idle.client.start();
+      idle.workers[0]?.ready();
+      await vi.advanceTimersByTimeAsync(100);
+      expect(idle.workers[0]?.terminated).toBe(true);
+
+      const destroyed = setup({ onCrash });
+      const inFlight = rejection(destroyed.client.call("echo", "x"));
+      destroyed.workers[0]?.ready();
+      await vi.advanceTimersByTimeAsync(0);
+      destroyed.client.destroy();
+      expect(isSdkError(await inFlight, "WORKER_TERMINATED")).toBe(true);
+
+      const cancelled = setup({ onCrash, cancelTimeout: 100 });
+      void cancelled.client.start();
+      cancelled.workers[0]?.ready();
+      await vi.advanceTimersByTimeAsync(0);
+      const controller = new AbortController();
+      const stuck = rejection(cancelled.client.call("slow", 1, { signal: controller.signal }));
+      await vi.advanceTimersByTimeAsync(0);
+      controller.abort();
+      await vi.advanceTimersByTimeAsync(100);
+      await stuck;
+      expect(cancelled.workers[0]?.terminated).toBe(true);
+
+      expect(onCrash).not.toHaveBeenCalled();
+    });
+
+    it("keeps working when the listener throws", async () => {
+      const errors: unknown[] = [];
+      const onError = (error: unknown) => errors.push(error);
+      process.on("uncaughtException", onError);
+      try {
+        const { client, workers } = setup({
+          onCrash: () => {
+            throw new Error("tracker bug");
+          },
+        });
+        const call = rejection(client.call("echo", "x"));
+        workers[0]?.ready();
+        await flush();
+        workers[0]?.reply(crash);
+
+        expect(isSdkError(await call, "WORKER_CRASHED")).toBe(true);
+        const next = client.call("echo", "y");
+        workers[1]?.ready();
+        await flush();
+        workers[1]?.respond(2, "y");
+        await expect(next).resolves.toBe("y");
+        await flush();
+        expect(errors).toEqual([expect.objectContaining({ message: "tracker bug" })]);
+      } finally {
+        process.off("uncaughtException", onError);
+      }
+    });
+  });
 });
