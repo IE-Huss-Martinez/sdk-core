@@ -10,6 +10,7 @@ catalog:
   "@commitlint/lint": ^21.2.4
   "@commitlint/load": ^21.2.4
   "@commitlint/types": ^21.2.3
+  "@microsoft/api-extractor": ^7.60.1
   "@secretlint/node": ^13.1.0
   "@secretlint/secretlint-rule-preset-recommend": ^13.1.0
   "@types/node": ^24.19.2
@@ -17,13 +18,14 @@ catalog:
   dependency-cruiser: ^18.7.2
   husky: ^9.1.7
   lint-staged: ^17.6.0
+  picomatch: ^4.0.7
   postcss-selector-parser: ^7.1.7
   postcss-value-parser: ^4.2.0
-  picomatch: ^4.0.7
   postcss: ^8.5.31
   secretlint: ^13.1.0
   stylelint: ^18.0.0
   typescript: ^6.0.3
+  vite: ^8.3.6
   vitest: ^5.1.0
 
 # Supply-chain hardening (ADR 0012).
