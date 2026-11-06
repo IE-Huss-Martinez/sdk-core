@@ -30,7 +30,7 @@ pnpm verify:fast   # the subset the pre-push hook runs
 | Format and lint | `lint` | Biome |
 | CSS rules | `lint:css` | stylelint |
 | Types | `typecheck` | TypeScript |
-| Layer rules | `lint:deps` | dependency-cruiser |
+| Layer rules | `lint:deps` | dependency-cruiser, through [`hm-lint-deps`](packages/sdk-config#hm-lint-deps) |
 | Build | `build` | per package |
 | Unit tests | `test` | Vitest |
 | Browser tests | `test:browser` | per package |

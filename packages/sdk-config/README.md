@@ -13,7 +13,7 @@ Install, as devDependencies, the tools for the presets you use. They are optiona
 | `tsconfig/*` | `typescript` (and `@types/node` for `tsconfig/node`) |
 | `biome` | `@biomejs/biome` |
 | `stylelint` | `stylelint` |
-| `dependency-cruiser` | `dependency-cruiser` |
+| `dependency-cruiser`, `hm-lint-deps` | `dependency-cruiser` |
 | `commitlint` | `@commitlint/cli` |
 | `lint-staged` | `lint-staged`, plus `secretlint`, `@biomejs/biome` and `stylelint`, which it runs |
 | `secretlint` | `secretlint` |
@@ -64,6 +64,32 @@ The layer rules of [ADR 0008](../../docs/adr/0008-ports-adapters-and-session.md)
 // .dependency-cruiser.js
 export { default } from "@hussmartinez/sdk-config/dependency-cruiser";
 ```
+
+#### `hm-lint-deps`
+
+Run dependency-cruiser through `hm-lint-deps` rather than `depcruise`:
+
+```json
+{ "scripts": { "lint:deps": "hm-lint-deps src" } }
+```
+
+When dependency-cruiser can't parse a file type, it skips those files without failing. Without a supported TypeScript, for example, it leaves out every `.ts` file and still reports no violations. `hm-lint-deps` runs the same check, with the same report, and also fails when a source file wasn't analysed.
+
+- **Expected files:** the files git tracks under the given paths whose extension the configuration resolves (`enhancedResolveOptions.extensions`) and dependency-cruiser can parse. Declaration files, non-code files and anything matched by the configuration's `exclude`, `doNotFollow` or `includeOnly` are left out.
+- **Analysed:** a file is analysed when it's in the cruise result and dependency-cruiser can parse its file type in the current environment.
+- **Missing files:** the command names up to 20 of them, with a count of the rest and the likely cause.
+
+```text
+Usage: hm-lint-deps [--config <file>] <path>...
+```
+
+| Exit code | Meaning |
+|---|---|
+| 0 | No violations, and every expected file was analysed |
+| 1 | Rule violations, or expected files that weren't analysed |
+| 2 | Usage or configuration error, including running outside a git repository |
+
+It reads `.dependency-cruiser.js` by default and needs `dependency-cruiser` installed. Configurations that use `webpackConfig` or `babelConfig` aren't supported.
 
 ### commitlint, lint-staged and secretlint
 

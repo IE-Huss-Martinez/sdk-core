@@ -9,6 +9,9 @@
     "directory": "packages/sdk-config"
   },
   "type": "module",
+  "bin": {
+    "hm-lint-deps": "./src/dependency-cruiser/cli.js"
+  },
   "exports": {
     "./biome": "./biome/base.jsonc",
     "./commitlint": "./src/commitlint/index.js",
