@@ -12,7 +12,7 @@ catalog:
   "@commitlint/types": ^21.2.3
   "@secretlint/node": ^13.1.0
   "@secretlint/secretlint-rule-preset-recommend": ^13.1.0
-  "@types/node": ^24.19.2
+  "@types/node": ^26.6.6
   "@types/picomatch": ^4.0.3
   dependency-cruiser: ^18.7.2
   husky: ^9.1.7
