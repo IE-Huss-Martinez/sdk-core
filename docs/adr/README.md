@@ -23,5 +23,6 @@ Use [`template.md`](template.md) for new records. Name files `NNNN-short-title.m
 | [0015](0015-verification-and-releases.md) | Verification, releases and trusted publishing | Accepted |
 | [0016](0016-git-hooks-and-merge-guards.md) | Git hooks and merge guards | Accepted |
 | [0017](0017-core-errors-and-shared-runtime-imports.md) | Where `core/errors` and `@hussmartinez/sdk-core` sit in the core layers | Accepted |
-| [0018](0018-worker-rpc-protocol.md) | The worker RPC protocol, its errors and its buffer rules | Accepted |
+| [0018](0018-worker-rpc-protocol.md) | The worker RPC protocol, its errors and its buffer rules | Accepted; its abort-reason rule is superseded by [0020](0020-file-policy.md) |
 | [0019](0019-message-catalogues.md) | Message catalogues as typed, plain-text data | Accepted |
+| [0020](0020-file-policy.md) | File policy: typed limits with warnings, shared by every SDK | Accepted; supersedes [0018](0018-worker-rpc-protocol.md)'s abort-reason rule |

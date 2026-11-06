@@ -121,12 +121,13 @@ Programmatic control goes through a ref handle, such as `open(file)`, `export()`
 - **Errors:** one `SdkError` subclass per SDK, with a stable `code`, `details` and `cause`. User-facing text comes from messages, never from error text.
 - **Contract tests:** every adapter passes the contract-test suite for its port.
 
-## Security and privacy ([ADR 0012](docs/adr/0012-hostile-input-and-no-network.md))
+## Security and privacy ([ADR 0012](docs/adr/0012-hostile-input-and-no-network.md), [ADR 0020](docs/adr/0020-file-policy.md))
 
-- **Treat every file as hostile:**
+- **Treat every file as hostile** ([ADR 0020](docs/adr/0020-file-policy.md)):
   - parse only in workers;
-  - enforce limits on size, count, pixels, decoded size and time;
-  - fail with specific error codes.
+  - enforce limits on size, count, pixels, decoded size and time, with `defineLimits` from `sdk-core`, extending `coreLimits` with the SDK's own;
+  - check before or while decoding, failing with specific error codes and `details` naming the limit, and warning from each limit's warning threshold;
+  - hosts configure limits through `filePolicy`, and unknown limit names are an error.
 - **Harden parsers:**
   - pdf.js runs with `isEvalSupported: false` and scripting disabled;
   - link protocols are allowlisted;
