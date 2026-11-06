@@ -51,6 +51,7 @@ sdk-core owns these codes, in `SdkCoreErrorCode`:
 | `WORKER_CRASHED` | An error escaped the worker's handlers, or a message couldn't be read |
 | `WORKER_TERMINATED` | The worker was terminated while the call was in flight, or the client was destroyed |
 | `WORKER_METHOD_NOT_FOUND` | The worker doesn't implement the method |
+| `WORKER_DATA_NOT_CLONEABLE` | A call's input or result can't be sent across the boundary; `cause` is the original exception and `details.method` names the method |
 
 `TIMEOUT` is separate from `ABORTED` because "cancelled" and "took too long" need different user-facing text ([0014](0014-accessibility-and-translatable-text.md)), and codes can't be added cheaply after release.
 
@@ -76,9 +77,11 @@ sdk-core owns these codes, in `SdkCoreErrorCode`:
   - Any other view, a partial one or one over a `SharedArrayBuffer`, is replaced with a copy of just its bytes. This applies to copied and transferred messages alike, so a small view into a large WebAssembly heap never sends the whole heap.
   - Transferring a full-coverage view detaches its whole buffer.
 - **Non-detachable buffers:** a buffer that can't be detached, such as `WebAssembly.Memory`'s, can't be recognised in advance. The transfer list is validated before anything is detached, so when posting with transfers fails, the sender retries once without transferring.
-- **Messages that can't be cloned at all:**
-  - a result becomes an `error` response, built with `serializeError`;
-  - an input rejects only that call, with code `UNKNOWN` and the `DataCloneError` as `cause`.
+- **Messages that can't be cloned at all** fail with `WORKER_DATA_NOT_CLONEABLE`, with the original exception as `cause` and the method in `details`:
+  - a result fails its call with an `error` response, and the worker keeps serving;
+  - an input rejects only that call, on the page.
+
+  Nothing is left pending.
 
   Nothing is left pending.
 

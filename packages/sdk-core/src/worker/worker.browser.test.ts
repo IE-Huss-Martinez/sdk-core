@@ -187,7 +187,11 @@ describe("worker RPC in a real browser", () => {
       const { client, created } = setup();
       const error = await rejection(client.call("notCloneable", undefined));
 
-      expect(error).toMatchObject({ code: "UNKNOWN", details: { originalName: "DataCloneError" } });
+      expect(error).toMatchObject({
+        code: "WORKER_DATA_NOT_CLONEABLE",
+        details: { method: "notCloneable" },
+        cause: { details: { originalName: "DataCloneError" } },
+      });
       await expect(client.call("echo", "fine")).resolves.toBe("fine");
       expect(created.count).toBe(1);
     });
@@ -199,7 +203,11 @@ describe("worker RPC in a real browser", () => {
       const bad = client.call("echo", (() => "x") as unknown as string);
 
       const error = await rejection(bad);
-      expect(error).toMatchObject({ code: "UNKNOWN", cause: { name: "DataCloneError" } });
+      expect(error).toMatchObject({
+        code: "WORKER_DATA_NOT_CLONEABLE",
+        details: { method: "echo" },
+        cause: { name: "DataCloneError" },
+      });
       await expect(other).resolves.toBe("waited");
     });
   });

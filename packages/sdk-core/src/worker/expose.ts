@@ -56,8 +56,8 @@ export interface ExposeWorkerOptions {
  *   `serializeError`, so `SdkError` codes survive.
  * - Only methods that are own properties of `handlers` can be called. Any
  *   other name, including `constructor`, fails with `WORKER_METHOD_NOT_FOUND`.
- * - A result that can't be cloned fails the call with an error, instead of
- *   leaving it pending.
+ * - A result that can't be cloned fails the call with
+ *   `WORKER_DATA_NOT_CLONEABLE`, instead of leaving it pending.
  * - Errors that escape every handler, such as an uncaught error in a timer
  *   or an unhandled rejection, are reported to the page as a crash. The page
  *   then replaces the worker.
@@ -96,7 +96,7 @@ export function exposeWorker<Contract extends WorkerContract<Contract>>(
     );
   };
 
-  const sendResult = (id: number, output: unknown): void => {
+  const sendResult = (id: number, method: string, output: unknown): void => {
     const prepared = prepareMessage(output, true);
     try {
       postWithFallback(
@@ -104,8 +104,18 @@ export function exposeWorker<Contract extends WorkerContract<Contract>>(
         envelope<ResultMessage>({ type: "result", id, output: prepared.value }),
         prepared.transferables,
       );
-    } catch (error) {
-      sendError(id, error);
+    } catch (cause) {
+      sendError(
+        id,
+        new SdkError(
+          "WORKER_DATA_NOT_CLONEABLE",
+          `The result of "${method}" can't be sent to the page.`,
+          {
+            cause,
+            details: { method },
+          },
+        ),
+      );
     }
   };
 
@@ -140,7 +150,7 @@ export function exposeWorker<Contract extends WorkerContract<Contract>>(
       .then(
         (output: unknown) => {
           running.delete(id);
-          sendResult(id, output);
+          sendResult(id, method, output);
         },
         (error: unknown) => {
           running.delete(id);

@@ -64,6 +64,10 @@ export type SdkErrorClass = new (
  *   flight, because another call had to be stopped or the client was
  *   destroyed. Calls aren't retried automatically.
  * - `WORKER_METHOD_NOT_FOUND`: the worker doesn't implement the method.
+ * - `WORKER_DATA_NOT_CLONEABLE`: a call's input or result can't be sent
+ *   across the worker boundary, for example because it contains a function.
+ *   The `cause` is the original exception, and `details.method` names the
+ *   method.
  *
  * @public
  */
@@ -75,7 +79,8 @@ export type SdkCoreErrorCode =
   | "WORKER_PROTOCOL_MISMATCH"
   | "WORKER_CRASHED"
   | "WORKER_TERMINATED"
-  | "WORKER_METHOD_NOT_FOUND";
+  | "WORKER_METHOD_NOT_FOUND"
+  | "WORKER_DATA_NOT_CLONEABLE";
 
 /**
  * Marks SdkError instances across realms and across copies of sdk-core, where

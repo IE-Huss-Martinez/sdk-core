@@ -39,7 +39,7 @@ export interface ExposeWorkerOptions {
 export function isSdkError<Code extends string = string>(value: unknown, code?: Code): value is SdkError<Code>;
 
 // @public
-export type SdkCoreErrorCode = "UNKNOWN" | "ABORTED" | "TIMEOUT" | "WORKER_START_FAILED" | "WORKER_PROTOCOL_MISMATCH" | "WORKER_CRASHED" | "WORKER_TERMINATED" | "WORKER_METHOD_NOT_FOUND";
+export type SdkCoreErrorCode = "UNKNOWN" | "ABORTED" | "TIMEOUT" | "WORKER_START_FAILED" | "WORKER_PROTOCOL_MISMATCH" | "WORKER_CRASHED" | "WORKER_TERMINATED" | "WORKER_METHOD_NOT_FOUND" | "WORKER_DATA_NOT_CLONEABLE";
 
 // @public
 export class SdkError<Code extends string = string> extends Error {

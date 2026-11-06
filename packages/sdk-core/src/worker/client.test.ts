@@ -310,7 +310,11 @@ describe("createWorkerClient", () => {
     workers[0]?.ready();
     await flush();
 
-    expect(await bad).toMatchObject({ code: "UNKNOWN", cause: { name: "DataCloneError" } });
+    expect(await bad).toMatchObject({
+      code: "WORKER_DATA_NOT_CLONEABLE",
+      details: { method: "echo" },
+      cause: { name: "DataCloneError" },
+    });
     workers[0]?.respond(workers[0]?.calls()[0]?.["id"], "fine");
     await expect(good).resolves.toBe("fine");
   });

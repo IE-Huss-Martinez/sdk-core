@@ -120,7 +120,11 @@ describe("exposeWorker", () => {
     expect(scope.last()).toMatchObject({
       type: "error",
       id: 1,
-      error: { code: "UNKNOWN", details: { originalName: "DataCloneError" } },
+      error: {
+        code: "WORKER_DATA_NOT_CLONEABLE",
+        details: { method: "notCloneable" },
+        cause: { code: "UNKNOWN", details: { originalName: "DataCloneError" } },
+      },
     });
   });
 

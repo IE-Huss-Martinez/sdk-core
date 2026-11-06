@@ -112,8 +112,8 @@ export interface WorkerClient<Contract extends WorkerContract<Contract>> {
    * @returns The method's output, transferred from the worker. Rejects with
    *   the worker's error, rebuilt with `deserializeError`, or with one of
    *   sdk-core's codes: `ABORTED`, `TIMEOUT`, `WORKER_START_FAILED`,
-   *   `WORKER_PROTOCOL_MISMATCH`, `WORKER_CRASHED`, `WORKER_TERMINATED` or
-   *   `WORKER_METHOD_NOT_FOUND`.
+   *   `WORKER_PROTOCOL_MISMATCH`, `WORKER_CRASHED`, `WORKER_TERMINATED`,
+   *   `WORKER_METHOD_NOT_FOUND` or `WORKER_DATA_NOT_CLONEABLE`.
    */
   call<Method extends WorkerMethodName<Contract>>(
     method: Method,
@@ -461,9 +461,11 @@ export function createWorkerClient<Contract extends WorkerContract<Contract>>(
             current.pending.delete(id);
             cleanup();
             reject(
-              new SdkError("UNKNOWN", `The input for "${method}" can't be sent to the worker.`, {
-                cause,
-              }),
+              new SdkError(
+                "WORKER_DATA_NOT_CLONEABLE",
+                `The input for "${method}" can't be sent to the worker.`,
+                { cause, details: { method } },
+              ),
             );
             scheduleIdle(current);
           }
