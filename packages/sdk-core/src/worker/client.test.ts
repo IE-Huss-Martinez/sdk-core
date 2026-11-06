@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { isSdkError } from "../errors/sdk-error.js";
+import { isSdkError, SdkError } from "../errors/sdk-error.js";
 import { serializeError } from "../errors/serialize.js";
 import { createWorkerClient, type WorkerLike } from "./client.js";
 
@@ -167,6 +167,17 @@ describe("createWorkerClient", () => {
     );
     expect(timedOut).toMatchObject({ code: "TIMEOUT", cause: timeout });
     expect(aborted).toMatchObject({ code: "ABORTED" });
+  });
+
+  it("rejects with an SdkError abort reason unchanged (ADR 0020)", async () => {
+    const { client } = setup();
+    const reason = new SdkError("PROCESSING_TIME_EXCEEDED", "Too slow.", {
+      details: { maximum: 1 },
+    });
+
+    await expect(
+      rejection(client.call("echo", "x", { signal: AbortSignal.abort(reason) })),
+    ).resolves.toBe(reason);
   });
 
   it("sends cancel for a call in flight, and a late result doesn't terminate the worker", async () => {
