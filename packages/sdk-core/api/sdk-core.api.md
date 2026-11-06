@@ -12,6 +12,43 @@ export type CheckedOverrides<Catalogue extends MessageCatalogue, Overrides> = st
 };
 
 // @public
+export function checkFile(policy: FilePolicy<CoreLimits>, file: Blob): LimitCheck;
+
+// @public
+export function checkFiles(policy: FilePolicy<CoreLimits>, files: ArrayLike<Blob> | Iterable<Blob>): LimitCheck;
+
+// @public
+export type CoreLimits = typeof coreLimits;
+
+// @public
+export const coreLimits: {
+    readonly maxFileSize: {
+        readonly code: "FILE_TOO_LARGE";
+        readonly unit: "bytes";
+        readonly default: 100000000;
+        readonly warning: 50000000;
+    };
+    readonly maxFiles: {
+        readonly code: "TOO_MANY_FILES";
+        readonly unit: "count";
+        readonly default: 20;
+    };
+    readonly maxDecodedSize: {
+        readonly code: "DECODED_SIZE_TOO_LARGE";
+        readonly unit: "bytes";
+        readonly default: 500000000;
+    };
+    readonly maxProcessingTime: {
+        readonly code: "PROCESSING_TIME_EXCEEDED";
+        readonly unit: "milliseconds";
+        readonly default: 120000;
+    };
+};
+
+// @public
+export function createDecodedSizeBudget(policy: FilePolicy<CoreLimits>): DecodedSizeBudget;
+
+// @public
 export function createMessages<const Catalogue extends MessageCatalogue & {
     readonly "errors.UNKNOWN": MessageValue;
 }, const Overrides extends MessageOverrides<Catalogue> = Record<never, never>>(catalogue: Catalogue, options?: CreateMessagesOptions<Overrides & CheckedOverrides<Catalogue, Overrides>>): Messages<Catalogue>;
@@ -24,6 +61,20 @@ export interface CreateMessagesOptions<Overrides> {
 
 // @public
 export function createWorkerClient<Contract extends WorkerContract<Contract>>(options: WorkerClientOptions): WorkerClient<Contract>;
+
+// @public
+export interface DecodedSizeBudget {
+    add(bytes: number): LimitCheck;
+    readonly total: number;
+}
+
+// @public
+export function defineLimits<const Definitions extends LimitDefinitions>(definitions: Definitions, options?: DefineLimitsOptions): Limits<Definitions>;
+
+// @public
+export interface DefineLimitsOptions {
+    readonly errorClass?: SdkErrorClass;
+}
 
 // @public
 export function defineMessages<const Catalogue extends MessageCatalogue>(catalogue: Catalogue): Catalogue;
@@ -57,7 +108,52 @@ export interface ExposeWorkerOptions {
 }
 
 // @public
+export interface FilePolicy<Definitions extends LimitDefinitions> {
+    check<Limit extends keyof Definitions & string>(limit: Limit, actual: number): LimitCheck;
+    error<Limit extends keyof Definitions & string>(limit: Limit, actual: number): SdkError<Definitions[Limit]["code"]>;
+    readonly limits: {
+        readonly [Limit in keyof Definitions]: ResolvedLimit;
+    };
+}
+
+// @public
+export type FilePolicyOverrides<Definitions extends LimitDefinitions> = {
+    readonly [Limit in keyof Definitions]?: LimitSetting;
+};
+
+// @public
 export function isSdkError<Code extends string = string>(value: unknown, code?: Code): value is SdkError<Code>;
+
+// @public
+export type LimitCheck = "warning" | undefined;
+
+// @public
+export interface LimitDefinition<Code extends string = string> {
+    readonly code: Code;
+    readonly default: number;
+    readonly unit: LimitUnit;
+    readonly warning?: number;
+}
+
+// @public
+export type LimitDefinitions = {
+    readonly [limit: string]: LimitDefinition;
+};
+
+// @public
+export interface Limits<Definitions extends LimitDefinitions> {
+    readonly definitions: Definitions;
+    resolve(overrides?: FilePolicyOverrides<Definitions>): FilePolicy<Definitions>;
+}
+
+// @public
+export type LimitSetting = number | {
+    readonly maximum?: number;
+    readonly warning?: number;
+};
+
+// @public
+export type LimitUnit = "bytes" | "count" | "milliseconds" | "pixels";
 
 // @public
 export type MessageArgs<Message extends MessageValue> = keyof MessageParams<Message> extends never ? [] : [params: MessageParams<Message>];
@@ -121,7 +217,16 @@ export type PluralMessage = {
 };
 
 // @public
-export type SdkCoreErrorCode = "UNKNOWN" | "ABORTED" | "TIMEOUT" | "WORKER_START_FAILED" | "WORKER_PROTOCOL_MISMATCH" | "WORKER_CRASHED" | "WORKER_TERMINATED" | "WORKER_METHOD_NOT_FOUND" | "WORKER_DATA_NOT_CLONEABLE";
+export function processingSignal(policy: FilePolicy<CoreLimits>, signal?: AbortSignal): AbortSignal;
+
+// @public
+export interface ResolvedLimit {
+    readonly maximum: number;
+    readonly warning: number;
+}
+
+// @public
+export type SdkCoreErrorCode = "UNKNOWN" | "ABORTED" | "TIMEOUT" | "WORKER_START_FAILED" | "WORKER_PROTOCOL_MISMATCH" | "WORKER_CRASHED" | "WORKER_TERMINATED" | "WORKER_METHOD_NOT_FOUND" | "WORKER_DATA_NOT_CLONEABLE" | "UNSUPPORTED_ENVIRONMENT" | "FILE_TOO_LARGE" | "TOO_MANY_FILES" | "DECODED_SIZE_TOO_LARGE" | "PROCESSING_TIME_EXCEEDED";
 
 // @public
 export const sdkCoreMessages: {
@@ -134,6 +239,20 @@ export const sdkCoreMessages: {
     readonly "errors.WORKER_TERMINATED": "The operation was stopped before it finished. Please try again.";
     readonly "errors.WORKER_METHOD_NOT_FOUND": "This operation isn't available. Reload the page and try again.";
     readonly "errors.WORKER_DATA_NOT_CLONEABLE": "Something went wrong while processing the file. Please try again.";
+    readonly "errors.UNSUPPORTED_ENVIRONMENT": "This browser doesn't support a feature this tool needs. Update your browser, or try another one.";
+    readonly "errors.FILE_TOO_LARGE": "This file is {actual, fileSize}, which is over the {maximum, fileSize} limit.";
+    readonly "errors.TOO_MANY_FILES": {
+        readonly $plural: "maximum";
+    } & {
+        readonly one: "You can add {maximum} file at a time.";
+        readonly other: "You can add up to {maximum} files at a time.";
+    };
+    readonly "errors.DECODED_SIZE_TOO_LARGE": "This file expands to more than {maximum, fileSize} when opened, which is over the limit.";
+    readonly "errors.PROCESSING_TIME_EXCEEDED": "Processing this file took too long and was stopped.";
+    readonly "warnings.maxFileSize": "This file is {actual, fileSize}. Large files may be slow to process.";
+    readonly "warnings.maxFiles": "Adding {actual} files at once may be slow.";
+    readonly "warnings.maxDecodedSize": "This file is very large once opened and may be slow to process.";
+    readonly "warnings.maxProcessingTime": "This is taking longer than usual.";
 };
 
 // @public

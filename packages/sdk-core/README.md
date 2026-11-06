@@ -4,7 +4,7 @@ Headless runtime shared by the `@hussmartinez` SDK family: worker messaging, err
 
 The package is ESM only, has no dependencies, and does nothing on import, so it's safe to load on a server ([ADR 0004](../../docs/adr/0004-entry-points-and-module-format.md)).
 
-> Status: not published yet. Errors, worker messaging and messages are available; the rest of the API lands in upcoming pull requests.
+> Status: not published yet. Errors, worker messaging, messages and the file policy are available; the session, tools and custom-element base come later.
 
 ## Errors
 
@@ -72,6 +72,39 @@ messages.error(error);                            // text for error.code, never 
 - **Locale:** it defaults to `"en"`. Always pass the host's `locale`, and never read it from the browser, because server and client must render the same text.
 - **Overrides are checked at runtime too.** Unknown keys are ignored, and malformed messages fall back to English, with warnings in development. `t()` never throws.
 
+## File policy
+
+Every SDK enforces limits on hostile input before or while decoding it, and hosts configure them through `filePolicy` ([ADR 0012](../../docs/adr/0012-hostile-input-and-no-network.md), [ADR 0020](../../docs/adr/0020-file-policy.md)).
+
+```ts
+export const pdfLimits = defineLimits(
+  { ...coreLimits, maxPages: { code: "TOO_MANY_PAGES", unit: "count", default: 2_000 } },
+  { errorClass: PdfError },
+);
+
+const policy = pdfLimits.resolve(props.filePolicy); // such as { maxFileSize: 300_000_000 }
+if (checkFile(policy, file) === "warning") {
+  announce(messages.t("warnings.maxFileSize", { actual: file.size }));
+}
+policy.check("maxPages", pageCount);                 // throws PdfError("TOO_MANY_PAGES") above 2,000
+await client.call("open", { bytes }, { signal: processingSignal(policy, signal) });
+```
+
+| Core limit | Code | Default | Warning from |
+|---|---|---|---|
+| `maxFileSize` | `FILE_TOO_LARGE` | 100 MB | 50 MB |
+| `maxFiles` | `TOO_MANY_FILES` | 20 | — |
+| `maxDecodedSize` | `DECODED_SIZE_TOO_LARGE` | 500 MB | — |
+| `maxProcessingTime` | `PROCESSING_TIME_EXCEEDED` | 120 s | — |
+
+- **`check()`** throws above the maximum, with `details: { limit, maximum, actual, unit }`, and returns `"warning"` from the warning threshold.
+- **Helpers:**
+  - `checkFile` and `checkFiles` check before reading;
+  - `createDecodedSizeBudget` stops a decompression bomb mid-stream, in the worker;
+  - `processingSignal` aborts a worker call with `PROCESSING_TIME_EXCEEDED`, and fails with `UNSUPPORTED_ENVIRONMENT` where `AbortSignal.any` is missing.
+- **Settings:** each is a number or `{ maximum, warning }`. `Infinity` disables a limit, which removes a protection, or disables a warning. Unknown limit names throw, so a typo can't leave a default in place.
+- **Text:** violations have text under `errors.<CODE>` and warnings under `warnings.<limit>` in `sdkCoreMessages`.
+
 ## Workers
 
 `createWorkerClient` and `exposeWorker` are a small, typed, versioned RPC layer for SDK workers ([ADR 0011](../../docs/adr/0011-worker-messaging-and-assets.md), [ADR 0018](../../docs/adr/0018-worker-rpc-protocol.md)). One interface describes the methods, and both sides are checked against it:
@@ -105,7 +138,7 @@ const bitmap = await client.call("render", { bytes, page: 1 }, { signal, onProgr
 
 - **Lifetimes:** the worker starts on the first call or `start()`, stops after `idleTimeout` without calls (30 s by default), and is recreated when needed. `destroy()` stops it for good.
 - **Start-up:** `exposeWorker` must run before any heavy initialisation. The client waits up to `startTimeout` (10 s) for the worker to announce itself, and that should measure start-up, not WebAssembly compilation.
-- **Cancellation:** an aborted call rejects at once with code `ABORTED`, or `TIMEOUT` when the signal timed out, with the signal's reason as `cause`. These aren't `AbortError`s. The handler's `signal` is aborted. If the call is still running after `cancelTimeout` (1 s), the worker is terminated, and other calls on it fail with `WORKER_TERMINATED`. Nothing is retried automatically.
+- **Cancellation:** an aborted call rejects at once. An `SdkError` reason, such as the file policy's `PROCESSING_TIME_EXCEEDED`, is passed through unchanged. Any other reason gives code `ABORTED`, or `TIMEOUT` when the signal timed out, with the reason as `cause`. These aren't `AbortError`s. The handler's `signal` is aborted. If the call is still running after `cancelTimeout` (1 s), the worker is terminated, and other calls on it fail with `WORKER_TERMINATED`. Nothing is retried automatically.
 - **Buffers:** inputs are copied unless you pass `transfer: true`, which detaches them. Results are transferred, so handlers must return buffers they no longer need. Views into part of a buffer, such as WebAssembly memory, are always copied, and only their bytes. An input or result that can't be cloned, such as one containing a function, fails that call with `WORKER_DATA_NOT_CLONEABLE`.
 - **Errors:** handler errors arrive rebuilt with `deserializeError`, so `PdfError` codes survive. Errors that escape the handlers, and failures to start, arrive as `WORKER_CRASHED`, `WORKER_START_FAILED` or `WORKER_PROTOCOL_MISMATCH`.
 - **Crash reporting:** pass `onCrash` to hear about those three failures even when no call is pending. SDKs should forward it to their host's `onEvent` or error reporting. Expected shutdowns, such as the idle timeout, `destroy()` or a stuck call being stopped, don't trigger it.
