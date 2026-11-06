@@ -5,6 +5,9 @@
 ```ts
 
 // @public
+export function createWorkerClient<Contract extends WorkerContract<Contract>>(options: WorkerClientOptions): WorkerClient<Contract>;
+
+// @public
 export function deserializeError(data: unknown, options?: DeserializeErrorOptions): SdkError;
 
 // @public
@@ -24,10 +27,19 @@ export type ErrorDetailValue = string | number | boolean | null | readonly Error
 };
 
 // @public
+export function exposeWorker<Contract extends WorkerContract<Contract>>(handlers: WorkerHandlers<Contract>, options?: ExposeWorkerOptions): void;
+
+// @public
+export interface ExposeWorkerOptions {
+    readonly includeStack?: boolean;
+    readonly scope?: WorkerScope;
+}
+
+// @public
 export function isSdkError<Code extends string = string>(value: unknown, code?: Code): value is SdkError<Code>;
 
 // @public
-export type SdkCoreErrorCode = "UNKNOWN";
+export type SdkCoreErrorCode = "UNKNOWN" | "ABORTED" | "TIMEOUT" | "WORKER_START_FAILED" | "WORKER_PROTOCOL_MISMATCH" | "WORKER_CRASHED" | "WORKER_TERMINATED" | "WORKER_METHOD_NOT_FOUND" | "WORKER_DATA_NOT_CLONEABLE";
 
 // @public
 export class SdkError<Code extends string = string> extends Error {
@@ -63,6 +75,75 @@ export function serializeError(error: unknown, options?: SerializeErrorOptions):
 export interface SerializeErrorOptions {
     readonly includeStack?: boolean;
     readonly maxDepth?: number;
+}
+
+// @public
+export interface WorkerCallContext<Progress> {
+    progress(value: Progress): void;
+    readonly signal: AbortSignal;
+}
+
+// @public
+export interface WorkerCallOptions<Progress> {
+    readonly onProgress?: (value: Progress) => void;
+    readonly signal?: AbortSignal;
+    readonly transfer?: boolean;
+}
+
+// @public
+export interface WorkerClient<Contract extends WorkerContract<Contract>> {
+    call<Method extends WorkerMethodName<Contract>>(method: Method, input: Contract[Method]["input"], options?: WorkerCallOptions<WorkerProgress<Contract[Method]>>): Promise<Contract[Method]["output"]>;
+    destroy(): void;
+    start(): Promise<void>;
+}
+
+// @public
+export interface WorkerClientOptions {
+    readonly cancelTimeout?: number;
+    readonly createWorker: () => WorkerLike;
+    readonly errorClasses?: DeserializeErrorOptions["errorClasses"];
+    readonly idleTimeout?: number;
+    readonly onCrash?: (error: SdkError<SdkCoreErrorCode>) => void;
+    readonly startTimeout?: number;
+}
+
+// @public
+export type WorkerContract<Contract> = {
+    readonly [Method in keyof Contract]: WorkerMethod;
+};
+
+// @public
+export type WorkerHandlers<Contract extends WorkerContract<Contract>> = {
+    readonly [Method in WorkerMethodName<Contract>]: (input: Contract[Method]["input"], context: WorkerCallContext<WorkerProgress<Contract[Method]>>) => Contract[Method]["output"] | Promise<Contract[Method]["output"]>;
+};
+
+// @public
+export interface WorkerLike {
+    addEventListener(type: string, listener: (event: Event) => void): void;
+    postMessage(message: unknown, transfer: Transferable[]): void;
+    removeEventListener(type: string, listener: (event: Event) => void): void;
+    terminate(): void;
+}
+
+// @public
+export interface WorkerMethod {
+    readonly input: unknown;
+    readonly output: unknown;
+    readonly progress?: unknown;
+}
+
+// @public
+export type WorkerMethodName<Contract> = keyof Contract & string;
+
+// @public
+export type WorkerProgress<Method> = Method extends {
+    readonly progress: infer Progress;
+} ? Progress : never;
+
+// @public
+export interface WorkerScope {
+    addEventListener(type: string, listener: (event: Event) => void): void;
+    postMessage(message: unknown, transfer: Transferable[]): void;
 }
 
 ```
