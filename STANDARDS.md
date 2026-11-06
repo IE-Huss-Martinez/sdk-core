@@ -97,11 +97,13 @@ Programmatic control goes through a ref handle, such as `open(file)`, `export()`
 - `"use client"` is kept in built React entries, and a test verifies it.
 - Every repository's end-to-end tests run against the Next.js and Vite test applications from `sdk-config`.
 
-## Architecture ([ADR 0008](docs/adr/0008-ports-adapters-and-session.md), [ADR 0009](docs/adr/0009-features-as-tools.md), [ADR 0010](docs/adr/0010-edits-as-commands.md), [ADR 0011](docs/adr/0011-worker-messaging-and-assets.md))
+## Architecture ([ADR 0008](docs/adr/0008-ports-adapters-and-session.md), [ADR 0009](docs/adr/0009-features-as-tools.md), [ADR 0010](docs/adr/0010-edits-as-commands.md), [ADR 0011](docs/adr/0011-worker-messaging-and-assets.md), [ADR 0017](docs/adr/0017-core-errors-and-shared-runtime-imports.md))
 
 - **Ports and adapters:**
   - the core defines ports, such as `PdfEngine` and `PdfProcessor`;
   - adapters implement them and run in workers;
+  - every core layer may import `@hussmartinez/sdk-core`, but never `@hussmartinez/ui`, `react` or `react-dom`;
+  - `core/errors` is a leaf: it imports only `core/model` and `@hussmartinez/sdk-core`, and every layer may import it;
   - the dependency rules are enforced with `dependency-cruiser`.
 - **Framework-agnostic session:** the store exposes `getSnapshot()`, `subscribe()` and commands. React binds with `useSyncExternalStore`, and the element binds to the same store.
 - **Tools:**
