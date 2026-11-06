@@ -232,6 +232,7 @@ Each repository extends the presets in `@hussmartinez/sdk-config` instead of cop
 - **ADRs:** significant decisions get an ADR in the owning repository.
 - **Versioning:**
   - semver, with `0.x` until the API settles;
-  - release-please prepares versions and changelogs;
-  - releases are published from tags through GitHub Actions with npm trusted publishing and provenance.
+  - release-please prepares versions and changelogs, and creates a GitHub Release when its pull request is merged;
+  - the same workflow then runs `pnpm verify` and publishes to npm with trusted publishing and provenance;
+  - the tarball, standalone scripts and checksums are attached to the GitHub Release, with artifact attestations.
 - **Licence:** Apache-2.0, with a `NOTICE` file crediting bundled third-party code whose licence requires it.

@@ -57,13 +57,22 @@ Each repository exposes `pnpm verify`, which runs, in order:
 - **Deprecations:** after `1.0`, deprecated APIs remain for at least one minor release before removal in the next major.
 - **release-please** reads the Conventional Commits on `main`, proposes the next version and changelog in a release pull request, and tags the release when it's merged.
 
-### Publishing
+### Releasing and publishing
 
-- **Trigger:** a release workflow runs when a release tag is pushed.
-- **Verification:** it runs `pnpm verify` again, then publishes with npm trusted publishing (OpenID Connect).
-- **No stored token:** there is no npm token in the repository settings.
-- **Provenance:** every published version carries a provenance statement linking it to the commit and workflow that built it.
-- **Permissions:** the release workflow is the only one with `id-token: write`.
+One `release` workflow runs on every push to `main` and has two jobs.
+
+1. **`release-please`** (permissions: `contents: write`, `pull-requests: write`):
+   - keeps a release pull request open with the next version and changelog;
+   - when that pull request is merged, creates the version tag and a **GitHub Release** whose notes are the changelog for that version.
+2. **`publish`** runs only when the first job has just created a release. Its permissions are `contents: write`, `id-token: write` and `attestations: write`. It:
+   1. runs `pnpm verify`;
+   2. publishes to npm with trusted publishing (OpenID Connect) and provenance, with no npm token stored anywhere;
+   3. attaches the npm tarball, each SDK's standalone script and a `SHA256SUMS` file to the GitHub Release;
+   4. creates GitHub artifact attestations for those files, so anyone can check a download with `gh attestation verify`.
+
+Publishing is a job in the same workflow rather than a separate workflow triggered by the tag. Tags and releases created with the workflow's own `GITHUB_TOKEN` don't trigger other workflows, so a separate publish workflow would never run.
+
+Each repository's README links to its Releases page and npm package. npm shows the provenance of every version.
 
 ## Alternatives considered
 
@@ -71,9 +80,11 @@ Each repository exposes `pnpm verify`, which runs, in order:
 - **CI only:** feedback arrives minutes after pushing, so broken work reaches the remote, and secrets committed by mistake become public immediately.
 - **Changesets:** a good fit for monorepos, but it duplicates information that Conventional Commits already carry.
 - **Publishing from a developer machine:** not reproducible, has no provenance, and depends on a long-lived token.
+- **A separate publish workflow triggered by the release tag:** doesn't run, because events created with `GITHUB_TOKEN` don't start other workflows. The workaround, a personal access token or GitHub App token for release-please, adds a long-lived credential for no benefit.
 
 ## Consequences
 
 - Every repository is verified the same way: locally for fast feedback, and in CI as the gate that can't be skipped.
-- Every pull request shows a visible check result, and releases can be traced to the commit and workflow that built them.
+- Every pull request shows a visible check result.
+- Every version appears on the repository's Releases page with its notes and verifiable files, and can be traced on npm to the commit and workflow that built it.
 - CI runs the browser suite on three engines, so a full run takes several minutes. That's acceptable for a merge gate.
