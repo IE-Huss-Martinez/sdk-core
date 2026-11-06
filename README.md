@@ -11,8 +11,6 @@ The standards every SDK follows live in [`STANDARDS.md`](STANDARDS.md). The reas
 
 > Status: being bootstrapped. No packages are published yet.
 
-Contributors, including coding agents, start with [`AGENTS.md`](AGENTS.md).
-
 ## Development
 
 You need Node 24 (see [`.node-version`](.node-version)) and pnpm. The exact pnpm version is pinned in `package.json`, and pnpm switches to it automatically.
@@ -41,6 +39,10 @@ pnpm verify:fast   # the subset the pre-push hook runs
 Steps marked "per package" run each package's script of the same name, and pass while no package defines one yet.
 
 The git hooks ([ADR 0016](docs/adr/0016-git-hooks-and-merge-guards.md)) run automatically: a secret scan and lint of staged files on commit, a Conventional Commits check of the message, and `pnpm verify:fast` on push.
+
+## Contributing
+
+Read [`CONTRIBUTING.md`](CONTRIBUTING.md) before opening a pull request. Coding agents also start with [`AGENTS.md`](AGENTS.md). Everyone taking part follows the [code of conduct](CODE_OF_CONDUCT.md). Report vulnerabilities privately, as described in the [security policy](SECURITY.md).
 
 ## License
 
