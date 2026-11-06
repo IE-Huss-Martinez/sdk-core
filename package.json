@@ -12,7 +12,7 @@
     "prepare": "husky",
     "lint": "biome check .",
     "lint:css": "stylelint \"**/*.css\" --allow-empty-input",
-    "lint:deps": "depcruise packages",
+    "lint:deps": "hm-lint-deps packages",
     "typecheck": "pnpm -r typecheck",
     "build": "pnpm -r --if-present build",
     "test": "pnpm -r --if-present test",
