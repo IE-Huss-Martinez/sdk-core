@@ -24,6 +24,8 @@
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json",
     "build": "vite build && pnpm check:api",
     "test": "vitest run --project unit",
+    "test:browser": "vitest run --project browser",
+    "test:browser:all": "vitest run --project browser --mode all-browsers",
     "check:api": "tsc -p tsconfig.build.json && api-extractor run",
     "api:update": "tsc -p tsconfig.build.json && api-extractor run --local"
   },
@@ -31,6 +33,8 @@
     "@hussmartinez/sdk-config": "workspace:*",
     "@microsoft/api-extractor": "catalog:",
     "@types/node": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
+    "playwright": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"

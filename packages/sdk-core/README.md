@@ -86,6 +86,10 @@ const bitmap = await client.call("render", { bytes, page: 1 }, { signal, onProgr
 
 The public API is recorded in [`api/sdk-core.api.md`](api/sdk-core.api.md) by api-extractor ([ADR 0015](../../docs/adr/0015-verification-and-releases.md)). `pnpm check:api`, part of `verify` and `verify:fast`, fails when the API changes without the report. After an intended change, run `pnpm api:update` and commit the updated report with the change.
 
+## Tests
+
+`pnpm test` runs the unit tests in Node. `pnpm test:browser` runs the browser tests, with real workers, in Chromium. `pnpm test:browser:all` runs them in Chromium, Firefox and WebKit, as CI does. Install the browsers once with `pnpm exec playwright install`.
+
 ## License
 
 [Apache-2.0](../../LICENSE)
