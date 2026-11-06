@@ -11,6 +11,8 @@ The standards every SDK follows live in [`STANDARDS.md`](STANDARDS.md). The reas
 
 > Status: being bootstrapped. No packages are published yet.
 
+Contributors, including coding agents, start with [`AGENTS.md`](AGENTS.md).
+
 ## License
 
 [Apache-2.0](LICENSE)
