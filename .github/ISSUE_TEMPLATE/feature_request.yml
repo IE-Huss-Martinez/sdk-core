@@ -1,0 +1,46 @@
+name: Feature request
+description: Suggest a capability for sdk-core or sdk-config.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        sdk-core and sdk-config stay small and stable, because every SDK depends on them. Anything specific to one media kind belongs in that SDK's repository ([ADR 0002](https://github.com/hussmartinez/sdk-core/blob/main/docs/adr/0002-one-repository-per-sdk.md)).
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      options:
+        - "@hussmartinez/sdk-core"
+        - "@hussmartinez/sdk-config"
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to do, and what gets in the way today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: How it could work, ideally with an example of the API you'd like to use.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches or workarounds, and why they fall short.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you submit
+      options:
+        - label: I searched the existing issues, and this hasn't been suggested yet.
+          required: true
+        - label: I checked that this doesn't contradict STANDARDS.md or an accepted ADR, or I explain why it should change.
+          required: true

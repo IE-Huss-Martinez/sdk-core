@@ -1,0 +1,67 @@
+name: Bug report
+description: Something in sdk-core or sdk-config doesn't work as documented.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. **Security vulnerabilities** go through [private reporting](https://github.com/hussmartinez/sdk-core/security/advisories/new) instead.
+
+        **Don't attach files with personal or confidential content.** If a particular file triggers the bug, attach one made for the purpose that reproduces it.
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      options:
+        - "@hussmartinez/sdk-core"
+        - "@hussmartinez/sdk-config"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The package version, or the commit if you're working from source.
+      placeholder: 0.1.0
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: Include the error message and its `code` if there is one.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: The smallest set of steps or code that shows the problem. A link to a minimal repository is ideal.
+      placeholder: |
+        1. …
+        2. …
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser and version, operating system, framework and bundler. For sdk-config, the Node and pnpm versions.
+      placeholder: Chrome 142 on macOS 15, Next.js 16 with Turbopack
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you submit
+      options:
+        - label: I searched the existing issues, and this hasn't been reported yet.
+          required: true
+        - label: This isn't a security vulnerability.
+          required: true
