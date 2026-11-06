@@ -32,6 +32,27 @@ export type {
   PluralCategory,
   PluralMessage,
 } from "./messages/types.js";
+export type { DecodedSizeBudget, WithProcessingTimeOptions } from "./policy/checks.js";
+export {
+  checkFile,
+  checkFiles,
+  createDecodedSizeBudget,
+  withProcessingTime,
+} from "./policy/checks.js";
+export type {
+  CoreLimits,
+  DefineLimitsOptions,
+  FilePolicy,
+  FilePolicyOverrides,
+  LimitCheck,
+  LimitDefinition,
+  LimitDefinitions,
+  LimitSetting,
+  Limits,
+  LimitUnit,
+  ResolvedLimit,
+} from "./policy/limits.js";
+export { coreLimits, defineLimits } from "./policy/limits.js";
 export type {
   WorkerCallOptions,
   WorkerClient,

@@ -1,6 +1,6 @@
 import { SdkError } from "../../errors/sdk-error.js";
 
-export type PdfErrorCode = "FILE_TOO_LARGE" | "PDF_ENCRYPTED";
+export type PdfErrorCode = "FILE_TOO_LARGE" | "PDF_ENCRYPTED" | "PROCESSING_TIME_EXCEEDED";
 
 export class PdfError extends SdkError<PdfErrorCode> {
   override readonly name = "PdfError";

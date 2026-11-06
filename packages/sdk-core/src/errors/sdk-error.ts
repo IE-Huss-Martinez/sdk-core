@@ -68,6 +68,12 @@ export type SdkErrorClass = new (
  *   across the worker boundary, for example because it contains a function.
  *   The `cause` is the original exception, and `details.method` names the
  *   method.
+ * - `UNSUPPORTED_ENVIRONMENT`: the browser lacks a feature the SDK needs.
+ *   `details.feature` names it (ADR 0013).
+ * - `FILE_TOO_LARGE`, `TOO_MANY_FILES`, `DECODED_SIZE_TOO_LARGE` and
+ *   `PROCESSING_TIME_EXCEEDED`: a file policy limit was exceeded. `details`
+ *   names the `limit`, its `maximum`, the `actual` value and the `unit`
+ *   (ADR 0020).
  *
  * @public
  */
@@ -80,7 +86,12 @@ export type SdkCoreErrorCode =
   | "WORKER_CRASHED"
   | "WORKER_TERMINATED"
   | "WORKER_METHOD_NOT_FOUND"
-  | "WORKER_DATA_NOT_CLONEABLE";
+  | "WORKER_DATA_NOT_CLONEABLE"
+  | "UNSUPPORTED_ENVIRONMENT"
+  | "FILE_TOO_LARGE"
+  | "TOO_MANY_FILES"
+  | "DECODED_SIZE_TOO_LARGE"
+  | "PROCESSING_TIME_EXCEEDED";
 
 /**
  * Marks SdkError instances across realms and across copies of sdk-core, where

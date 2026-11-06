@@ -1,4 +1,4 @@
-import { type SdkCoreErrorCode, SdkError } from "../errors/sdk-error.js";
+import { isSdkError, type SdkCoreErrorCode, SdkError } from "../errors/sdk-error.js";
 import { type DeserializeErrorOptions, deserializeError } from "../errors/serialize.js";
 import {
   type CallMessage,
@@ -78,10 +78,13 @@ export interface WorkerClientOptions {
  */
 export interface WorkerCallOptions<Progress> {
   /**
-   * Cancels the call. The returned promise rejects at once with an `SdkError`
-   * whose code is `ABORTED`, or `TIMEOUT` when the reason is a `TimeoutError`
-   * (from `AbortSignal.timeout()`). The signal's reason is its `cause`. It's
-   * not an `AbortError`, so `error.name === "AbortError"` checks don't match.
+   * Cancels the call. The returned promise rejects at once. When the signal's
+   * reason is an `SdkError`, such as the file policy's
+   * `PROCESSING_TIME_EXCEEDED`, the call rejects with that error unchanged.
+   * Otherwise it rejects with an `SdkError` whose code is `ABORTED`, or
+   * `TIMEOUT` when the reason is a `TimeoutError` (from
+   * `AbortSignal.timeout()`), with the reason as its `cause`. It's not an
+   * `AbortError`, so `error.name === "AbortError"` checks don't match.
    */
   readonly signal?: AbortSignal;
   /** Receives the worker's progress updates. */
@@ -501,9 +504,13 @@ export function createWorkerClient<Contract extends WorkerContract<Contract>>(
 
 /**
  * @param reason - The signal's abort reason.
- * @returns `TIMEOUT` for a `TimeoutError`, `ABORTED` otherwise.
+ * @returns The reason itself when it's an `SdkError` (ADR 0020), `TIMEOUT`
+ *   for a `TimeoutError`, and `ABORTED` otherwise.
  */
-function abortError(reason: unknown): SdkError<SdkCoreErrorCode> {
+function abortError(reason: unknown): SdkError {
+  if (isSdkError(reason)) {
+    return reason;
+  }
   const isTimeout =
     typeof reason === "object" &&
     reason !== null &&

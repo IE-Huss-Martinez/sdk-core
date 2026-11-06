@@ -1,10 +1,14 @@
 import type { SdkCoreErrorCode } from "../errors/sdk-error.js";
-import { defineMessages } from "./messages.js";
+import type { CoreLimits } from "../policy/limits.js";
+import { defineMessages, plural } from "./messages.js";
+import type { MessageValue } from "./types.js";
 
 /**
- * English text for sdk-core's own error codes. Every SDK spreads it into its
- * catalogue, so `messages.error()` can describe worker failures, and so
- * `errors.UNKNOWN` exists as the fallback for any other error.
+ * English text for sdk-core's own error codes and the core limits' warnings.
+ * Every SDK spreads it into its catalogue, so `messages.error()` can describe
+ * worker failures and policy violations, and so `errors.UNKNOWN` exists as
+ * the fallback for any other error. Limit messages take the error's
+ * `details` (`maximum`, `actual`) as parameters.
  *
  * @example
  * ```ts
@@ -26,4 +30,20 @@ export const sdkCoreMessages = defineMessages({
     "This operation isn't available. Reload the page and try again.",
   "errors.WORKER_DATA_NOT_CLONEABLE":
     "Something went wrong while processing the file. Please try again.",
-}) satisfies Record<`errors.${SdkCoreErrorCode}`, string>;
+  "errors.UNSUPPORTED_ENVIRONMENT":
+    "This browser doesn't support a feature this tool needs. Update your browser, or try another one.",
+  "errors.FILE_TOO_LARGE":
+    "This file is {actual, fileSize}, which is over the {maximum, fileSize} limit.",
+  "errors.TOO_MANY_FILES": plural("maximum", {
+    one: "You can add {maximum} file at a time.",
+    other: "You can add up to {maximum} files at a time.",
+  }),
+  "errors.DECODED_SIZE_TOO_LARGE":
+    "This file expands to more than {maximum, fileSize} when opened, which is over the limit.",
+  "errors.PROCESSING_TIME_EXCEEDED": "Processing this file took too long and was stopped.",
+  "warnings.maxFileSize": "This file is {actual, fileSize}. Large files may be slow to process.",
+  "warnings.maxFiles": "Adding {actual} files at once may be slow.",
+  "warnings.maxDecodedSize": "This file is very large once opened and may be slow to process.",
+  "warnings.maxProcessingTime": "This is taking longer than usual.",
+}) satisfies Record<`errors.${SdkCoreErrorCode}`, MessageValue> &
+  Record<`warnings.${keyof CoreLimits}`, MessageValue>;
