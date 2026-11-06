@@ -11,22 +11,38 @@
   "type": "module",
   "exports": {
     "./biome": "./biome/base.jsonc",
+    "./stylelint": "./src/stylelint/index.js",
     "./tsconfig/*": "./tsconfig/*.json",
     "./package.json": "./package.json"
   },
   "files": [
-    "biome.json",
-    "tsconfig"
+    "biome",
+    "src",
+    "tsconfig",
+    "!src/**/*.test.js"
   ],
   "engines": {
     "node": ">=24"
   },
+  "scripts": {
+    "typecheck": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "postcss-selector-parser": "catalog:",
+    "postcss-value-parser": "catalog:"
+  },
   "peerDependencies": {
     "@biomejs/biome": "catalog:",
+    "stylelint": "catalog:",
     "typescript": "catalog:"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
-    "typescript": "catalog:"
+    "@types/node": "catalog:",
+    "postcss": "catalog:",
+    "stylelint": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }
