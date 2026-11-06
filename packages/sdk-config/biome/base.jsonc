@@ -34,6 +34,10 @@
     "enabled": true,
     "rules": {
       "preset": "recommended",
+      "complexity": {
+        // Conflicts with the tsconfig preset's noPropertyAccessFromIndexSignature.
+        "useLiteralKeys": "off"
+      },
       "correctness": {
         "noUnusedImports": "error",
         "noUnusedVariables": "error"
