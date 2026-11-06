@@ -148,7 +148,18 @@ describe("hm-lint-deps", () => {
       const { status, stderr } = runCli(cwd, ["src"]);
 
       expect(status).toBe(EXIT_USAGE);
-      expect(stderr).toMatch(/^hm-lint-deps: .+ isn't inside a git repository\./);
+      expect(stderr).toMatch(/^hm-lint-deps: .+ isn't inside a git work tree\./);
+      expect(stderr).not.toContain("    at ");
+    });
+
+    it("reports git's own error for a path outside the repository", async () => {
+      const cwd = await repository(SOURCES);
+      const outside = join(dirname(cwd), "elsewhere");
+      const { status, stderr } = runCli(cwd, [outside]);
+
+      expect(status).toBe(EXIT_USAGE);
+      expect(stderr).toMatch(/^hm-lint-deps: git ls-files failed: .*is outside repository/);
+      expect(stderr).not.toContain("isn't inside a git work tree");
       expect(stderr).not.toContain("    at ");
     });
 

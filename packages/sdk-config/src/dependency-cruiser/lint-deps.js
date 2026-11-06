@@ -120,17 +120,62 @@ async function loadConfig(configPath, cwd) {
  * @returns {string[]}
  */
 function listTrackedFiles(paths, cwd) {
+  assertInsideWorkTree(cwd);
+  const output = git(["ls-files", "-z", "--", ...paths], cwd);
+  return output.split("\0").filter(Boolean);
+}
+
+/**
+ * Fails with a dedicated message only when `cwd` really isn't in a work tree.
+ * Any other git problem is reported in git's own words.
+ *
+ * @param {string} cwd
+ */
+function assertInsideWorkTree(cwd) {
+  /** @type {string} */
+  let inside;
   try {
-    const output = execFileSync("git", ["ls-files", "-z", "--", ...paths], {
-      cwd,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-    return output.split("\0").filter(Boolean);
-  } catch {
+    inside = git(["rev-parse", "--is-inside-work-tree"], cwd).trim();
+  } catch (error) {
+    if (!(error instanceof GitError && /not a git repository/i.test(error.message))) {
+      throw error;
+    }
+    inside = "false";
+  }
+  if (inside !== "true") {
     throw new UsageError(
-      `${cwd} isn't inside a git repository. hm-lint-deps compares the cruise with the files git tracks.`,
+      `${cwd} isn't inside a git work tree. hm-lint-deps compares the cruise with the files git tracks.`,
     );
+  }
+}
+
+/**
+ * A git command failed. The message is git's first line of error output.
+ */
+class GitError extends UsageError {
+  /** @override */
+  name = "GitError";
+}
+
+/**
+ * Runs git and returns its output, or throws a {@link GitError} with git's own
+ * first error line, such as `git ls-files failed: … is outside repository`.
+ *
+ * @param {string[]} args
+ * @param {string} cwd
+ * @returns {string}
+ */
+function git(args, cwd) {
+  try {
+    return execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+  } catch (error) {
+    const command = `git ${args[0]}`;
+    if (/** @type {NodeJS.ErrnoException} */ (error).code === "ENOENT") {
+      throw new GitError(`${command} failed: git isn't installed or isn't on the PATH.`);
+    }
+    const stderr = String(/** @type {{ stderr?: unknown }} */ (error).stderr ?? "");
+    const firstLine = stderr.split("\n").find((line) => line.trim() !== "") ?? errorText(error);
+    throw new GitError(`${command} failed: ${firstLine.replace(/^(?:fatal|error): /, "")}`);
   }
 }
 
