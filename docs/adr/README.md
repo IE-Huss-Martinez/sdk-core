@@ -22,3 +22,4 @@ Use [`template.md`](template.md) for new records. Name files `NNNN-short-title.m
 | [0014](0014-accessibility-and-translatable-text.md) | Accessibility and translatable text | Accepted |
 | [0015](0015-verification-and-releases.md) | Verification, releases and trusted publishing | Accepted |
 | [0016](0016-git-hooks-and-merge-guards.md) | Git hooks and merge guards | Accepted |
+| [0017](0017-core-errors-and-shared-runtime-imports.md) | Where `core/errors` and `@hussmartinez/sdk-core` sit in the core layers | Accepted |
