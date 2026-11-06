@@ -28,15 +28,41 @@ async function violations(fixture) {
     .sort();
 }
 
+/**
+ * @param {string[]} list
+ * @param {string} rule
+ * @returns {string[]}
+ */
+const withRule = (list, rule) => list.filter((violation) => violation.startsWith(`${rule}:`));
+
+/**
+ * @param {string[]} list
+ * @param {string} rule
+ * @returns {string[]}
+ */
+const withoutRule = (list, rule) => list.filter((violation) => !violation.startsWith(`${rule}:`));
+
 describe("dependency-cruiser preset", () => {
-  it("reports every forbidden edge between the layers of ADR 0008", async () => {
-    await expect(violations("layered-sdk")).resolves.toEqual([
-      "core-no-react: core/session/store.ts -> react",
+  it("reports every forbidden edge between the layers of ADR 0008 and ADR 0017", async () => {
+    // The fixture installs no packages, so its npm imports are also unresolvable.
+    const layerViolations = withoutRule(await violations("layered-sdk"), "not-to-unresolvable");
+    expect(layerViolations).toEqual([
+      "core-no-ui: core/operations/rotate.ts -> @hussmartinez/ui",
+      "core-no-ui: core/session/store.ts -> react",
       "layer-adapters: adapters/engine/engine.ts -> core/session/events.ts",
       "layer-core: core/session/store.ts -> adapters/engine/engine.ts",
+      "layer-errors: core/errors/errors.ts -> core/session/events.ts",
       "layer-features: features/rotate/rotate.operation.ts -> adapters/engine/engine.ts",
       "layer-model: core/model/page.ts -> core/session/events.ts",
       "layer-operations: core/operations/rotate.ts -> core/ports/engine.ts",
+    ]);
+  });
+
+  it("reports imports that don't resolve", async () => {
+    expect(withRule(await violations("layered-sdk"), "not-to-unresolvable")).toEqual([
+      "not-to-unresolvable: core/errors/errors.ts -> @hussmartinez/sdk-core",
+      "not-to-unresolvable: core/operations/rotate.ts -> @hussmartinez/ui",
+      "not-to-unresolvable: core/session/store.ts -> @hussmartinez/sdk-core",
       "not-to-unresolvable: core/session/store.ts -> react",
     ]);
   });

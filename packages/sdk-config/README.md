@@ -58,7 +58,7 @@ export { default } from "@hussmartinez/sdk-config/stylelint";
 
 ### dependency-cruiser
 
-The layer rules of [ADR 0008](../../docs/adr/0008-ports-adapters-and-session.md), as forbidden imports between `src/core/*`, `src/adapters`, `src/features`, `src/react`, `src/element` and `src/workers`. It also rejects cycles, unresolvable and undeclared imports, devDependencies in published code and imports of tests.
+The layer rules of [ADR 0008](../../docs/adr/0008-ports-adapters-and-session.md), as clarified by [ADR 0017](../../docs/adr/0017-core-errors-and-shared-runtime-imports.md), as forbidden imports between `src/core/*`, `src/adapters`, `src/features`, `src/react`, `src/element` and `src/workers`. The core may import `@hussmartinez/sdk-core` but never `@hussmartinez/ui` or React, and `src/core/errors` imports only `src/core/model` and `@hussmartinez/sdk-core`. It also rejects cycles, unresolvable and undeclared imports, devDependencies in published code and imports of tests.
 
 ```js
 // .dependency-cruiser.js

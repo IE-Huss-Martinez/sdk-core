@@ -1,3 +1,5 @@
+// Violates core-no-ui.
+import "@hussmartinez/ui";
 import type { Page } from "../model/page.js";
 // Violates layer-operations.
 import type { Engine } from "../ports/engine.js";

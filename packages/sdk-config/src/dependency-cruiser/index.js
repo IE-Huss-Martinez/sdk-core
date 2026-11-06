@@ -8,11 +8,25 @@
 const layer = (folder) => `(?:^|/)src/${folder}/`;
 
 const TEST_FILE = "\\.test\\.[cm]?[jt]sx?$";
-const REACT = "(?:^|/node_modules/)(?:react|react-dom)(?:/|$)";
+/**
+ * Matches an npm package, whether dependency-cruiser resolved it into
+ * `node_modules` or left it as a bare name because it isn't installed.
+ *
+ * @param {string} names Alternation of package names, such as `react|react-dom`.
+ * @returns {string}
+ */
+const npmPackage = (names) => `(?:^|/node_modules/)(?:${names})(?:/|$)`;
+
+const UI_PACKAGES = npmPackage("react|react-dom|@hussmartinez/ui");
+const SDK_CORE = npmPackage("@hussmartinez/sdk-core");
+
+/** Layers outside the core, which the core never imports. */
+const OUTER_LAYERS = ["adapters", "features", "react", "element", "workers"];
 
 /**
- * Forbidden edges between the layers of ADR 0008. Each rule names a layer and
- * the layers it must never import; anything not listed is allowed. The inner
+ * Forbidden edges between the layers of ADR 0008, as clarified by ADR 0017.
+ * Each rule names a layer and the layers it must never import; anything not
+ * listed is allowed. The inner
  * core rules only cover edges within the core, because `layer-core` already
  * keeps the whole core away from the outer layers.
  *
@@ -29,25 +43,25 @@ const LAYER_RULES = [
     name: "layer-operations",
     from: layer("core/operations"),
     notTo: ["core/ports", "core/session"],
-    comment: "core/operations may import only core/model.",
+    comment: "core/operations may import only core/model and core/errors.",
   },
   {
     name: "layer-ports",
     from: layer("core/ports"),
     notTo: ["core/operations", "core/session"],
-    comment: "core/ports may import only core/model.",
+    comment: "core/ports may import only core/model and core/errors.",
   },
   {
     name: "layer-core",
     from: layer("core"),
-    notTo: ["adapters", "features", "react", "element", "workers"],
+    notTo: OUTER_LAYERS,
     comment: "The core never depends on adapters, features or UI layers.",
   },
   {
     name: "layer-adapters",
     from: layer("adapters"),
     notTo: ["core/operations", "core/session", "features", "react", "element"],
-    comment: "Adapters implement ports and may import only ports, model and sdk-core.",
+    comment: "Adapters implement ports and may import only ports, model, errors and sdk-core.",
   },
   {
     name: "layer-features",
@@ -59,8 +73,8 @@ const LAYER_RULES = [
 
 /**
  * dependency-cruiser preset for the SDK family. It enforces the layer rules of
- * ADR 0008 and keeps production code away from tests, cycles and undeclared
- * packages. Paths work both in `<kind>-sdk` repositories and in workspaces.
+ * ADR 0008, as clarified by ADR 0017, and keeps production code away from
+ * tests, cycles and undeclared packages. Paths work both in `<kind>-sdk` repositories and in workspaces.
  *
  * @type {import("dependency-cruiser").IConfiguration}
  */
@@ -74,11 +88,27 @@ const config = {
       to: { path: notTo.map(layer) },
     })),
     {
-      name: "core-no-react",
-      comment: "The core entry is headless and server-safe (ADR 0004, ADR 0008).",
+      name: "layer-errors",
+      comment: "core/errors is a leaf that imports only core/model and sdk-core (ADR 0017).",
+      severity: "error",
+      from: { path: layer("core/errors") },
+      to: {
+        pathNot: [
+          layer("core/errors"),
+          layer("core/model"),
+          SDK_CORE,
+          // Already reported by layer-core and core-no-ui.
+          ...OUTER_LAYERS.map(layer),
+          UI_PACKAGES,
+        ],
+      },
+    },
+    {
+      name: "core-no-ui",
+      comment: "The core is headless and server-safe, so no React or ui (ADR 0017).",
       severity: "error",
       from: { path: layer("core") },
-      to: { path: REACT },
+      to: { path: UI_PACKAGES },
     },
     {
       name: "no-circular",
