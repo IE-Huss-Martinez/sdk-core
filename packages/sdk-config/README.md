@@ -6,7 +6,17 @@ Shared development configuration for the `@hussmartinez` SDK family. Every repos
 
 ## Presets
 
-Install the tools you run as devDependencies; each preset lists them as peer dependencies. Plugins that a preset loads itself, such as `@commitlint/config-conventional`, come with the preset.
+Install, as devDependencies, the tools for the presets you use. They are optional peer dependencies, so a repository without CSS doesn't need stylelint, for example. Plugins that a preset loads itself, such as `@commitlint/config-conventional`, come with the preset.
+
+| Preset | Install |
+|---|---|
+| `tsconfig/*` | `typescript` (and `@types/node` for `tsconfig/node`) |
+| `biome` | `@biomejs/biome` |
+| `stylelint` | `stylelint` |
+| `dependency-cruiser` | `dependency-cruiser` |
+| `commitlint` | `@commitlint/cli` |
+| `lint-staged` | `lint-staged`, plus `secretlint`, `@biomejs/biome` and `stylelint`, which it runs |
+| `secretlint` | `secretlint` |
 
 ### TypeScript
 

@@ -47,6 +47,29 @@
     "stylelint": "catalog:",
     "typescript": "catalog:"
   },
+  "peerDependenciesMeta": {
+    "@biomejs/biome": {
+      "optional": true
+    },
+    "@commitlint/cli": {
+      "optional": true
+    },
+    "dependency-cruiser": {
+      "optional": true
+    },
+    "lint-staged": {
+      "optional": true
+    },
+    "secretlint": {
+      "optional": true
+    },
+    "stylelint": {
+      "optional": true
+    },
+    "typescript": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
     "@commitlint/cli": "catalog:",
