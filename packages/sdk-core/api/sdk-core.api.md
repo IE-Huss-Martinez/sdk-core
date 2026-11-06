@@ -217,9 +217,6 @@ export type PluralMessage = {
 };
 
 // @public
-export function processingSignal(policy: FilePolicy<CoreLimits>, signal?: AbortSignal): AbortSignal;
-
-// @public
 export interface ResolvedLimit {
     readonly maximum: number;
     readonly warning: number;
@@ -289,6 +286,14 @@ export function serializeError(error: unknown, options?: SerializeErrorOptions):
 export interface SerializeErrorOptions {
     readonly includeStack?: boolean;
     readonly maxDepth?: number;
+}
+
+// @public
+export function withProcessingTime<Result>(policy: FilePolicy<CoreLimits>, operation: (signal: AbortSignal) => Result | PromiseLike<Result>, options?: WithProcessingTimeOptions): Promise<Result>;
+
+// @public
+export interface WithProcessingTimeOptions {
+    readonly signal?: AbortSignal;
 }
 
 // @public

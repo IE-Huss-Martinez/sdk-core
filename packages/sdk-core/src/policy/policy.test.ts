@@ -2,7 +2,7 @@ import { afterEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import { isSdkError, SdkError } from "../errors/sdk-error.js";
 import { sdkCoreMessages } from "../messages/core-messages.js";
 import { createMessages } from "../messages/messages.js";
-import { checkFile, checkFiles, createDecodedSizeBudget, processingSignal } from "./checks.js";
+import { checkFile, checkFiles, createDecodedSizeBudget, withProcessingTime } from "./checks.js";
 import { coreLimits, defineLimits, type FilePolicy } from "./limits.js";
 
 type PdfErrorCode = "TOO_MANY_PAGES" | (typeof coreLimits)[keyof typeof coreLimits]["code"];
@@ -18,6 +18,13 @@ const pdfLimits = defineLimits(
   },
   { errorClass: PdfError },
 );
+
+/** Settles only when the signal aborts, like a cooperative worker call. */
+function untilAborted(signal: AbortSignal): Promise<never> {
+  return new Promise((_resolve, reject) => {
+    signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+  });
+}
 
 function thrown(action: () => unknown): unknown {
   try {
@@ -193,57 +200,120 @@ describe("checks", () => {
     expect(() => budget.add(-1)).toThrow(RangeError);
   });
 
-  describe("processingSignal", () => {
-    it("aborts with PROCESSING_TIME_EXCEEDED after maxProcessingTime", async () => {
+  describe("withProcessingTime", () => {
+    const policy = pdfLimits.resolve({ maxProcessingTime: 1_000 });
+
+    /** A caller signal whose listeners are counted. */
+    function countedSignal() {
+      const controller = new AbortController();
+      const add = vi.spyOn(controller.signal, "addEventListener");
+      const remove = vi.spyOn(controller.signal, "removeEventListener");
+      return { controller, listeners: () => add.mock.calls.length - remove.mock.calls.length };
+    }
+
+    it("returns the result, and leaves no timer or listener after a fast success", async () => {
       vi.useFakeTimers();
-      const signal = processingSignal(pdfLimits.resolve({ maxProcessingTime: 1_000 }));
+      const caller = countedSignal();
+      let received: AbortSignal | undefined;
+
+      const result = await withProcessingTime(
+        policy,
+        async (signal) => {
+          received = signal;
+          return "done";
+        },
+        { signal: caller.controller.signal },
+      );
+
+      expect(result).toBe("done");
+      expect(vi.getTimerCount()).toBe(0);
+      expect(caller.listeners()).toBe(0);
+      await vi.advanceTimersByTimeAsync(5_000);
+      expect(received?.aborted).toBe(false);
+    });
+
+    it("cleans up after a failure, and rejects with the operation's error", async () => {
+      vi.useFakeTimers();
+      const caller = countedSignal();
+      const failure = new Error("parser bug");
+
+      await expect(
+        withProcessingTime(policy, () => Promise.reject(failure), {
+          signal: caller.controller.signal,
+        }),
+      ).rejects.toBe(failure);
+      expect(vi.getTimerCount()).toBe(0);
+      expect(caller.listeners()).toBe(0);
+    });
+
+    it("aborts a slow operation with PROCESSING_TIME_EXCEEDED", async () => {
+      vi.useFakeTimers();
+      const running = withProcessingTime(policy, (signal) => untilAborted(signal));
+      const outcome = running.catch((error: unknown) => error);
 
       await vi.advanceTimersByTimeAsync(999);
-      expect(signal.aborted).toBe(false);
       await vi.advanceTimersByTimeAsync(1);
-      expect(signal.reason).toBeInstanceOf(PdfError);
-      expect(signal.reason).toMatchObject({
+      const error = await outcome;
+      expect(error).toBeInstanceOf(PdfError);
+      expect(error).toMatchObject({
         code: "PROCESSING_TIME_EXCEEDED",
         details: { limit: "maxProcessingTime", maximum: 1_000, unit: "milliseconds" },
       });
-      expect(signal.reason.details.actual).toBeGreaterThanOrEqual(1_000);
-    });
-
-    it("follows the caller's signal, and stops the timer when it aborts", async () => {
-      vi.useFakeTimers();
-      const controller = new AbortController();
-      const signal = processingSignal(
-        pdfLimits.resolve({ maxProcessingTime: 1_000 }),
-        controller.signal,
-      );
-      const reason = new Error("User cancelled.");
-
-      controller.abort(reason);
-      expect(signal.reason).toBe(reason);
+      expect((error as PdfError).details?.["actual"]).toBeGreaterThanOrEqual(1_000);
       expect(vi.getTimerCount()).toBe(0);
     });
 
-    it("never times out when the limit is Infinity", () => {
+    it("lets the caller's abort win, with its own reason", async () => {
       vi.useFakeTimers();
+      const caller = countedSignal();
+      const reason = new Error("User cancelled.");
+      const running = withProcessingTime(policy, (signal) => untilAborted(signal), {
+        signal: caller.controller.signal,
+      });
+
+      caller.controller.abort(reason);
+      await expect(running).rejects.toBe(reason);
+      expect(vi.getTimerCount()).toBe(0);
+      expect(caller.listeners()).toBe(0);
+    });
+
+    it("starts the time when the operation starts", async () => {
+      vi.useFakeTimers();
+      await vi.advanceTimersByTimeAsync(10_000);
+      const running = withProcessingTime(policy, (signal) => untilAborted(signal)).catch(
+        (error: unknown) => error,
+      );
+
+      await vi.advanceTimersByTimeAsync(999);
+      expect(vi.getTimerCount()).toBe(1);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(await running).toMatchObject({ code: "PROCESSING_TIME_EXCEEDED" });
+    });
+
+    it("passes the caller's signal and sets no timer when the limit is Infinity", async () => {
+      vi.useFakeTimers();
+      const unlimited = pdfLimits.resolve({ maxProcessingTime: Number.POSITIVE_INFINITY });
       const caller = new AbortController().signal;
 
-      expect(
-        processingSignal(
-          pdfLimits.resolve({ maxProcessingTime: Number.POSITIVE_INFINITY }),
-          caller,
-        ),
-      ).toBe(caller);
-      expect(vi.getTimerCount()).toBe(0);
+      await expect(
+        withProcessingTime(unlimited, (signal) => signal, { signal: caller }),
+      ).resolves.toBe(caller);
+      const own = await withProcessingTime(unlimited, (signal) => {
+        expect(vi.getTimerCount()).toBe(0);
+        return signal;
+      });
+      expect(own.aborted).toBe(false);
     });
 
-    it("fails with UNSUPPORTED_ENVIRONMENT without AbortSignal.any", () => {
+    it("rejects with UNSUPPORTED_ENVIRONMENT without AbortSignal.any, before running anything", async () => {
       vi.stubGlobal("AbortSignal", { ...AbortSignal, any: undefined });
-      const error = thrown(() => processingSignal(pdfLimits.resolve()));
+      const operation = vi.fn();
 
-      expect(error).toMatchObject({
+      await expect(withProcessingTime(pdfLimits.resolve(), operation)).rejects.toMatchObject({
         code: "UNSUPPORTED_ENVIRONMENT",
         details: { feature: "AbortSignal.any" },
       });
+      expect(operation).not.toHaveBeenCalled();
     });
   });
 });

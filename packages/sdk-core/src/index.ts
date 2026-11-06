@@ -32,12 +32,12 @@ export type {
   PluralCategory,
   PluralMessage,
 } from "./messages/types.js";
-export type { DecodedSizeBudget } from "./policy/checks.js";
+export type { DecodedSizeBudget, WithProcessingTimeOptions } from "./policy/checks.js";
 export {
   checkFile,
   checkFiles,
   createDecodedSizeBudget,
-  processingSignal,
+  withProcessingTime,
 } from "./policy/checks.js";
 export type {
   CoreLimits,

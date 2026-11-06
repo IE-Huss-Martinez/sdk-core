@@ -82,38 +82,67 @@ export function createDecodedSizeBudget(policy: FilePolicy<CoreLimits>): Decoded
 }
 
 /**
- * Returns a signal that aborts when the caller's signal does, or when
- * `maxProcessingTime` has passed. Pass it to a worker call: it then rejects
- * with the policy's `PROCESSING_TIME_EXCEEDED` error, whose `details` name
- * the limit (ADR 0020). Create one per operation; the time starts now.
+ * Options for {@link withProcessingTime}.
  *
- * @param policy - A resolved policy that includes the core limits.
- * @param signal - The caller's signal, if any.
- * @throws With code `UNSUPPORTED_ENVIRONMENT` if the browser lacks
- *   `AbortSignal.any` (ADR 0013).
  * @public
  */
-export function processingSignal(
+export interface WithProcessingTimeOptions {
+  /** The caller's signal. Aborting it aborts the operation with its own reason. */
+  readonly signal?: AbortSignal;
+}
+
+/**
+ * Runs one operation under `maxProcessingTime` (ADR 0020). The operation
+ * receives a signal that aborts when the caller's signal does, or when the
+ * time is up. Pass it to the worker call, which then rejects with the
+ * policy's `PROCESSING_TIME_EXCEEDED` error, whose `details` name the limit.
+ *
+ * The time starts when the operation starts. When it settles, whether it
+ * succeeds, fails or is aborted, the timer is cleared. The caller's signal
+ * gets no listeners, so a long-lived signal can be reused for any number of
+ * operations.
+ *
+ * @example
+ * ```ts
+ * const bitmap = await withProcessingTime(
+ *   policy,
+ *   (signal) => client.call("render", input, { signal }),
+ *   { signal: callerSignal },
+ * );
+ * ```
+ *
+ * @param policy - A resolved policy that includes the core limits.
+ * @param operation - The work, given the combined signal.
+ * @param options - The caller's signal.
+ * @returns The operation's result.
+ * @throws Whatever the operation throws, or, when `AbortSignal.any` is
+ *   missing, an error with code `UNSUPPORTED_ENVIRONMENT` (ADR 0013).
+ * @public
+ */
+export async function withProcessingTime<Result>(
   policy: FilePolicy<CoreLimits>,
-  signal?: AbortSignal,
-): AbortSignal {
+  operation: (signal: AbortSignal) => Result | PromiseLike<Result>,
+  options: WithProcessingTimeOptions = {},
+): Promise<Result> {
   if (typeof AbortSignal.any !== "function") {
     throw new SdkError("UNSUPPORTED_ENVIRONMENT", "This browser doesn't support AbortSignal.any.", {
       details: { feature: "AbortSignal.any" },
     });
   }
+  const { signal } = options;
   const { maximum } = policy.limits.maxProcessingTime;
   if (maximum === Number.POSITIVE_INFINITY) {
-    return signal ?? new AbortController().signal;
+    return operation(signal ?? new AbortController().signal);
   }
 
-  const controller = new AbortController();
+  const timeLimit = new AbortController();
   const started = Date.now();
   const timer = setTimeout(() => {
-    controller.abort(policy.error("maxProcessingTime", Math.max(maximum, Date.now() - started)));
+    timeLimit.abort(policy.error("maxProcessingTime", Math.max(maximum, Date.now() - started)));
   }, maximum);
-  const stop = () => clearTimeout(timer);
-  signal?.addEventListener("abort", stop, { once: true });
-  controller.signal.addEventListener("abort", stop, { once: true });
-  return signal ? AbortSignal.any([signal, controller.signal]) : controller.signal;
+  try {
+    return await operation(signal ? AbortSignal.any([signal, timeLimit.signal]) : timeLimit.signal);
+  } finally {
+    clearTimeout(timer);
+  }
 }

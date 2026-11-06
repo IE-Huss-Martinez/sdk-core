@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { isSdkError } from "../errors/sdk-error.js";
-import { processingSignal } from "../policy/checks.js";
+import { withProcessingTime } from "../policy/checks.js";
 import { coreLimits, defineLimits } from "../policy/limits.js";
 import { createWorkerClient, type WorkerClient, type WorkerClientOptions } from "./client.js";
 import { PdfError, type TestWorker } from "./fixtures/contract.js";
@@ -97,13 +97,13 @@ describe("worker RPC in a real browser", () => {
       expect((error as Error).cause).toMatchObject({ name: "TimeoutError" });
     });
 
-    it("rejects with the policy's PROCESSING_TIME_EXCEEDED when the time limit passes", async () => {
+    it("rejects with the policy's PROCESSING_TIME_EXCEEDED under withProcessingTime", async () => {
       const { client } = setup();
       const policy = defineLimits(coreLimits, { errorClass: PdfError }).resolve({
         maxProcessingTime: 100,
       });
       const error = await rejection(
-        client.call("wait", { ms: 10_000 }, { signal: processingSignal(policy) }),
+        withProcessingTime(policy, (signal) => client.call("wait", { ms: 10_000 }, { signal })),
       );
 
       expect(error).toBeInstanceOf(PdfError);

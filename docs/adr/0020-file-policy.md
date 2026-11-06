@@ -48,7 +48,7 @@ Sizes are decimal (1 MB = 1 000 000 bytes), as in messages ([0019](0019-message-
   - `checkFile` checks the size before reading;
   - `checkFiles` checks the count, then each size;
   - `createDecodedSizeBudget` is fed chunk by chunk while decompressing, so a decompression bomb fails as soon as it passes the limit;
-  - `processingSignal` aborts after `maxProcessingTime`.
+  - `withProcessingTime` runs one operation under `maxProcessingTime`.
 
 ### Settings are validated
 
@@ -62,8 +62,14 @@ Error text uses the `errors.<CODE>` keys of [ADR 0019](0019-message-catalogues.m
 
 ### Time limits and the worker client
 
-- **`processingSignal(policy, signal?)`** combines the caller's signal with a timer, using `AbortSignal.any`. When the time is up, it aborts with the policy's `PROCESSING_TIME_EXCEEDED` error as the reason. The timer is cleared when either signal aborts.
-- **Feature detection:** `processingSignal` checks for `AbortSignal.any` when it's called, not at import. If it's missing, it fails with `UNSUPPORTED_ENVIRONMENT` and `details.feature`, as [ADR 0013](0013-browser-and-react-support.md) requires. `UNSUPPORTED_ENVIRONMENT` joins sdk-core's codes.
+- **`withProcessingTime(policy, operation, { signal })`** runs one operation under the time limit, scoped to it:
+  - the operation receives a signal that combines the caller's signal with the limit, using `AbortSignal.any`, and the time starts when the operation starts;
+  - when the time is up, the signal aborts with the policy's `PROCESSING_TIME_EXCEEDED` error as the reason;
+  - when the operation settles, by success, failure or abort, the timer is cleared in a `finally`;
+  - the caller's signal gets no listeners, so hosts can reuse one long-lived signal for any number of operations.
+
+  A scoped helper cleans up by construction. A function returning a signal can't know when the work is done, so its timer would outlive successful operations and abort their signals afterwards.
+- **Feature detection:** `withProcessingTime` checks for `AbortSignal.any` when it's called, not at import, and before running the operation. If it's missing, it rejects with `UNSUPPORTED_ENVIRONMENT` and `details.feature`, as [ADR 0013](0013-browser-and-react-support.md) requires. `UNSUPPORTED_ENVIRONMENT` joins sdk-core's codes.
 - **This supersedes part of ADR 0018:** when a call's abort reason is already an `SdkError`, the worker client rejects with that error unchanged. Other reasons still become `ABORTED`, or `TIMEOUT` for a `TimeoutError`. This lets the policy, and SDKs, cancel calls with their own codes and details.
 
 ## Alternatives considered

@@ -87,7 +87,7 @@ if (checkFile(policy, file) === "warning") {
   announce(messages.t("warnings.maxFileSize", { actual: file.size }));
 }
 policy.check("maxPages", pageCount);                 // throws PdfError("TOO_MANY_PAGES") above 2,000
-await client.call("open", { bytes }, { signal: processingSignal(policy, signal) });
+await withProcessingTime(policy, (signal) => client.call("open", { bytes }, { signal }), { signal });
 ```
 
 | Core limit | Code | Default | Warning from |
@@ -101,7 +101,7 @@ await client.call("open", { bytes }, { signal: processingSignal(policy, signal) 
 - **Helpers:**
   - `checkFile` and `checkFiles` check before reading;
   - `createDecodedSizeBudget` stops a decompression bomb mid-stream, in the worker;
-  - `processingSignal` aborts a worker call with `PROCESSING_TIME_EXCEEDED`, and fails with `UNSUPPORTED_ENVIRONMENT` where `AbortSignal.any` is missing.
+  - `withProcessingTime` runs one operation, such as a worker call, under the time limit, which then rejects with `PROCESSING_TIME_EXCEEDED`. It cleans up when the operation settles, adds no listeners to the caller's signal, and rejects with `UNSUPPORTED_ENVIRONMENT` where `AbortSignal.any` is missing.
 - **Settings:** each is a number or `{ maximum, warning }`. `Infinity` disables a limit, which removes a protection, or disables a warning. Unknown limit names throw, so a typo can't leave a default in place.
 - **Text:** violations have text under `errors.<CODE>` and warnings under `warnings.<limit>` in `sdkCoreMessages`.
 
