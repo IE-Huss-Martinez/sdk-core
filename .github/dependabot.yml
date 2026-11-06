@@ -1,12 +1,35 @@
 version: 2
+
+# Updates wait 7 days after a release, so a compromised version is usually
+# caught and pulled before it is proposed. This also stays well above pnpm's
+# one-day minimumReleaseAge, so a proposed version can always be installed.
 updates:
   # Keeps the commit SHAs that actions are pinned to current (ADR 0015).
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: ci
     groups:
       github-actions:
         patterns: ["*"]
+
+  # Workspace dependencies, including the pnpm catalog in pnpm-workspace.yaml.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: build
+      include: scope
+    groups:
+      # Minor and patch updates arrive together; each major gets its own pull
+      # request, because it may need code or configuration changes.
+      npm:
+        patterns: ["*"]
+        update-types: [minor, patch]
