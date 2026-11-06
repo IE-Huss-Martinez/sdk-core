@@ -26,9 +26,8 @@ const OUTER_LAYERS = ["adapters", "features", "react", "element", "workers"];
 /**
  * Forbidden edges between the layers of ADR 0008, as clarified by ADR 0017.
  * Each rule names a layer and the layers it must never import; anything not
- * listed is allowed. The inner
- * core rules only cover edges within the core, because `layer-core` already
- * keeps the whole core away from the outer layers.
+ * listed is allowed. The inner core rules only cover edges within the core,
+ * because `layer-core` already keeps the whole core away from the outer layers.
  *
  * @type {Array<{ name: string, from: string, notTo: string[], comment: string }>}
  */
@@ -74,7 +73,8 @@ const LAYER_RULES = [
 /**
  * dependency-cruiser preset for the SDK family. It enforces the layer rules of
  * ADR 0008, as clarified by ADR 0017, and keeps production code away from
- * tests, cycles and undeclared packages. Paths work both in `<kind>-sdk` repositories and in workspaces.
+ * tests, cycles and undeclared packages. Paths work both in `<kind>-sdk`
+ * repositories and in workspaces.
  *
  * @type {import("dependency-cruiser").IConfiguration}
  */
