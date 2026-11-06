@@ -10,7 +10,8 @@ This repository is part of the `@hussmartinez` SDK family and is public. Treat i
 ## Making changes
 
 - **Pull requests:** work on a branch and open one focused pull request per change. Never push to `main`; it is protected.
-- **Pull request descriptions:** cover what changed, why, and how it was tested.
+- **Pull request descriptions:** cover what changed, why, and how it was tested. They can be as detailed as useful, because they don't go into git history.
+- **Squash commits:** the merger writes the commit message on `main`. Its title is the pull request title plus `(#N)`, and its body is 2–6 lines of plain prose. See [How pull requests are merged](CONTRIBUTING.md#how-pull-requests-are-merged).
 - **Commits:** follow Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `build:`, `ci:`, `chore:`). The pull request title becomes the squash commit, so write it as a Conventional Commit too.
 - **Signing:** commits are signed; don't disable signing.
 - **No attribution:** don't add AI or tool attribution to commits or pull requests.
