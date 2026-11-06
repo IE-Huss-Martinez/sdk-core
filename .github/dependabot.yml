@@ -1,0 +1,12 @@
+version: 2
+updates:
+  # Keeps the commit SHAs that actions are pinned to current (ADR 0015).
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+    groups:
+      github-actions:
+        patterns: ["*"]
