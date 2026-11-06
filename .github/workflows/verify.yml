@@ -37,4 +37,25 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # Browser tests run on Chromium, Firefox and WebKit (ADR 0015). The
+      # browsers are cached per Playwright version. Their system libraries
+      # aren't cacheable, so they're installed on a cache hit too.
+      - name: Read the Playwright version
+        id: playwright
+        run: echo "version=$(pnpm --filter @hussmartinez/sdk-core exec playwright --version | cut -d ' ' -f 2)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      - name: Install the browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm --filter @hussmartinez/sdk-core exec playwright install --with-deps chromium firefox webkit
+
+      - name: Install the browsers' system libraries
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm --filter @hussmartinez/sdk-core exec playwright install-deps chromium firefox webkit
+
       - run: pnpm verify
