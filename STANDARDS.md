@@ -113,7 +113,11 @@ Programmatic control goes through a ref handle, such as `open(file)`, `export()`
   - every edit is a serialisable command;
   - the session provides undo, redo and grouping within a memory budget;
   - destructive actions offer undo instead of confirmation.
-- **Workers:** typed, versioned RPC from `sdk-core`, with cancellation, progress, error codes preserved, and caller buffers copied unless `transfer: true`.
+- **Workers** ([ADR 0018](docs/adr/0018-worker-rpc-protocol.md)):
+  - typed, versioned RPC from `sdk-core`, with cancellation, progress and error codes preserved;
+  - caller buffers are copied unless `transfer: true`, and results are transferred, except views into part of a buffer, which are copied;
+  - a call that can't be stopped terminates its worker, other calls on it fail with `WORKER_TERMINATED`, and none are retried automatically;
+  - `exposeWorker` runs before any heavy initialisation, and WebAssembly loads lazily.
 - **Errors:** one `SdkError` subclass per SDK, with a stable `code`, `details` and `cause`. User-facing text comes from messages, never from error text.
 - **Contract tests:** every adapter passes the contract-test suite for its port.
 
