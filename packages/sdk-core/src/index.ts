@@ -18,3 +18,20 @@ export type {
   SerializeErrorOptions,
 } from "./errors/serialize.js";
 export { deserializeError, serializeError } from "./errors/serialize.js";
+export type {
+  WorkerCallOptions,
+  WorkerClient,
+  WorkerClientOptions,
+  WorkerLike,
+} from "./worker/client.js";
+export { createWorkerClient } from "./worker/client.js";
+export type { ExposeWorkerOptions, WorkerScope } from "./worker/expose.js";
+export { exposeWorker } from "./worker/expose.js";
+export type {
+  WorkerCallContext,
+  WorkerContract,
+  WorkerHandlers,
+  WorkerMethod,
+  WorkerMethodName,
+  WorkerProgress,
+} from "./worker/types.js";

@@ -46,14 +46,36 @@ export type SdkErrorClass = new (
 ) => SdkError;
 
 /**
- * Error codes defined by sdk-core itself.
+ * Error codes defined by sdk-core itself. They're stable: a code never
+ * changes meaning once released.
  *
  * - `UNKNOWN`: something that isn't an {@link SdkError} was thrown, or a
  *   serialized error couldn't be read.
+ * - `ABORTED`: a worker call's `AbortSignal` was aborted.
+ * - `TIMEOUT`: a worker call's signal was aborted by a timeout, such as
+ *   `AbortSignal.timeout()`.
+ * - `WORKER_START_FAILED`: the worker couldn't be created or loaded, or didn't
+ *   announce itself within the start timeout.
+ * - `WORKER_PROTOCOL_MISMATCH`: the page and the worker use different
+ *   versions of the worker protocol, usually from mismatched builds.
+ * - `WORKER_CRASHED`: an error escaped the worker's handlers, or a message
+ *   couldn't be read. The worker is replaced on the next call.
+ * - `WORKER_TERMINATED`: the worker was terminated while the call was in
+ *   flight, because another call had to be stopped or the client was
+ *   destroyed. Calls aren't retried automatically.
+ * - `WORKER_METHOD_NOT_FOUND`: the worker doesn't implement the method.
  *
  * @public
  */
-export type SdkCoreErrorCode = "UNKNOWN";
+export type SdkCoreErrorCode =
+  | "UNKNOWN"
+  | "ABORTED"
+  | "TIMEOUT"
+  | "WORKER_START_FAILED"
+  | "WORKER_PROTOCOL_MISMATCH"
+  | "WORKER_CRASHED"
+  | "WORKER_TERMINATED"
+  | "WORKER_METHOD_NOT_FOUND";
 
 /**
  * Marks SdkError instances across realms and across copies of sdk-core, where

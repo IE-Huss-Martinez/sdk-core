@@ -23,7 +23,7 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json",
     "build": "vite build && pnpm check:api",
-    "test": "vitest run",
+    "test": "vitest run --project unit",
     "check:api": "tsc -p tsconfig.build.json && api-extractor run",
     "api:update": "tsc -p tsconfig.build.json && api-extractor run --local"
   },
