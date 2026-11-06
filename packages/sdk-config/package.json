@@ -11,6 +11,7 @@
   "type": "module",
   "exports": {
     "./biome": "./biome/base.jsonc",
+    "./dependency-cruiser": "./src/dependency-cruiser/index.js",
     "./stylelint": "./src/stylelint/index.js",
     "./tsconfig/*": "./tsconfig/*.json",
     "./package.json": "./package.json"
@@ -34,12 +35,14 @@
   },
   "peerDependencies": {
     "@biomejs/biome": "catalog:",
+    "dependency-cruiser": "catalog:",
     "stylelint": "catalog:",
     "typescript": "catalog:"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
     "@types/node": "catalog:",
+    "dependency-cruiser": "catalog:",
     "postcss": "catalog:",
     "stylelint": "catalog:",
     "typescript": "catalog:",

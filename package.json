@@ -11,6 +11,7 @@
   "scripts": {
     "lint": "biome check .",
     "lint:css": "stylelint \"**/*.css\" --allow-empty-input",
+    "lint:deps": "depcruise packages",
     "typecheck": "pnpm -r typecheck",
     "build": "pnpm -r --if-present build",
     "test": "pnpm -r --if-present test",
@@ -18,12 +19,13 @@
     "check:size": "pnpm -r --if-present check:size",
     "check:api": "pnpm -r --if-present check:api",
     "check:package": "pnpm -r --if-present check:package",
-    "verify": "pnpm lint && pnpm lint:css && pnpm typecheck && pnpm build && pnpm test && pnpm test:browser && pnpm check:size && pnpm check:api && pnpm check:package",
-    "verify:fast": "pnpm typecheck && pnpm test && pnpm check:api"
+    "verify": "pnpm lint && pnpm lint:css && pnpm typecheck && pnpm lint:deps && pnpm build && pnpm test && pnpm test:browser && pnpm check:size && pnpm check:api && pnpm check:package",
+    "verify:fast": "pnpm typecheck && pnpm test && pnpm lint:deps && pnpm check:api"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
     "@hussmartinez/sdk-config": "workspace:*",
+    "dependency-cruiser": "catalog:",
     "stylelint": "catalog:"
   }
 }
