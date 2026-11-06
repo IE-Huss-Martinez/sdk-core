@@ -24,3 +24,4 @@ Use [`template.md`](template.md) for new records. Name files `NNNN-short-title.m
 | [0016](0016-git-hooks-and-merge-guards.md) | Git hooks and merge guards | Accepted |
 | [0017](0017-core-errors-and-shared-runtime-imports.md) | Where `core/errors` and `@hussmartinez/sdk-core` sit in the core layers | Accepted |
 | [0018](0018-worker-rpc-protocol.md) | The worker RPC protocol, its errors and its buffer rules | Accepted |
+| [0019](0019-message-catalogues.md) | Message catalogues as typed, plain-text data | Accepted |

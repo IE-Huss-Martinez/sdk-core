@@ -18,6 +18,20 @@ export type {
   SerializeErrorOptions,
 } from "./errors/serialize.js";
 export { deserializeError, serializeError } from "./errors/serialize.js";
+export { sdkCoreMessages } from "./messages/core-messages.js";
+export type { CreateMessagesOptions, Messages } from "./messages/messages.js";
+export { createMessages, defineMessages, plural } from "./messages/messages.js";
+export type {
+  CheckedOverrides,
+  MessageArgs,
+  MessageCatalogue,
+  MessageFormats,
+  MessageOverrides,
+  MessageParams,
+  MessageValue,
+  PluralCategory,
+  PluralMessage,
+} from "./messages/types.js";
 export type {
   WorkerCallOptions,
   WorkerClient,

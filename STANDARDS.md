@@ -155,7 +155,11 @@ Programmatic control goes through a ref handle, such as `open(file)`, `export()`
   - native `<dialog>` with `showModal()`;
   - `aria-live` announcements for results;
   - target sizes of at least 24 px, and 44 px on touch.
-- **No inline text:** every visible string and accessible name comes from the typed message catalogue in `src/messages/en.ts`. Hosts override them with `messages`, and numbers, sizes and dates use `Intl`.
+- **No inline text** ([ADR 0019](docs/adr/0019-message-catalogues.md)):
+  - every visible string and accessible name comes from the typed message catalogue in `src/messages/en.ts`, declared with `defineMessages` and including `sdkCoreMessages`;
+  - messages are plain text with `{name}` and `{name, format}` placeholders, plurals are `{ "$plural": … }` objects, and output is never markup;
+  - hosts override them with `messages`, and numbers, sizes and dates use `Intl` for the `locale` the host passes;
+  - error text is looked up by code under `errors.<CODE>`, never taken from `error.message`.
 - **Automated checks:** `@axe-core/playwright` runs in every end-to-end suite.
 
 ## UX

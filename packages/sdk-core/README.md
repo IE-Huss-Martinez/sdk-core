@@ -4,7 +4,7 @@ Headless runtime shared by the `@hussmartinez` SDK family: worker messaging, err
 
 The package is ESM only, has no dependencies, and does nothing on import, so it's safe to load on a server ([ADR 0004](../../docs/adr/0004-entry-points-and-module-format.md)).
 
-> Status: not published yet. Errors and worker messaging are available; the rest of the API lands in upcoming pull requests.
+> Status: not published yet. Errors, worker messaging and messages are available; the rest of the API lands in upcoming pull requests.
 
 ## Errors
 
@@ -44,6 +44,33 @@ error instanceof PdfError; // true
 - **`serializeError(error, options?)`** turns any thrown value into plain data and never throws for the value itself. Values that aren't `SdkError`s get the code `UNKNOWN`. Their original name goes in `details.originalName`, or their `typeof` in `details.thrownType`. Stack traces are left out unless you pass `includeStack: true`, so they don't cross the boundary in production.
 - **`deserializeError(data, options?)`** rebuilds the error with its registered class, or as `SdkError` keeping its name. It treats the data as untrusted: invalid input becomes an `UNKNOWN` error, details are sanitised again, and class names are only looked up as own keys of `errorClasses`.
 - **Both** follow the `cause` chain up to `maxDepth` levels (8 by default) and stop at cycles.
+
+## Messages
+
+Every visible string comes from a typed English catalogue that hosts can override, in whole or in part, for example from a translator's JSON file ([ADR 0014](../../docs/adr/0014-accessibility-and-translatable-text.md), [ADR 0019](../../docs/adr/0019-message-catalogues.md)).
+
+```ts
+// src/messages/en.ts
+export const en = defineMessages({
+  ...sdkCoreMessages,
+  "toolbar.rotate": "Rotate",
+  "result.saved": "Saved {size, fileSize}",
+  "pages.selected": plural("count", { one: "{count} page selected", other: "{count} pages selected" }),
+  "errors.FILE_TOO_LARGE": "This file is {actual, fileSize}. The limit is {maximum, fileSize}.",
+});
+
+const messages = createMessages(en, { locale: props.locale, overrides: props.messages });
+messages.t("result.saved", { size: 1_300_000 }); // "Saved 1.3 MB"
+messages.t("pages.selected", { count: 3 });       // "3 pages selected"
+messages.error(error);                            // text for error.code, never error.message
+```
+
+- **Placeholders:** `{name}` takes a string or a number. `{name, number}`, `{name, fileSize}` (decimal units), `{name, date}` and `{name, time}` are formatted with `Intl` for the locale. Unknown keys and missing or wrongly typed parameters are type errors.
+- **Plurals:** plain objects, `{ "$plural": "count", "one": "…", "other": "…" }`, whose form is chosen with `Intl.PluralRules`. Translations may add forms, such as `few` and `many`.
+- **Errors:** `messages.error()` looks up `errors.<CODE>` with the error's `details` as parameters, and falls back to `errors.UNKNOWN`. Include `sdkCoreMessages` for sdk-core's own codes.
+- **Plain text only:** the output is a string, never markup, so render it as text.
+- **Locale:** it defaults to `"en"`. Always pass the host's `locale`, and never read it from the browser, because server and client must render the same text.
+- **Overrides are checked at runtime too.** Unknown keys are ignored, and malformed messages fall back to English, with warnings in development. `t()` never throws.
 
 ## Workers
 
