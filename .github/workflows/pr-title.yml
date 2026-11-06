@@ -9,9 +9,12 @@ on:
 permissions:
   pull-requests: read
 
-concurrency:
-  group: pr-title-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+# No concurrency group, on purpose. Pushing and then editing the description
+# starts two runs for the same commit, and cancelling one leaves a cancelled
+# required check on that commit, which blocks the merge. A group with
+# cancel-in-progress: false doesn't help, because a newer queued run still
+# cancels a pending one. The job finishes in seconds, so letting every run
+# complete costs nothing.
 
 jobs:
   pr-title:
