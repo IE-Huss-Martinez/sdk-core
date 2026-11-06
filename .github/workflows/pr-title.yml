@@ -29,6 +29,8 @@ jobs:
         env:
           TITLE: ${{ github.event.pull_request.title }}
           MAX_LENGTH: 65
+          # ${#TITLE} counts characters only under a UTF-8 locale, bytes otherwise.
+          LC_ALL: C.UTF-8
         run: |
           length=${#TITLE}
           if [ "$length" -gt "$MAX_LENGTH" ]; then

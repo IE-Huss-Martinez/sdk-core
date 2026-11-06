@@ -72,32 +72,43 @@ describe("commitlint preset", () => {
 
 describe("pr-title workflow length check", () => {
   /**
-   * Runs the workflow's length step with bash, as the runner does.
+   * Runs the workflow's length step with bash, with the step's own
+   * environment and nothing inherited, as the runner does.
    *
    * @param {string} title
+   * @param {Record<string, string>} [overrides] Environment changes, to test
+   *   what the step's settings protect against.
    */
-  async function checkTitle(title) {
+  async function checkTitle(title, overrides = {}) {
     const workflow = await readFile(PR_TITLE_WORKFLOW, "utf8");
     const step = /- name: Check the title length\n([\s\S]*?)\n\n/.exec(workflow)?.[1] ?? "";
-    const maxLength = /^\s+MAX_LENGTH: (\d+)$/m.exec(step)?.[1];
+    const envBlock = /env:\n((?:\s{10}.*\n)+?)\s{8}run:/.exec(step)?.[1] ?? "";
+    /** @type {Record<string, string>} */
+    const stepEnv = {};
+    for (const [, name, value] of envBlock.matchAll(/^\s{10}([A-Z_]+): (.+)$/gm)) {
+      if (name && value && !value.includes("${{")) {
+        stepEnv[name] = value;
+      }
+    }
     const script = /run: \|\n((?:\s{10}.*\n?)+)/.exec(step)?.[1] ?? "";
     const cwd = await mkdtemp(join(tmpdir(), "hm-pr-title-"));
     try {
       const result = spawnSync("bash", ["-e", "-c", script], {
         cwd,
         encoding: "utf8",
-        env: { PATH: process.env["PATH"], LANG: "C.UTF-8", TITLE: title, MAX_LENGTH: maxLength },
+        env: { PATH: process.env["PATH"], ...stepEnv, ...overrides, TITLE: title },
       });
-      return { maxLength, status: result.status, stdout: result.stdout, files: await readdir(cwd) };
+      return { stepEnv, status: result.status, stdout: result.stdout, files: await readdir(cwd) };
     } finally {
       await rm(cwd, { recursive: true, force: true });
     }
   }
 
-  it("uses the preset's pull request title limit", async () => {
-    await expect(checkTitle("docs: x")).resolves.toMatchObject({
-      maxLength: String(PR_TITLE_MAX_LENGTH),
-    });
+  it("uses the preset's pull request title limit and a UTF-8 locale", async () => {
+    const { stepEnv } = await checkTitle("docs: x");
+
+    expect(stepEnv["MAX_LENGTH"]).toBe(String(PR_TITLE_MAX_LENGTH));
+    expect(stepEnv["LC_ALL"]).toMatch(/\.UTF-8$/i);
   });
 
   it("accepts a title at the limit and rejects one over it", async () => {
@@ -109,9 +120,19 @@ describe("pr-title workflow length check", () => {
     expect(tooLong.stdout).toContain(`has ${PR_TITLE_MAX_LENGTH + 1} characters`);
   });
 
-  it("counts characters, not bytes", async () => {
+  describe("with multibyte characters", () => {
     const title = `docs: ${"é".repeat(PR_TITLE_MAX_LENGTH - 6)}`;
-    await expect(checkTitle(title)).resolves.toMatchObject({ status: 0 });
+
+    it("counts characters, not bytes", async () => {
+      await expect(checkTitle(title)).resolves.toMatchObject({ status: 0 });
+    });
+
+    it("would count bytes without the step's locale", async () => {
+      const result = await checkTitle(title, { LC_ALL: "C" });
+
+      expect(result.status).toBe(1);
+      expect(result.stdout).toContain(`has ${2 * PR_TITLE_MAX_LENGTH - 6} characters`);
+    });
   });
 
   it("never runs the title as code", async () => {
