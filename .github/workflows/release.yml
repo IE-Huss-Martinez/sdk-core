@@ -89,7 +89,7 @@ jobs:
       id-token: write # npm trusted publishing and provenance, through OIDC
       attestations: write # create the artifact attestations
     env:
-      # Switch point for staged publishing (ADR 0021): "stage publish" uploads
+      # Direct publishing, as decided in ADR 0021. "stage publish" would upload
       # each version privately until a maintainer approves it on npm with 2FA.
       NPM_PUBLISH_COMMAND: publish
     steps:
@@ -140,6 +140,21 @@ jobs:
       - name: Pack the packages
         if: steps.plan.outputs.pending == 'true'
         run: pnpm changeset pack --from-publish-plan publish-plan.json --out-dir release-packs
+
+      # Bootstrap only (ADR 0021): npm can't configure a trusted publisher for
+      # a package that doesn't exist yet, so the first release uses a
+      # short-lived token stored as NPM_TOKEN in the npm environment. Without
+      # that secret, this step does nothing and publishing is pure trusted
+      # publishing. Provenance still comes from this job's OIDC token.
+      - name: Use the bootstrap npm token, if there is one
+        if: steps.plan.outputs.pending == 'true'
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -n "$NPM_TOKEN" ]; then
+            npm config set "//registry.npmjs.org/:_authToken" "$NPM_TOKEN" --location user
+            echo "::warning title=Bootstrap npm token in use::Publishing with NPM_TOKEN. After this release, configure the trusted publishers, delete the secret and revoke the token (CONTRIBUTING.md, \"Setting up releases\")."
+          fi
 
       # With no changesets pending, the action runs the publish script, which
       # reports each published version; the action then pushes its tag and
