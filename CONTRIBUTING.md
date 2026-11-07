@@ -101,6 +101,29 @@ Nobody publishes by hand.
    - creates a tag such as `@hussmartinez/sdk-core@0.2.0` and a GitHub Release with the changelog entry;
    - attaches the tarball and `SHA256SUMS`, with artifact attestations.
 
+## Setting up releases
+
+These are one-time steps for the maintainer ([ADR 0021](docs/adr/0021-version-and-release-with-changesets.md)).
+
+### The GitHub App for the version pull request
+
+1. **Create a GitHub App.** It needs repository permissions *Contents: read and write* and *Pull requests: read and write* (*Metadata: read* is implied), and no webhook. Install it on `hussmartinez/sdk-core` only.
+2. **Create a `release` environment** under Settings → Environments, and restrict its deployment branches to `main`.
+3. **Store the App's credentials in that environment:** its client ID as the variable `RELEASE_APP_CLIENT_ID`, and a private key as the secret `RELEASE_APP_PRIVATE_KEY`. Never store them as repository-level secrets, which workflows on every branch can read.
+
+The `version` job fails with these instructions until both are set.
+
+### npm
+
+1. **Create an `npm` environment,** restricted to `main`. Add yourself as a required reviewer if you want to approve each publish.
+2. **Bootstrap the first publish.** npm can only configure a trusted publisher for a package that already exists, so the first version needs a token:
+   1. Create a granular access token that can publish only `@hussmartinez/sdk-core` and `@hussmartinez/sdk-config`, with an expiry of a few days. Store it only as the secret `NPM_TOKEN` in the `npm` environment.
+   2. Merge the first version pull request. The publish job uses the token, logs a warning that it did, and still attaches provenance.
+   3. **Straight away,** configure the trusted publisher for each package: Package settings → Trusted Publisher → GitHub Actions, with organisation or user `hussmartinez`, repository `sdk-core`, workflow `release.yml`, environment `npm`, and direct `npm publish` allowed. npm expires a configuration that hasn't published within two days, which is why this comes right after the bootstrap.
+   4. Delete the `NPM_TOKEN` secret, revoke the token on npm, and turn on "Require two-factor authentication and disallow tokens" for each package, under Settings → Publishing access.
+
+From then on, publishing uses trusted publishing only, with no token anywhere.
+
 ## Licence
 
 By contributing, you agree that your contributions are licensed under the [Apache License 2.0](LICENSE), like the rest of the project.
