@@ -40,6 +40,20 @@ Steps marked "per package" run each package's script of the same name, and pass 
 
 The git hooks ([ADR 0016](docs/adr/0016-git-hooks-and-merge-guards.md)) run automatically: a secret scan and lint of staged files on commit, a Conventional Commits check of the message, and `pnpm verify:fast` on push.
 
+## Releases
+
+Each package is versioned and released on its own, from changesets ([ADR 0021](docs/adr/0021-version-and-release-with-changesets.md)). Versions stay at `0.x` until the API settles, and during `0.x` a breaking change bumps the minor version.
+
+- **Changelogs:** each package's `CHANGELOG.md`, written for users. The first release creates them.
+- **Release notes and files:** the [Releases page](https://github.com/hussmartinez/sdk-core/releases) has each version's notes, its npm tarball and a `SHA256SUMS` file, tagged like `@hussmartinez/sdk-core@0.1.0`.
+- **npm:** [`@hussmartinez/sdk-core`](https://www.npmjs.com/package/@hussmartinez/sdk-core) and [`@hussmartinez/sdk-config`](https://www.npmjs.com/package/@hussmartinez/sdk-config), published from GitHub Actions with provenance.
+- **Checking a download:** confirm that a tarball was built by this repository's release workflow:
+
+  ```sh
+  gh attestation verify hussmartinez-sdk-core-0.1.0.tgz --repo hussmartinez/sdk-core
+  sha256sum --check SHA256SUMS
+  ```
+
 ## Contributing
 
 Read [`CONTRIBUTING.md`](CONTRIBUTING.md) before opening a pull request. Coding agents also start with [`AGENTS.md`](AGENTS.md). Everyone taking part follows the [code of conduct](CODE_OF_CONDUCT.md). Report vulnerabilities privately, as described in the [security policy](SECURITY.md).
