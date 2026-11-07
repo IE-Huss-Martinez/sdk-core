@@ -1,7 +1,8 @@
 name: Verify
 
 # Runs the full `pnpm verify` on every pull request and every push to main
-# (ADR 0015). The job name is the required status check, so keep it `verify`.
+# (ADR 0015), and checks pull requests for changesets (ADR 0021). The job
+# names are the required status checks, so keep them `verify` and `changeset`.
 on:
   pull_request:
   push:
@@ -59,3 +60,31 @@ jobs:
         run: pnpm --filter @hussmartinez/sdk-core exec playwright install-deps chromium firefox webkit
 
       - run: pnpm verify
+
+  # Fails a pull request that changes a published package's source or
+  # package.json without a changeset (ADR 0021). Which files count is set by
+  # changedFilePatterns in .changeset/config.json. The version pull request
+  # consumes changesets by design, so it's skipped.
+  changeset:
+    name: changeset
+    if: github.event_name == 'pull_request' && github.head_ref != 'changeset-release/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # Full history, so that origin/main is there to compare against.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        with:
+          cache: true
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm changeset status --since=origin/main
