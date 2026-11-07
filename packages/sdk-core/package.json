@@ -27,14 +27,17 @@
     "test:browser": "vitest run --project browser",
     "test:browser:all": "vitest run --project browser --mode all-browsers",
     "check:api": "tsc -p tsconfig.build.json && api-extractor run",
+    "check:package": "publint run --pack pnpm --strict && attw --pack . --profile esm-only",
     "api:update": "tsc -p tsconfig.build.json && api-extractor run --local"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "catalog:",
     "@hussmartinez/sdk-config": "workspace:*",
     "@microsoft/api-extractor": "catalog:",
     "@types/node": "catalog:",
     "@vitest/browser-playwright": "catalog:",
     "playwright": "catalog:",
+    "publint": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"
