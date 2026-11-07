@@ -1,6 +1,6 @@
 # 0015. Verification, releases and trusted publishing
 
-- **Status:** Accepted
+- **Status:** Accepted; release tooling superseded by [0021](0021-version-and-release-with-changesets.md)
 - **Date:** 2026-11-06
 
 ## Context

@@ -220,7 +220,7 @@ Every `<kind>-sdk` repository follows this structure:
 
 Each repository extends the presets in `@hussmartinez/sdk-config` instead of copying configuration.
 
-## Workflow ([ADR 0015](docs/adr/0015-verification-and-releases.md), [ADR 0016](docs/adr/0016-git-hooks-and-merge-guards.md))
+## Workflow ([ADR 0015](docs/adr/0015-verification-and-releases.md), [ADR 0016](docs/adr/0016-git-hooks-and-merge-guards.md), [ADR 0021](docs/adr/0021-version-and-release-with-changesets.md))
 
 - **Verification:**
   - `pnpm verify` runs code checks, build, unit tests, browser tests, size budgets, the API report and package checks;
@@ -241,9 +241,11 @@ Each repository extends the presets in `@hussmartinez/sdk-config` instead of cop
   - Conventional Commits, and pull request titles become commit titles;
   - commits are signed.
 - **ADRs:** significant decisions get an ADR in the owning repository.
-- **Versioning:**
-  - semver, with `0.x` until the API settles;
-  - release-please prepares versions and changelogs, and creates a GitHub Release when its pull request is merged;
-  - the same workflow then runs `pnpm verify` and publishes to npm with trusted publishing and provenance;
+- **Versioning** ([ADR 0021](docs/adr/0021-version-and-release-with-changesets.md)):
+  - semver, with `0.x` until the API settles, and each package versioned on its own;
+  - every pull request that changes a published package's source or `package.json` adds a changeset with `pnpm changeset`, describing the change for users; a required `changeset` check enforces it;
+  - Conventional Commits stay for history and pull request titles, but don't drive versions;
+  - the release workflow keeps a `chore: version packages` pull request open with the pending changesets; merging it publishes;
+  - the same workflow then runs `pnpm verify` and publishes to npm with trusted publishing and provenance, and creates a GitHub Release per package;
   - the tarball, standalone scripts and checksums are attached to the GitHub Release, with artifact attestations.
 - **Licence:** Apache-2.0, with a `NOTICE` file crediting bundled third-party code whose licence requires it.
