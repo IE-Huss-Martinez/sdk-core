@@ -36,7 +36,7 @@ Changesets is the most widely used tool for this in JavaScript and TypeScript. E
 
 One `release` workflow runs on every push to `main`, with two jobs. Every action is pinned to a commit SHA, and each job has a timeout and only the permissions it needs.
 
-1. **`version`** (`contents: write`, `pull-requests: write`): `changesets/action` opens or updates the **`chore: version packages`** pull request while changesets are pending. Its title and commit message pass the `pr-title` check. The action pushes the version commit, and later the tags, through the GitHub API, so they're signed by GitHub.
+1. **`version`** (`contents: write`, `pull-requests: write`, environment `release`): `changesets/action` opens or updates the **`chore: version packages`** pull request while changesets are pending, with a GitHub App token (see below). Its title and commit message pass the `pr-title` check. The action pushes the version commit, and later the tags, through the GitHub API, so they're signed by GitHub.
 2. **`publish`** (`contents: write`, `id-token: write`, `attestations: write`, environment `npm`) runs when no changesets are pending, which is after the version pull request is merged:
    1. **Plan:** `changeset publish-plan` lists the versions that aren't on npm yet. If there are none, as on most pushes, nothing else runs.
    2. **Install:** a fresh install with no caches, so a poisoned cache can't reach a release.
@@ -47,16 +47,39 @@ One `release` workflow runs on every push to `main`, with two jobs. Every action
 
 npm, rather than pnpm or `changeset publish`, publishes the tarballs. It's the client that supports trusted publishing and staged publishing.
 
-### Open switch points
+### The version pull request uses a GitHub App token
 
-Two choices are deliberately made switchable without changing the workflow's structure:
+- **Why:** a pull request opened with `GITHUB_TOKEN` doesn't trigger workflows, so `verify`, `changeset` and `pr-title` would never report on the version pull request, and it could never be merged under the required checks.
+- **How:** the `version` job mints a token from a GitHub App with `actions/create-github-app-token`, scoped to `contents: write` and `pull-requests: write`, whatever else the App is allowed. The repository setting that lets Actions create pull requests can stay off.
+- **Where the key lives:** the App's client ID (`RELEASE_APP_CLIENT_ID`) and private key (`RELEASE_APP_PRIVATE_KEY`) are stored only in the **`release` environment**, which is restricted to `main`. A repository secret would be readable by workflows on any branch in the repository, including `pull_request` runs. Only the `version` job uses the environment.
+- **Required:** without the App, the job fails with instructions rather than opening a pull request that can't be merged.
 
-- **The version pull request's token.** With `GITHUB_TOKEN`, a pull request it opens doesn't trigger workflows, so the required checks don't run on it. The repository must also allow Actions to create pull requests. Setting the `RELEASE_APP_CLIENT_ID` variable and the `RELEASE_APP_PRIVATE_KEY` secret makes the `version` job mint a GitHub App token, scoped to `contents: write` and `pull-requests: write`, used by that job only.
-- **Direct or staged publishing.** `NPM_PUBLISH_COMMAND` is `publish`. Setting it to `stage publish` uploads each version privately until a maintainer approves it on npm with 2FA.
+This is a long-lived credential, which ADR 0015 avoided because a separate publish workflow didn't need one. Required checks on the version pull request are the benefit that justifies it.
 
-The defaults are `GITHUB_TOKEN` and direct publishing until the maintainer decides. Each decision is recorded when it's made.
+### Direct publishing
+
+The publish job publishes each version directly with `npm publish`, through trusted publishing. Every release is already gated by review of the version pull request and by the required checks. The `npm` environment can add a required reviewer. `NPM_PUBLISH_COMMAND` remains in the workflow, so moving to staged publishing later is a one-line change.
+
+### Bootstrapping the first publish
+
+npm can only configure a trusted publisher for a package that already exists, so the first version of each package can't be published through OIDC alone.
+
+- **The bootstrap token:** when the `npm` environment has an `NPM_TOKEN` secret, the publish job configures it for that run, and logs a warning. The npm CLI uses trusted publishing when it's configured, and falls back to the token otherwise.
+- **Provenance:** it still comes from the job's OIDC token (`id-token: write` with `--provenance`), so the first versions have provenance too.
+- **The normal path:** without `NPM_TOKEN`, publishing is pure trusted publishing.
+
+The bootstrap is done once, and then removed:
+
+1. Create a granular npm access token that can publish only the `@hussmartinez/sdk-core` and `@hussmartinez/sdk-config` packages, expiring in a few days, and store it only as `NPM_TOKEN` in the `npm` environment.
+2. Merge the first version pull request, which publishes `0.1.0` with the token.
+3. Configure the trusted publisher for each package straight away. npm expires a trusted-publisher configuration that hasn't published within two days, which is why it's set up right after the bootstrap rather than before.
+4. Delete the `NPM_TOKEN` secret, revoke the token, and turn on "Require two-factor authentication and disallow tokens" for each package.
 
 ## Alternatives considered
+
+- **Staged publishing (`npm stage publish`), with each version approved on npm with 2FA:** a strong extra gate. The maintainer chose direct publishing, because review of the version pull request, the required checks and the `npm` environment already gate every release. The switch is kept as a one-line change.
+- **`GITHUB_TOKEN` for the version pull request, re-triggering checks by hand:** no stored credential, but it needs a maintainer to close and reopen the pull request before every merge, and it lets every workflow create pull requests.
+- **Keeping the App key as a repository secret:** simpler, but readable by workflows on any branch in the repository.
 
 - **Keeping release-please:** no extra file per change, but release notes are only as good as commit subjects. Grouping and rewording them requires overrides in pull request bodies.
 - **Hand-written changelogs without tooling:** easy to forget, with no link between a note and the version it ships in.
