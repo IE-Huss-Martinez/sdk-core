@@ -9,7 +9,10 @@
 // 2. publishes it with npm and provenance. NPM_PUBLISH_COMMAND chooses
 //    `publish` (the default) or `stage publish`, which waits for a
 //    maintainer's 2FA approval on npm;
-// 3. creates the annotated tag `<name>@<version>`, and reports it in
+// 3. records it in $PUBLISHED_RECORD, if set, as soon as npm accepts it, so
+//    the release can be finished even if another package fails
+//    (scripts/finish-releases.mjs);
+// 4. creates the annotated tag `<name>@<version>`, and reports it in
 //    $CHANGESETS_OUTPUT, so changesets/action pushes the tag and creates the
 //    GitHub Release.
 //
@@ -71,7 +74,19 @@ for (const step of steps) {
     );
 
     if (!dryRun) {
-      execFileSync("git", ["tag", "--annotate", label, "--message", label], { stdio: "inherit" });
+      if (process.env.PUBLISHED_RECORD) {
+        appendFileSync(
+          process.env.PUBLISHED_RECORD,
+          `${JSON.stringify({ name: step.name, version: step.version, tarball })}\n`,
+        );
+      }
+      try {
+        execFileSync("git", ["tag", "--annotate", label, "--message", label], { stdio: "inherit" });
+      } catch (error) {
+        throw new Error(
+          `it was published, but tagging it failed: ${error instanceof Error ? error.message : error}`,
+        );
+      }
       if (process.env.CHANGESETS_OUTPUT) {
         appendFileSync(
           process.env.CHANGESETS_OUTPUT,
