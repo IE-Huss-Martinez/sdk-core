@@ -1,0 +1,198 @@
+name: Release
+
+# Versions and publishes the packages with Changesets (ADR 0021).
+#
+# - With changesets on main, the version job opens or updates the
+#   "chore: version packages" pull request.
+# - Once that pull request is merged, the publish job verifies, publishes the
+#   new versions to npm with trusted publishing and provenance, creates the
+#   tags and GitHub Releases, and attaches the tarballs with SHA256SUMS and
+#   attestations.
+on:
+  push:
+    branches: [main]
+
+permissions: {} # each job declares only what it needs
+
+# Never cancel a release in progress; queue the next push behind it.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  version:
+    name: version
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # The GitHub App's key lives only in this environment, which is
+    # restricted to main, so no other branch or pull request can read it.
+    environment: release
+    permissions:
+      contents: write # push the version commit to the release branch
+      pull-requests: write # open and update the version pull request
+    outputs:
+      has-changesets: ${{ steps.changesets.outputs.has-changesets }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      - run: pnpm install --frozen-lockfile
+
+      # The version pull request is opened with a GitHub App token (ADR 0021).
+      # A pull request opened with GITHUB_TOKEN doesn't trigger workflows, so
+      # it could never pass the required checks.
+      - name: Check the release App configuration
+        env:
+          CLIENT_ID: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          HAS_PRIVATE_KEY: ${{ secrets.RELEASE_APP_PRIVATE_KEY != '' }}
+        run: |
+          if [ -z "$CLIENT_ID" ] || [ "$HAS_PRIVATE_KEY" != "true" ]; then
+            echo "::error title=Release App not configured::Set the RELEASE_APP_CLIENT_ID variable and the RELEASE_APP_PRIVATE_KEY secret in the release environment (Settings → Environments → release). See CONTRIBUTING.md, \"Setting up releases\"."
+            exit 1
+          fi
+
+      - id: app-token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          # Scope the token to what this job needs, whatever the App can do.
+          permission-contents: write
+          permission-pull-requests: write
+
+      # Without publish-script, the action only versions: it opens or updates
+      # the version pull request when there are changesets.
+      - id: changesets
+        uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
+        with:
+          github-token: ${{ steps.app-token.outputs.token }}
+          pr-title: "chore: version packages"
+          commit-message: "chore: version packages"
+
+  publish:
+    name: publish
+    needs: version
+    if: needs.version.outputs.has-changesets == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # The npm trusted publisher is bound to this workflow and environment.
+    environment: npm
+    permissions:
+      contents: write # push tags, create GitHub Releases and upload their files
+      id-token: write # npm trusted publishing and provenance, through OIDC
+      attestations: write # create the artifact attestations
+    env:
+      # Direct publishing, as decided in ADR 0021. "stage publish" would upload
+      # each version privately until a maintainer approves it on npm with 2FA.
+      NPM_PUBLISH_COMMAND: publish
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # No registry-url: trusted publishing needs no token or .npmrc.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+
+      # No caches in a job that publishes: everything is installed fresh, so a
+      # poisoned cache can't reach a release.
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      - run: pnpm install --frozen-lockfile
+
+      # Lists the versions not yet on npm. Most pushes to main have none, and
+      # then nothing below runs.
+      - name: Plan the release
+        id: plan
+        run: |
+          pnpm changeset publish-plan --output publish-plan.json
+          count=$(jq '[.plan[][] | select(.kind == "publish")] | length' publish-plan.json)
+          echo "Versions to publish: $count"
+          echo "pending=$([ "$count" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: Check the npm version
+        if: steps.plan.outputs.pending == 'true'
+        run: |
+          required=11.5.1
+          current=$(npm --version)
+          if [ "$(printf '%s\n' "$required" "$current" | sort -V | head -n 1)" != "$required" ]; then
+            echo "::error::npm $current is too old for trusted publishing; $required or newer is needed."
+            exit 1
+          fi
+
+      - name: Install the browsers
+        if: steps.plan.outputs.pending == 'true'
+        run: pnpm --filter @hussmartinez/sdk-core exec playwright install --with-deps chromium firefox webkit
+
+      - if: steps.plan.outputs.pending == 'true'
+        run: pnpm verify
+
+      # changeset pack rewrites catalog: and workspace: ranges into real
+      # versions, and records each tarball's integrity in the plan.
+      - name: Pack the packages
+        if: steps.plan.outputs.pending == 'true'
+        run: pnpm changeset pack --from-publish-plan publish-plan.json --out-dir release-packs
+
+      # Bootstrap only (ADR 0021): npm can't configure a trusted publisher for
+      # a package that doesn't exist yet, so the first release uses a
+      # short-lived token stored as NPM_TOKEN in the npm environment. Without
+      # that secret, this step does nothing and publishing is pure trusted
+      # publishing. Provenance still comes from this job's OIDC token.
+      - name: Use the bootstrap npm token, if there is one
+        if: steps.plan.outputs.pending == 'true'
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -n "$NPM_TOKEN" ]; then
+            npm config set "//registry.npmjs.org/:_authToken" "$NPM_TOKEN" --location user
+            echo "::warning title=Bootstrap npm token in use::Publishing with NPM_TOKEN. After this release, configure the trusted publishers, delete the secret and revoke the token (CONTRIBUTING.md, \"Setting up releases\")."
+          fi
+
+      # With no changesets pending, the action runs the publish script, which
+      # reports each published version; the action then pushes its tag and
+      # creates its GitHub Release.
+      - id: changesets
+        if: steps.plan.outputs.pending == 'true'
+        uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
+        with:
+          publish-script: node scripts/publish-packages.mjs release-packs
+          create-github-releases: true
+
+      - name: Collect the published tarballs and their checksums
+        if: steps.changesets.outputs.published == 'true'
+        env:
+          PUBLISHED: ${{ steps.changesets.outputs.published-packages }}
+        run: |
+          set -euo pipefail
+          for name in $(jq -r '.[].name' <<<"$PUBLISHED"); do
+            version=$(jq -r --arg name "$name" '.[] | select(.name == $name) | .version' <<<"$PUBLISHED")
+            dir="release-assets/${name//\//__}"
+            mkdir -p "$dir"
+            cp "release-packs/packages/$(jq -r --arg name "$name" '.plan[][] | select(.name == $name) | .tarball.path' release-packs/publish-plan.json | xargs basename)" "$dir/"
+            (cd "$dir" && sha256sum ./*.tgz > SHA256SUMS && cat SHA256SUMS)
+            echo "$name@$version" > "$dir/TAG"
+          done
+
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        if: steps.changesets.outputs.published == 'true'
+        with:
+          subject-path: release-assets/*/*.tgz
+
+      - name: Attach the files to each GitHub Release
+        if: steps.changesets.outputs.published == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for dir in release-assets/*/; do
+            tag=$(cat "$dir/TAG")
+            gh release upload "$tag" "$dir"*.tgz "$dir/SHA256SUMS" --clobber
+          done

@@ -10,6 +10,7 @@
   },
   "scripts": {
     "prepare": "husky",
+    "changeset": "changeset",
     "lint": "biome check .",
     "lint:css": "stylelint \"**/*.css\" --allow-empty-input",
     "lint:deps": "hm-lint-deps packages",
@@ -25,6 +26,8 @@
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
+    "@changesets/changelog-github": "catalog:",
+    "@changesets/cli": "catalog:",
     "@commitlint/cli": "catalog:",
     "@hussmartinez/sdk-config": "workspace:*",
     "dependency-cruiser": "catalog:",
