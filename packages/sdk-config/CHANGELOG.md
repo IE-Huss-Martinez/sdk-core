@@ -1,5 +1,11 @@
 # @hussmartinez/sdk-config
 
+## 0.1.1
+
+### Patch Changes
+
+- [#22](https://github.com/hussmartinez/sdk-core/pull/22) [`06f2162`](https://github.com/hussmartinez/sdk-core/commit/06f2162f3563d6329ee8664ea22d6ff95c5c8ac4) Thanks [@hussmartinez](https://github.com/hussmartinez)! - Add npm version, CI and licence badges to the README, and replace the outdated "not published yet" status with the package's `0.x` status.
+
 ## 0.1.0
 
 ### Minor Changes
