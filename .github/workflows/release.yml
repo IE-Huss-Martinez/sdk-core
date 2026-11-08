@@ -108,13 +108,17 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # Every release file (the plan, the packed tarballs and the release
+      # assets) goes to $RUNNER_TEMP, outside the checkout, so that pnpm verify
+      # never lints or tests them.
+
       # Lists the versions not yet on npm. Most pushes to main have none, and
       # then nothing below runs.
       - name: Plan the release
         id: plan
         run: |
-          pnpm changeset publish-plan --output publish-plan.json
-          count=$(jq '[.plan[][] | select(.kind == "publish")] | length' publish-plan.json)
+          pnpm changeset publish-plan --output "$RUNNER_TEMP/publish-plan.json"
+          count=$(jq '[.plan[][] | select(.kind == "publish")] | length' "$RUNNER_TEMP/publish-plan.json")
           echo "Versions to publish: $count"
           echo "pending=$([ "$count" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
@@ -139,7 +143,7 @@ jobs:
       # versions, and records each tarball's integrity in the plan.
       - name: Pack the packages
         if: steps.plan.outputs.pending == 'true'
-        run: pnpm changeset pack --from-publish-plan publish-plan.json --out-dir release-packs
+        run: pnpm changeset pack --from-publish-plan "$RUNNER_TEMP/publish-plan.json" --out-dir "$RUNNER_TEMP/release-packs"
 
       # Bootstrap only (ADR 0021): npm can't configure a trusted publisher for
       # a package that doesn't exist yet, so the first release uses a
@@ -163,7 +167,7 @@ jobs:
         if: steps.plan.outputs.pending == 'true'
         uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
-          publish-script: node scripts/publish-packages.mjs release-packs
+          publish-script: node scripts/publish-packages.mjs ${{ runner.temp }}/release-packs
           create-github-releases: true
 
       - name: Collect the published tarballs and their checksums
@@ -174,9 +178,10 @@ jobs:
           set -euo pipefail
           for name in $(jq -r '.[].name' <<<"$PUBLISHED"); do
             version=$(jq -r --arg name "$name" '.[] | select(.name == $name) | .version' <<<"$PUBLISHED")
-            dir="release-assets/${name//\//__}"
+            dir="$RUNNER_TEMP/release-assets/${name//\//__}"
             mkdir -p "$dir"
-            cp "release-packs/packages/$(jq -r --arg name "$name" '.plan[][] | select(.name == $name) | .tarball.path' release-packs/publish-plan.json | xargs basename)" "$dir/"
+            packs="$RUNNER_TEMP/release-packs"
+            cp "$packs/packages/$(jq -r --arg name "$name" '.plan[][] | select(.name == $name) | .tarball.path' "$packs/publish-plan.json" | xargs basename)" "$dir/"
             (cd "$dir" && sha256sum ./*.tgz > SHA256SUMS && cat SHA256SUMS)
             echo "$name@$version" > "$dir/TAG"
           done
@@ -184,7 +189,7 @@ jobs:
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         if: steps.changesets.outputs.published == 'true'
         with:
-          subject-path: release-assets/*/*.tgz
+          subject-path: ${{ runner.temp }}/release-assets/*/*.tgz
 
       - name: Attach the files to each GitHub Release
         if: steps.changesets.outputs.published == 'true'
@@ -192,7 +197,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          for dir in release-assets/*/; do
+          for dir in "$RUNNER_TEMP"/release-assets/*/; do
             tag=$(cat "$dir/TAG")
             gh release upload "$tag" "$dir"*.tgz "$dir/SHA256SUMS" --clobber
           done
