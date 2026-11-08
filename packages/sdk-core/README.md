@@ -1,10 +1,12 @@
 # @hussmartinez/sdk-core
 
+[![npm version of @hussmartinez/sdk-core](https://img.shields.io/npm/v/@hussmartinez/sdk-core)](https://www.npmjs.com/package/@hussmartinez/sdk-core) [![Verify workflow status on main](https://github.com/hussmartinez/sdk-core/actions/workflows/verify.yml/badge.svg?branch=main)](https://github.com/hussmartinez/sdk-core/actions/workflows/verify.yml?query=branch%3Amain) [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](https://github.com/hussmartinez/sdk-core/blob/main/LICENSE)
+
 Headless runtime shared by the `@hussmartinez` SDK family: worker messaging, errors, session primitives, the tool registry, the custom-element base, file policy and the messages helper.
 
 The package is ESM only, has no dependencies, and does nothing on import, so it's safe to load on a server ([ADR 0004](../../docs/adr/0004-entry-points-and-module-format.md)).
 
-> Status: not published yet. Errors, worker messaging, messages and the file policy are available; the session, tools and custom-element base come later.
+> Status: `0.x`, so the API may still change between minor versions. Errors, worker messaging, messages and the file policy are available; the session, tools and custom-element base come later.
 
 ## Errors
 

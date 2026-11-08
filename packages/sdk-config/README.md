@@ -1,8 +1,10 @@
 # @hussmartinez/sdk-config
 
+[![npm version of @hussmartinez/sdk-config](https://img.shields.io/npm/v/@hussmartinez/sdk-config)](https://www.npmjs.com/package/@hussmartinez/sdk-config) [![Verify workflow status on main](https://github.com/hussmartinez/sdk-core/actions/workflows/verify.yml/badge.svg?branch=main)](https://github.com/hussmartinez/sdk-core/actions/workflows/verify.yml?query=branch%3Amain) [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](https://github.com/hussmartinez/sdk-core/blob/main/LICENSE)
+
 Shared development configuration for the `@hussmartinez` SDK family. Every repository extends these presets instead of copying configuration, so a rule changes in one place ([STANDARDS.md](../../STANDARDS.md#tooling)).
 
-> Status: not published yet. Inside this workspace, the root configuration files use these presets.
+> Status: `0.x`, so presets may still change between minor versions. Inside this workspace, the root configuration files use these presets.
 
 ## Presets
 
