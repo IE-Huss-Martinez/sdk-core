@@ -1,6 +1,6 @@
 {
   "name": "@hussmartinez/sdk-config",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Shared development configuration for the @hussmartinez SDK family.",
   "license": "Apache-2.0",
   "repository": {
