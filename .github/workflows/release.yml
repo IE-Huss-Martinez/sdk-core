@@ -112,8 +112,9 @@ jobs:
       # assets) goes to $RUNNER_TEMP, outside the checkout, so that pnpm verify
       # never lints or tests them.
 
-      # Lists the versions not yet on npm. Most pushes to main have none, and
-      # then nothing below runs.
+      # Lists the versions not yet on npm. Most pushes to main have none: then
+      # nothing is published, and only the finishing steps at the end check
+      # that every release has its files.
       - name: Plan the release
         id: plan
         run: |
@@ -162,42 +163,36 @@ jobs:
 
       # With no changesets pending, the action runs the publish script, which
       # reports each published version; the action then pushes its tag and
-      # creates its GitHub Release.
+      # creates its GitHub Release. If one package fails, this step fails and
+      # the job fails, but the steps below still finish the others.
       - id: changesets
         if: steps.plan.outputs.pending == 'true'
         uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
+        env:
+          PUBLISHED_RECORD: ${{ runner.temp }}/published.ndjson
         with:
           publish-script: node scripts/publish-packages.mjs ${{ runner.temp }}/release-packs
           create-github-releases: true
 
-      - name: Collect the published tarballs and their checksums
-        if: steps.changesets.outputs.published == 'true'
+      # Finishes every version that's on npm but whose GitHub Release lacks its
+      # files: the ones this run published, even if another package failed,
+      # and any left unfinished by an earlier run. Complete releases are left
+      # alone, so nothing is attested twice.
+      - name: Prepare the release files
+        id: finish
+        if: ${{ !cancelled() && steps.plan.outcome == 'success' }}
         env:
-          PUBLISHED: ${{ steps.changesets.outputs.published-packages }}
-        run: |
-          set -euo pipefail
-          for name in $(jq -r '.[].name' <<<"$PUBLISHED"); do
-            version=$(jq -r --arg name "$name" '.[] | select(.name == $name) | .version' <<<"$PUBLISHED")
-            dir="$RUNNER_TEMP/release-assets/${name//\//__}"
-            mkdir -p "$dir"
-            packs="$RUNNER_TEMP/release-packs"
-            cp "$packs/packages/$(jq -r --arg name "$name" '.plan[][] | select(.name == $name) | .tarball.path' "$packs/publish-plan.json" | xargs basename)" "$dir/"
-            (cd "$dir" && sha256sum ./*.tgz > SHA256SUMS && cat SHA256SUMS)
-            echo "$name@$version" > "$dir/TAG"
-          done
+          GH_TOKEN: ${{ github.token }}
+          PUBLISHED_RECORD: ${{ runner.temp }}/published.ndjson
+        run: node scripts/finish-releases.mjs prepare "$RUNNER_TEMP/release-assets"
 
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
-        if: steps.changesets.outputs.published == 'true'
+        if: ${{ !cancelled() && steps.finish.outputs.count > 0 }}
         with:
           subject-path: ${{ runner.temp }}/release-assets/*/*.tgz
 
       - name: Attach the files to each GitHub Release
-        if: steps.changesets.outputs.published == 'true'
+        if: ${{ !cancelled() && steps.finish.outputs.count > 0 }}
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          for dir in "$RUNNER_TEMP"/release-assets/*/; do
-            tag=$(cat "$dir/TAG")
-            gh release upload "$tag" "$dir"*.tgz "$dir/SHA256SUMS" --clobber
-          done
+        run: node scripts/finish-releases.mjs attach "$RUNNER_TEMP/release-assets"

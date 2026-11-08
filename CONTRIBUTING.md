@@ -101,6 +101,8 @@ Nobody publishes by hand.
    - creates a tag such as `@hussmartinez/sdk-core@0.2.0` and a GitHub Release with the changelog entry;
    - attaches the tarball and `SHA256SUMS`, with artifact attestations.
 
+**If a release partly fails,** for example because one package's publish is rejected, the packages that did publish still get their tarball, `SHA256SUMS` and attestation, and the workflow run fails. After fixing the cause, re-run the workflow or push to `main` again. Every run checks each package's current version against npm and its GitHub Release, publishes what's missing, and repairs releases without their files, using tarballs downloaded from npm and verified against the registry's integrity. A complete release is left alone.
+
 ## Setting up releases
 
 These are one-time steps for the maintainer ([ADR 0021](docs/adr/0021-version-and-release-with-changesets.md)).
