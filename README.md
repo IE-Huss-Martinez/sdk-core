@@ -1,5 +1,7 @@
 # sdk-core
 
+[![npm version of @hussmartinez/sdk-core](https://img.shields.io/npm/v/@hussmartinez/sdk-core)](https://www.npmjs.com/package/@hussmartinez/sdk-core) [![npm version of @hussmartinez/sdk-config](https://img.shields.io/npm/v/@hussmartinez/sdk-config)](https://www.npmjs.com/package/@hussmartinez/sdk-config) [![Verify workflow status on main](https://github.com/hussmartinez/sdk-core/actions/workflows/verify.yml/badge.svg?branch=main)](https://github.com/hussmartinez/sdk-core/actions/workflows/verify.yml?query=branch%3Amain) [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+
 Shared foundation for the `@hussmartinez` SDK family: client-side SDKs for working with PDFs, images, video and audio, where files never leave the user's device.
 
 This repository is a pnpm workspace with two packages:
@@ -9,7 +11,7 @@ This repository is a pnpm workspace with two packages:
 
 The standards every SDK follows live in [`STANDARDS.md`](STANDARDS.md). The reasoning behind them is recorded as architecture decision records in [`docs/adr`](docs/adr).
 
-> Status: being bootstrapped. No packages are published yet.
+> Status: `0.x`. Both packages are published, and their APIs may still change between minor versions.
 
 ## Development
 
