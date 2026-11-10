@@ -46,9 +46,19 @@ The git hooks run on their own: a secret scan and lint of staged files on commit
 
 Mark the pull request ready once `pnpm verify` passes locally. CI is the final gate, not a substitute for running it yourself.
 
+## How pull requests are reviewed
+
+**The author of a pull request never merges it.** A separate reviewer does, after reviewing it:
+
+- **The diff:** the reviewer reads the full diff and checks it against `STANDARDS.md` and the ADRs.
+- **The checks:** CI must be green. For any change to code, the reviewer also runs `pnpm verify` independently, rather than relying on the author's result.
+- **Not "almost right":** if the scope, title or quality isn't right, the pull request is fixed before it's merged.
+
+**Coding agents** open one pull request at a time. After opening it, they stop and report the link, a short summary and their `pnpm verify` result. They start the next change only after the pull request is merged, from an up-to-date `main`. An agent never reviews or merges a pull request it wrote; author and reviewer are always different sessions.
+
 ## How pull requests are merged
 
-Pull requests are squash-merged into a linear `main`, and the maintainer writes the squash commit message:
+Pull requests are squash-merged into a linear `main`, and the reviewer writes the squash commit message:
 
 - **Title:** the pull request title, followed by the pull request number, such as `feat(sdk-core): add typed worker messaging (#12)`.
 - **Body:** 2–6 lines of plain prose, wrapped at 72 characters, saying what changed and why.
