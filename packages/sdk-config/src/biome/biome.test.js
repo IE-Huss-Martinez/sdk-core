@@ -1,5 +1,6 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -52,5 +53,26 @@ describe("Biome preset", () => {
     await expect(lint("export const value: any = 1;\n")).resolves.toEqual([
       "lint/suspicious/noExplicitAny",
     ]);
+  });
+
+  it("declares the $schema of the Biome version the workspace installs", async () => {
+    const preset = await readFile(PRESET, "utf8");
+    const declared = /"\$schema":\s*"https:\/\/biomejs\.dev\/schemas\/([^/]+)\/schema\.json"/.exec(
+      preset,
+    )?.[1];
+    const installed = createRequire(import.meta.url)("@biomejs/biome/package.json").version;
+
+    // A Dependabot bump of @biomejs/biome must update the preset's $schema too.
+    expect(declared).toBe(installed);
+  });
+
+  it("doesn't make Biome print a schema version notice", async () => {
+    await writeFile(join(project, "probe.ts"), "export const value = 1;\n");
+    const { stdout, stderr } = spawnSync(BIOME, ["lint", "probe.ts"], {
+      cwd: project,
+      encoding: "utf8",
+    });
+
+    expect(`${stdout}${stderr}`).not.toContain("schema version does not match");
   });
 });
