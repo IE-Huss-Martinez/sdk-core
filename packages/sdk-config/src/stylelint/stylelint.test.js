@@ -1,6 +1,12 @@
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { dirname, join, relative } from "node:path";
+import { fileURLToPath } from "node:url";
 import stylelint from "stylelint";
 import { describe, expect, it } from "vitest";
 import config from "./index.js";
+
+const PRESET = fileURLToPath(new URL("./index.js", import.meta.url));
 
 /**
  * Lints CSS with the preset and returns `rule: text` for every warning.
@@ -240,6 +246,48 @@ describe("stylelint preset", () => {
         .hm-visually-hidden { inline-size: 1px; }
       `;
       await expect(lint(css)).resolves.toEqual([]);
+    });
+  });
+
+  describe("build output", () => {
+    // The same stylesheet, with literal values, everywhere: only the copies
+    // outside build output and caches must be linted.
+    const css = ".hm-a { color: #fff; margin: 3px; }\n";
+    const linted = ["src/a.css", "packages/ui/src/a.css"];
+    const ignored = [
+      "dist/styles.css",
+      "packages/ui/dist/styles.css",
+      "temp/a.css",
+      "coverage/a.css",
+      "storybook-static/a.css",
+      "node_modules/pkg/a.css",
+    ];
+
+    it("lints sources but not build output, through a re-exported preset", async () => {
+      const project = await mkdtemp(join(tmpdir(), "hm-stylelint-"));
+      try {
+        await writeFile(
+          join(project, "stylelint.config.js"),
+          `export { default } from ${JSON.stringify(PRESET)};\n`,
+        );
+        for (const file of [...linted, ...ignored]) {
+          await mkdir(dirname(join(project, file)), { recursive: true });
+          await writeFile(join(project, file), css);
+        }
+
+        // As a consumer runs it: stylelint "**/*.css" from the repository root.
+        const { results } = await stylelint.lint({ files: "**/*.css", cwd: project });
+        const checked = results.filter((result) => !result.ignored);
+
+        expect(checked.map((result) => relative(project, result.source ?? "")).sort()).toEqual(
+          [...linted].sort(),
+        );
+        for (const result of checked) {
+          expect(result.warnings.map((warning) => warning.rule)).toContain("hm/no-literal-values");
+        }
+      } finally {
+        await rm(project, { recursive: true, force: true });
+      }
     });
   });
 });
