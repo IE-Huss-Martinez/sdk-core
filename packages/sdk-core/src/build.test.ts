@@ -1,6 +1,7 @@
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import * as esbuild from "esbuild";
 import { build } from "vite";
 import { afterAll, describe, expect, it } from "vitest";
@@ -13,7 +14,7 @@ import { afterAll, describe, expect, it } from "vitest";
 const builtPackage = (async () => {
   const directory = await mkdtemp(join(tmpdir(), "hm-sdk-core-build-"));
   await build({
-    configFile: new URL("../vite.config.ts", import.meta.url).pathname,
+    configFile: fileURLToPath(new URL("../vite.config.ts", import.meta.url)),
     logLevel: "silent",
     build: { outDir: directory, emptyOutDir: true },
   });
