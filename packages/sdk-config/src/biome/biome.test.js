@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -52,5 +52,23 @@ describe("Biome preset", () => {
     await expect(lint("export const value: any = 1;\n")).resolves.toEqual([
       "lint/suspicious/noExplicitAny",
     ]);
+  });
+
+  it("doesn't pin a Biome schema version", async () => {
+    // A $schema here would be checked against each consumer's own Biome CLI,
+    // so any other version would print a notice. Consumers keep their own.
+    const preset = await readFile(PRESET, "utf8");
+
+    expect(preset).not.toMatch(/"\$schema"/);
+  });
+
+  it("doesn't make Biome print a schema version notice", async () => {
+    await writeFile(join(project, "probe.ts"), "export const value = 1;\n");
+    const { stdout, stderr } = spawnSync(BIOME, ["lint", "probe.ts"], {
+      cwd: project,
+      encoding: "utf8",
+    });
+
+    expect(`${stdout}${stderr}`).not.toContain("schema version does not match");
   });
 });
