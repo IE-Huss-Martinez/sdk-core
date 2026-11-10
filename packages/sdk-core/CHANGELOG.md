@@ -1,5 +1,11 @@
 # @hussmartinez/sdk-core
 
+## 0.1.2
+
+### Patch Changes
+
+- [#34](https://github.com/hussmartinez/sdk-core/pull/34) [`515704a`](https://github.com/hussmartinez/sdk-core/commit/515704a3df2fc90f0d11eda462cf26d6a1495b4e) Thanks [@hussmartinez](https://github.com/hussmartinez)! - Bundlers can now drop the code you don't import. A bundle that imports `SdkError`, `createMessages` or `createWorkerClient` no longer includes `sdkCoreMessages`, the English catalogue, with bundlers that rely on `@__PURE__` annotations, such as esbuild and webpack with Terser: an esbuild bundle of `SdkError` alone goes from 714 to 185 bytes, minified and brotli-compressed. A bundle that doesn't use `SdkError`, such as one that imports only `plural`, no longer includes it. `isSdkError` works as before, including for errors from older copies of sdk-core.
+
 ## 0.1.1
 
 ### Patch Changes
