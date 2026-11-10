@@ -12,6 +12,7 @@
   "changedFilePatterns": [
     "src/**",
     "!src/**/*.test.ts",
+    "!src/**/*.test.js",
     "!src/**/fixtures/**",
     "biome/**",
     "tsconfig/**",
