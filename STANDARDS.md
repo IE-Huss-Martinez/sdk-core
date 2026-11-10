@@ -239,7 +239,9 @@ Each repository extends the presets in `@hussmartinez/sdk-config` instead of cop
   - every change goes through a small, focused pull request describing what changed, why, and how it was tested;
   - squash merges only, with linear history on `main`;
   - Conventional Commits, and pull request titles become commit titles;
-  - commits are signed.
+  - commits are signed;
+  - the author never merges: a separate reviewer checks the full diff against `STANDARDS.md` and the ADRs, requires green CI, runs `pnpm verify` independently for code changes, and merges nothing "almost right";
+  - coding agents open one pull request at a time, stop and report, and never review or merge their own; author and reviewer are always different sessions.
 - **ADRs:** significant decisions get an ADR in the owning repository.
 - **Versioning** ([ADR 0021](docs/adr/0021-version-and-release-with-changesets.md)):
   - semver, with `0.x` until the API settles, and each package versioned on its own;
