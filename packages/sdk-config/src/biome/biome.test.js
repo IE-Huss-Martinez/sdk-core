@@ -1,6 +1,5 @@
 import { execFileSync, spawnSync } from "node:child_process";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -55,15 +54,12 @@ describe("Biome preset", () => {
     ]);
   });
 
-  it("declares the $schema of the Biome version the workspace installs", async () => {
+  it("doesn't pin a Biome schema version", async () => {
+    // A $schema here would be checked against each consumer's own Biome CLI,
+    // so any other version would print a notice. Consumers keep their own.
     const preset = await readFile(PRESET, "utf8");
-    const declared = /"\$schema":\s*"https:\/\/biomejs\.dev\/schemas\/([^/]+)\/schema\.json"/.exec(
-      preset,
-    )?.[1];
-    const installed = createRequire(import.meta.url)("@biomejs/biome/package.json").version;
 
-    // A Dependabot bump of @biomejs/biome must update the preset's $schema too.
-    expect(declared).toBe(installed);
+    expect(preset).not.toMatch(/"\$schema"/);
   });
 
   it("doesn't make Biome print a schema version notice", async () => {

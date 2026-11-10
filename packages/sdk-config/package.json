@@ -43,7 +43,7 @@
     "postcss-value-parser": "catalog:"
   },
   "peerDependencies": {
-    "@biomejs/biome": "catalog:",
+    "@biomejs/biome": "^2.6.2",
     "@commitlint/cli": "catalog:",
     "dependency-cruiser": "catalog:",
     "lint-staged": "catalog:",
