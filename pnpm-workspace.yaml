@@ -20,6 +20,7 @@ catalog:
   "@types/picomatch": ^4.0.3
   "@vitest/browser-playwright": 5.1.0
   dependency-cruiser: ^18.7.2
+  esbuild: ^0.28.2
   husky: ^9.1.7
   lint-staged: ^17.6.0
   picomatch: ^4.0.7
@@ -36,7 +37,10 @@ catalog:
 
 # Supply-chain hardening (ADR 0012).
 # Dependency install scripts are blocked unless allowlisted here.
-allowBuilds: {}
+# esbuild's (a devDependency of sdk-core's tree-shaking test) only checks its
+# platform binary, which works without it, so it's denied explicitly.
+allowBuilds:
+  esbuild: false
 # Fail the install when an unapproved package wants to run a build script.
 strictDepBuilds: true
 # Don't resolve versions published less than a day ago.

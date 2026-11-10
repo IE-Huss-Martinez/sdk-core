@@ -97,7 +97,7 @@ export type SdkCoreErrorCode =
  * Marks SdkError instances across realms and across copies of sdk-core, where
  * `instanceof` fails. `Symbol.for` returns the same symbol in every realm.
  */
-const BRAND = Symbol.for("@hussmartinez/sdk-core/SdkError");
+const BRAND = /* @__PURE__ */ Symbol.for("@hussmartinez/sdk-core/SdkError");
 
 /**
  * Base class for every error the SDK family throws (ADR 0008).
@@ -146,13 +146,15 @@ export class SdkError<Code extends string = string> extends Error {
   constructor(code: Code, message: string, options: SdkErrorOptions = {}) {
     super(message, "cause" in options ? { cause: options.cause } : undefined);
     this.code = code;
+    // Set on each instance rather than once on the prototype: a module-scope
+    // Object.defineProperty is a side effect that would keep this class in
+    // every bundle that imports anything from sdk-core.
+    Object.defineProperty(this, BRAND, { value: true });
     if (options.details !== undefined) {
       this.details = options.details;
     }
   }
 }
-
-Object.defineProperty(SdkError.prototype, BRAND, { value: true });
 
 /**
  * Checks whether a value is an {@link SdkError}, optionally with a given code.

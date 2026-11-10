@@ -86,6 +86,21 @@ describe("isSdkError", () => {
     expect(isSdkError(error)).toBe(true);
   });
 
+  it("brands every instance, including subclasses, without an enumerable property", () => {
+    const brand = Symbol.for("@hussmartinez/sdk-core/SdkError");
+
+    for (const error of [new SdkError("UNKNOWN", "Base."), new PdfError("PDF_ENCRYPTED", "Sub.")]) {
+      expect(Object.getOwnPropertyDescriptor(error, brand)).toEqual({
+        value: true,
+        writable: false,
+        enumerable: false,
+        configurable: false,
+      });
+      expect(Object.keys(error)).not.toContain(brand);
+      expect(Object.getOwnPropertySymbols({ ...error })).toEqual([]);
+    }
+  });
+
   it("recognises branded errors from another realm", () => {
     const error = runInNewContext(`
       class ForeignError extends Error {
