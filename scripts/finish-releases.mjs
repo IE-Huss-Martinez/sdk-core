@@ -14,7 +14,9 @@
 // skipped. For the rest, it takes the tarball this run published (listed in
 // $PUBLISHED_RECORD) or downloads it from the registry, verifies it against the
 // registry's dist.integrity, and writes it with SHA256SUMS to <dir>. It sets
-// `count` in $GITHUB_OUTPUT, so the workflow attests only those files.
+// `count` in $GITHUB_OUTPUT, so the workflow attests only those files. A
+// version this run published that never becomes visible on npm fails the step,
+// but only after the other packages are prepared.
 //
 // `attach` creates any missing release, from its existing tag and the
 // changelog, and uploads the files in <dir>.
@@ -62,9 +64,18 @@ const tarballName = (name, version) => `${name.replace(/^@/, "").replace("/", "-
 const registry = (
   process.env.NPM_REGISTRY_URL ?? run("npm", ["config", "get", "registry"])
 ).replace(/\/?$/, "/");
-// How long to wait for a version that should be on npm. Overridable for tests.
+// How long to wait for a version that should be on npm, all overridable for
+// tests. npm can take minutes to process a new version before it's served:
+// about 1 minute for 0.1.0 and 0.1.1, but 3 to 4 minutes for sdk-config 0.1.2.
+// So a version this run published gets up to 10 minutes from its publish, and
+// one that only has another sign of being on npm (a plan, release or tag) gets
+// 1 minute. Polls back off from 5 s, doubling up to 30 s, with jitter.
 const pollInterval = Number(process.env.FINISH_POLL_INTERVAL_MS ?? 5_000);
-const pollTimeout = Number(process.env.FINISH_POLL_TIMEOUT_MS ?? 60_000);
+const pollMaxInterval = Number(process.env.FINISH_POLL_MAX_INTERVAL_MS ?? 30_000);
+const publishedTimeout = Number(process.env.FINISH_POLL_TIMEOUT_MS ?? 600_000);
+const signTimeout = Number(process.env.FINISH_POLL_SIGN_TIMEOUT_MS ?? 60_000);
+
+const seconds = (ms) => `${Math.round(ms / 1000)} s`;
 
 /**
  * The registry's integrity for a version, or undefined when it isn't on npm.
@@ -88,18 +99,26 @@ async function registryIntegrity(name, version) {
 }
 
 /**
- * Like registryIntegrity, but polls for up to pollTimeout, for a version that
- * should already be on npm but may not be visible yet.
+ * After a check that didn't find the version, polls registryIntegrity until the
+ * deadline, for a version that should be on npm but may not be visible yet.
+ * The delay between polls doubles from pollInterval up to pollMaxInterval, and
+ * each delay is randomised between half and all of it, so that retries don't
+ * fall into step.
  */
-async function waitForIntegrity(name, version) {
-  const deadline = Date.now() + pollTimeout;
-  for (;;) {
+async function waitForIntegrity(name, version, deadline) {
+  for (let attempt = 0; ; attempt += 1) {
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) {
+      return undefined;
+    }
+    const backoff = Math.min(pollMaxInterval, pollInterval * 2 ** attempt);
+    const delay = Math.min(remaining, backoff / 2 + Math.random() * (backoff / 2));
+    print(`${name}@${version}: not visible on npm yet, checking again in ${seconds(delay)}.`);
+    sleep(delay);
     const integrity = await registryIntegrity(name, version);
-    if (integrity || Date.now() >= deadline) {
+    if (integrity) {
       return integrity;
     }
-    print(`${name}@${version}: not visible on npm yet, waiting.`);
-    sleep(pollInterval);
   }
 }
 
@@ -158,6 +177,7 @@ function publishedThisRun() {
 async function prepare() {
   const published = publishedThisRun();
   const planned = plannedThisRun();
+  const failures = [];
   let count = 0;
 
   for (const pkg of workspacePackages()) {
@@ -165,6 +185,9 @@ async function prepare() {
     const thisRun = published.get(tag);
     const assets = releaseAssets(tag);
     let integrity = await registryIntegrity(pkg.name, pkg.version);
+    // When this run published the version, the wait counts from the publish,
+    // so several packages published together share one window.
+    const since = Number(thisRun?.publishedAt) || Date.now();
 
     if (!integrity) {
       // Wait when there's a sign that the version should be on npm.
@@ -178,15 +201,18 @@ async function prepare() {
               ? "it has a tag"
               : undefined;
       if (reason) {
+        const timeout = thisRun ? publishedTimeout : signTimeout;
         print(
-          `${tag}: not visible on npm yet, but ${reason}; waiting up to ${pollTimeout / 1000} s.`,
+          `${tag}: not visible on npm yet, but ${reason}; waiting up to ${seconds(timeout)}${thisRun ? " from its publish" : ""}.`,
         );
-        integrity = await waitForIntegrity(pkg.name, pkg.version);
+        integrity = await waitForIntegrity(pkg.name, pkg.version, since + timeout);
       }
       if (!integrity && thisRun) {
-        throw new Error(
-          `${tag}: this run published it, but it still isn't visible on npm after ${pollTimeout / 1000} s. Re-run the workflow to finish its release.`,
+        // Fail the step, but only after finishing the other packages.
+        failures.push(
+          `${tag}: this run published it, but it still isn't visible on npm ${seconds(Date.now() - since)} after its publish. Re-run the workflow to finish its release.`,
         );
+        continue;
       }
       if (!integrity && reason) {
         process.stdout.write(
@@ -197,6 +223,12 @@ async function prepare() {
         print(`${tag}: not on npm, nothing to finish.`);
         continue;
       }
+    }
+    if (thisRun) {
+      // Recorded on every release, to learn how long npm really takes.
+      process.stdout.write(
+        `::notice title=Visible on npm::${tag}: visible on npm ${seconds(Date.now() - since)} after its publish.\n`,
+      );
     }
 
     const file = tarballName(pkg.name, pkg.version);
@@ -239,6 +271,9 @@ async function prepare() {
     appendFileSync(process.env.GITHUB_OUTPUT, `count=${count}\n`);
   }
   print(`Releases to finish: ${count}`);
+  if (failures.length > 0) {
+    throw new Error(failures.join("\n"));
+  }
 }
 
 /** The changelog section for a version, as release notes. */
