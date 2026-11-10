@@ -215,7 +215,7 @@ Every `<kind>-sdk` repository follows this structure:
 - **Code checks:** Biome, stylelint and `dependency-cruiser`.
 - **Tests:** Vitest, Playwright and `@axe-core/playwright`.
 - **Packaging and API:** `size-limit`, `api-extractor`, `publint` and `@arethetypeswrong/cli`.
-- **Component catalogue (`ui`):** Ladle.
+- **Component catalogue (`ui`):** Storybook 10 with the React and Vite builder, axe checks and stories run as Vitest browser tests ([ADR 0022](docs/adr/0022-storybook-for-the-component-catalogue.md)).
 - **Git hooks:** Husky with lint-staged.
 
 Each repository extends the presets in `@hussmartinez/sdk-config` instead of copying configuration.
