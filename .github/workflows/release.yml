@@ -184,6 +184,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PUBLISHED_RECORD: ${{ runner.temp }}/published.ndjson
+          PUBLISH_PLAN: ${{ runner.temp }}/publish-plan.json
         run: node scripts/finish-releases.mjs prepare "$RUNNER_TEMP/release-assets"
 
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
