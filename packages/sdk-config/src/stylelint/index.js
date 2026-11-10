@@ -15,6 +15,17 @@ const NAME = "[a-z0-9]+(?:-[a-z0-9]+)*";
  */
 const config = {
   plugins: [layerNamePattern, noLiteralValues, selectorScope],
+  // Build output and tool caches. Built CSS inlines the token values, so
+  // linting it would report every one. Stylelint resolves these globs against
+  // the directory of the config file that declares them, so they apply when a
+  // repository's stylelint.config.js re-exports this preset, as documented.
+  ignoreFiles: [
+    "**/dist/**",
+    "**/temp/**",
+    "**/coverage/**",
+    "**/storybook-static/**",
+    "**/node_modules/**",
+  ],
   reportDescriptionlessDisables: true,
   reportInvalidScopeDisables: true,
   reportNeedlessDisables: true,
