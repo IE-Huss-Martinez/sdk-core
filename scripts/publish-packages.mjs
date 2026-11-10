@@ -9,9 +9,9 @@
 // 2. publishes it with npm and provenance. NPM_PUBLISH_COMMAND chooses
 //    `publish` (the default) or `stage publish`, which waits for a
 //    maintainer's 2FA approval on npm;
-// 3. records it in $PUBLISHED_RECORD, if set, as soon as npm accepts it, so
-//    the release can be finished even if another package fails
-//    (scripts/finish-releases.mjs);
+// 3. records it in $PUBLISHED_RECORD, if set, as soon as npm accepts it, with
+//    the time, so the release can be finished even if another package fails
+//    and the wait for npm counts from the publish (scripts/finish-releases.mjs);
 // 4. creates the annotated tag `<name>@<version>`, and reports it in
 //    $CHANGESETS_OUTPUT, so changesets/action pushes the tag and creates the
 //    GitHub Release.
@@ -77,7 +77,7 @@ for (const step of steps) {
       if (process.env.PUBLISHED_RECORD) {
         appendFileSync(
           process.env.PUBLISHED_RECORD,
-          `${JSON.stringify({ name: step.name, version: step.version, tarball })}\n`,
+          `${JSON.stringify({ name: step.name, version: step.version, tarball, publishedAt: Date.now() })}\n`,
         );
       }
       try {
