@@ -17,7 +17,9 @@ import type { MessageValue } from "./types.js";
  *
  * @public
  */
-export const sdkCoreMessages = defineMessages({
+// Pure annotations let bundlers that don't analyse function bodies, such as
+// esbuild and Terser, drop the catalogue from bundles that don't use it.
+export const sdkCoreMessages = /* @__PURE__ */ defineMessages({
   "errors.UNKNOWN": "Something went wrong. Please try again.",
   "errors.ABORTED": "The operation was cancelled.",
   "errors.TIMEOUT": "The operation took too long and was stopped.",
@@ -34,7 +36,7 @@ export const sdkCoreMessages = defineMessages({
     "This browser doesn't support a feature this tool needs. Update your browser, or try another one.",
   "errors.FILE_TOO_LARGE":
     "This file is {actual, fileSize}, which is over the {maximum, fileSize} limit.",
-  "errors.TOO_MANY_FILES": plural("maximum", {
+  "errors.TOO_MANY_FILES": /* @__PURE__ */ plural("maximum", {
     one: "You can add {maximum} file at a time.",
     other: "You can add up to {maximum} files at a time.",
   }),

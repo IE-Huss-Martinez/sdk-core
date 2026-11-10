@@ -36,6 +36,7 @@
     "@microsoft/api-extractor": "catalog:",
     "@types/node": "catalog:",
     "@vitest/browser-playwright": "catalog:",
+    "esbuild": "catalog:",
     "playwright": "catalog:",
     "publint": "catalog:",
     "typescript": "catalog:",
