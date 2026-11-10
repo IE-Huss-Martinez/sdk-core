@@ -59,23 +59,66 @@ const SUMS = "SHA256SUMS";
 /** The npm tarball name, such as hussmartinez-sdk-core-0.1.1.tgz. */
 const tarballName = (name, version) => `${name.replace(/^@/, "").replace("/", "-")}-${version}.tgz`;
 
-/** The registry's integrity for a version, or undefined when it isn't on npm. */
-function registryIntegrity(name, version, { wait }) {
-  for (let attempt = 0; ; attempt += 1) {
-    try {
-      const integrity = run("npm", ["view", `${name}@${version}`, "dist.integrity"]);
-      if (integrity) {
-        return integrity;
-      }
-    } catch {
-      // Not found, or not visible yet.
-    }
-    // A version published moments ago can take a little while to appear.
-    if (!wait || attempt >= 12) {
-      return undefined;
-    }
-    sleep(5_000);
+const registry = (
+  process.env.NPM_REGISTRY_URL ?? run("npm", ["config", "get", "registry"])
+).replace(/\/?$/, "/");
+// How long to wait for a version that should be on npm. Overridable for tests.
+const pollInterval = Number(process.env.FINISH_POLL_INTERVAL_MS ?? 5_000);
+const pollTimeout = Number(process.env.FINISH_POLL_TIMEOUT_MS ?? 60_000);
+
+/**
+ * The registry's integrity for a version, or undefined when it isn't on npm.
+ *
+ * It reads the version's own document (`<registry>/<name>/<version>`), not the
+ * package document that `npm view` reads: the registry's CDN caches the
+ * package document for up to five minutes, so a version published moments
+ * ago can be missing from it, while the version document isn't cached.
+ */
+async function registryIntegrity(name, version) {
+  const url = `${registry}${name.replace("/", "%2f")}/${version}`;
+  const response = await fetch(url, { headers: { accept: "application/json" }, cache: "no-store" });
+  if (response.status === 404) {
+    return undefined;
   }
+  if (!response.ok) {
+    throw new Error(`${name}@${version}: the registry answered ${response.status} for ${url}.`);
+  }
+  const manifest = await response.json();
+  return typeof manifest?.dist?.integrity === "string" ? manifest.dist.integrity : undefined;
+}
+
+/**
+ * Like registryIntegrity, but polls for up to pollTimeout, for a version that
+ * should already be on npm but may not be visible yet.
+ */
+async function waitForIntegrity(name, version) {
+  const deadline = Date.now() + pollTimeout;
+  for (;;) {
+    const integrity = await registryIntegrity(name, version);
+    if (integrity || Date.now() >= deadline) {
+      return integrity;
+    }
+    print(`${name}@${version}: not visible on npm yet, waiting.`);
+    sleep(pollInterval);
+  }
+}
+
+/** Whether the tag exists on GitHub. */
+function tagExists(tag) {
+  const refs = JSON.parse(run("gh", ["api", `repos/${repository}/git/matching-refs/tags/${tag}`]));
+  return refs.some((ref) => ref.ref === `refs/tags/${tag}`);
+}
+
+/** The versions in this run's publish plan, as name@version. */
+function plannedThisRun() {
+  const plan = process.env.PUBLISH_PLAN;
+  if (!plan || !existsSync(plan)) {
+    return new Set();
+  }
+  const steps = JSON.parse(readFileSync(plan, "utf8")).plan.flat();
+  return new Set(
+    steps.filter((step) => step.kind === "publish").map((step) => `${step.name}@${step.version}`),
+  );
 }
 
 /** The release's asset names, or undefined when there's no release. */
@@ -112,21 +155,51 @@ function publishedThisRun() {
   return new Map(entries.map((entry) => [`${entry.name}@${entry.version}`, entry]));
 }
 
-function prepare() {
+async function prepare() {
   const published = publishedThisRun();
+  const planned = plannedThisRun();
   let count = 0;
 
   for (const pkg of workspacePackages()) {
     const tag = `${pkg.name}@${pkg.version}`;
     const thisRun = published.get(tag);
-    const integrity = registryIntegrity(pkg.name, pkg.version, { wait: Boolean(thisRun) });
+    const assets = releaseAssets(tag);
+    let integrity = await registryIntegrity(pkg.name, pkg.version);
+
     if (!integrity) {
-      print(`${tag}: not on npm, nothing to finish.`);
-      continue;
+      // Wait when there's a sign that the version should be on npm.
+      const reason = thisRun
+        ? "this run published it"
+        : planned.has(tag)
+          ? "this run planned to publish it"
+          : assets
+            ? "it has a GitHub Release"
+            : tagExists(tag)
+              ? "it has a tag"
+              : undefined;
+      if (reason) {
+        print(
+          `${tag}: not visible on npm yet, but ${reason}; waiting up to ${pollTimeout / 1000} s.`,
+        );
+        integrity = await waitForIntegrity(pkg.name, pkg.version);
+      }
+      if (!integrity && thisRun) {
+        throw new Error(
+          `${tag}: this run published it, but it still isn't visible on npm after ${pollTimeout / 1000} s. Re-run the workflow to finish its release.`,
+        );
+      }
+      if (!integrity && reason) {
+        process.stdout.write(
+          `::warning title=Not on npm::${tag}: ${reason}, but it isn't on npm.\n`,
+        );
+      }
+      if (!integrity) {
+        print(`${tag}: not on npm, nothing to finish.`);
+        continue;
+      }
     }
 
     const file = tarballName(pkg.name, pkg.version);
-    const assets = releaseAssets(tag);
     if (assets?.includes(file) && assets.includes(SUMS)) {
       print(`${tag}: release complete.`);
       continue;
@@ -238,7 +311,7 @@ function attach() {
 
 try {
   if (command === "prepare") {
-    prepare();
+    await prepare();
   } else {
     attach();
   }
