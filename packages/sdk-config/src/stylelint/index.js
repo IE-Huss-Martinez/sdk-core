@@ -25,6 +25,9 @@ const config = {
     "**/coverage/**",
     "**/storybook-static/**",
     "**/node_modules/**",
+    // Next.js builds, and server-rendered Vite builds.
+    "**/.next/**",
+    "**/dist-server/**",
   ],
   reportDescriptionlessDisables: true,
   reportInvalidScopeDisables: true,
