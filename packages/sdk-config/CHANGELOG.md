@@ -1,5 +1,11 @@
 # @hussmartinez/sdk-config
 
+## 0.1.4
+
+### Patch Changes
+
+- [#39](https://github.com/hussmartinez/sdk-core/pull/39) [`e00470d`](https://github.com/hussmartinez/sdk-core/commit/e00470d0cceb2ac1cd0111e083a0f7cdbb60cf2c) Thanks [@hussmartinez](https://github.com/hussmartinez)! - The stylelint preset now also ignores `.next/` and `dist-server/`, at any depth: Next.js builds, and server-rendered Vite builds. Their CSS inlines the token values, so stylelint reported it as `hm/no-literal-values` errors when an editor, lint-staged or an explicit path linted it. If your repository lists these two in a `.stylelintignore`, you can remove them once you're on this version. As before, the ignores apply when your `stylelint.config.js` re-exports the preset.
+
 ## 0.1.3
 
 ### Patch Changes
