@@ -22,7 +22,8 @@
 // changelog, and uploads the files in <dir>.
 //
 // It uses `npm` and `gh`, with GH_TOKEN and GITHUB_REPOSITORY from the
-// workflow.
+// workflow. test/release/ runs it end to end against a fake registry, npm and
+// gh, through NPM_REGISTRY_URL, PATH and the FINISH_POLL_* variables.
 
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";

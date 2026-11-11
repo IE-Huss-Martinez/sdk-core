@@ -19,6 +19,8 @@
 // npm, not pnpm, publishes the tarballs: it's the client that supports trusted
 // publishing and staging. `changeset pack` has already rewritten `catalog:` and
 // `workspace:` ranges.
+//
+// test/release/ runs it end to end with a fake npm on PATH.
 
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
