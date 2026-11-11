@@ -261,9 +261,21 @@ describe("stylelint preset", () => {
       "coverage/a.css",
       "storybook-static/a.css",
       "node_modules/pkg/a.css",
+      // A Next.js build, and a server-rendered Vite build.
+      ".next/static/css/app.css",
+      "apps/next/.next/static/css/app.css",
+      "dist-server/assets/a.css",
+      "apps/vite/dist-server/assets/a.css",
     ];
 
-    it("lints sources but not build output, through a re-exported preset", async () => {
+    /**
+     * Writes a project that re-exports the preset, as the README documents,
+     * with the stylesheet at every path, and returns the files stylelint
+     * checks and doesn't ignore, relative to the project.
+     *
+     * @param {(project: string) => string[] | string} files
+     */
+    async function lintProject(files) {
       const project = await mkdtemp(join(tmpdir(), "hm-stylelint-"));
       try {
         await writeFile(
@@ -274,20 +286,28 @@ describe("stylelint preset", () => {
           await mkdir(dirname(join(project, file)), { recursive: true });
           await writeFile(join(project, file), css);
         }
-
-        // As a consumer runs it: stylelint "**/*.css" from the repository root.
-        const { results } = await stylelint.lint({ files: "**/*.css", cwd: project });
+        const { results } = await stylelint.lint({ files: files(project), cwd: project });
         const checked = results.filter((result) => !result.ignored);
-
-        expect(checked.map((result) => relative(project, result.source ?? "")).sort()).toEqual(
-          [...linted].sort(),
-        );
         for (const result of checked) {
           expect(result.warnings.map((warning) => warning.rule)).toContain("hm/no-literal-values");
         }
+        return checked.map((result) => relative(project, result.source ?? "")).sort();
       } finally {
         await rm(project, { recursive: true, force: true });
       }
+    }
+
+    it("lints sources but not build output, through a re-exported preset", async () => {
+      // As a consumer runs it: stylelint "**/*.css" from the repository root.
+      await expect(lintProject(() => "**/*.css")).resolves.toEqual([...linted].sort());
+    });
+
+    it("ignores build output linted by path, as editors and lint-staged do", async () => {
+      // The "**/*.css" glob skips dot-directories such as .next, so only an
+      // explicit path shows whether the preset ignores them.
+      await expect(
+        lintProject((project) => [...linted, ...ignored].map((file) => join(project, file))),
+      ).resolves.toEqual([...linted].sort());
     });
   });
 });
