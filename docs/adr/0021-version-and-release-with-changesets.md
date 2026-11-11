@@ -40,7 +40,7 @@ One `release` workflow runs on every push to `main`, with two jobs. Every action
 2. **`publish`** (`contents: write`, `id-token: write`, `attestations: write`, environment `npm`) runs when no changesets are pending, which is after the version pull request is merged:
    1. **Plan:** `changeset publish-plan` lists the versions that aren't on npm yet. If there are none, as on most pushes, nothing else runs.
    2. **Install:** a fresh install with no caches, so a poisoned cache can't reach a release.
-   3. **Verify:** `pnpm verify`, including the browser tests on all three engines.
+   3. **Verify:** `pnpm verify`, including the browser tests on all three engines. Since [ADR 0023](0023-verify-releases-in-an-unprivileged-job.md), it runs in its own unprivileged job.
    4. **Pack:** `changeset pack` packs each package with pnpm, which rewrites `catalog:` and `workspace:` ranges, and records each tarball's SHA-256 integrity.
    5. **Publish:** `changesets/action` runs `scripts/publish-packages.mjs`. For each tarball, the script checks the integrity, publishes it with **npm** (trusted publishing over OIDC, with provenance and no token), creates its tag, and reports it to the action. The action pushes the tags and creates the GitHub Releases, using the changelog entries as their notes.
    6. **Attach:** the published tarballs and a `SHA256SUMS` per package are attached to each release, with artifact attestations from `actions/attest-build-provenance`.

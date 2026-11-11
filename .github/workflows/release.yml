@@ -4,10 +4,12 @@ name: Release
 #
 # - With changesets on main, the version job opens or updates the
 #   "chore: version packages" pull request.
-# - Once that pull request is merged, the publish job verifies, publishes the
-#   new versions to npm with trusted publishing and provenance, creates the
-#   tags and GitHub Releases, and attaches the tarballs with SHA256SUMS and
-#   attestations.
+# - Once that pull request is merged, the plan job finds the versions not yet
+#   on npm, and the verify job runs pnpm verify for them in the pinned
+#   Playwright image, with read-only permissions. The publish job then
+#   publishes the new versions to npm with trusted publishing and provenance,
+#   creates the tags and GitHub Releases, and attaches the tarballs with
+#   SHA256SUMS and attestations.
 on:
   push:
     branches: [main]
@@ -76,10 +78,83 @@ jobs:
           pr-title: "chore: version packages"
           commit-message: "chore: version packages"
 
-  publish:
-    name: publish
+  # Lists the versions not yet on npm. Most pushes to main have none: then
+  # nothing is verified or published, and the publish job only checks that
+  # every release has its files.
+  plan:
+    name: plan
     needs: version
     if: needs.version.outputs.has-changesets == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      pending: ${{ steps.plan.outputs.pending }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Plan the release
+        id: plan
+        run: |
+          pnpm changeset publish-plan --output "$RUNNER_TEMP/publish-plan.json"
+          count=$(jq '[.plan[][] | select(.kind == "publish")] | length' "$RUNNER_TEMP/publish-plan.json")
+          echo "Versions to publish: $count"
+          echo "pending=$([ "$count" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+  # The same pnpm verify as verify.yml's job, in the same pinned Playwright
+  # image, before anything is published. It runs on its own, with read-only
+  # permissions, so the test suite never runs where the OIDC token and write
+  # permissions are. A test in test/ci-image.test.js keeps its image and steps
+  # equal to verify.yml's.
+  verify:
+    # Not "verify", the name of verify.yml's required check.
+    name: verify release
+    needs: plan
+    if: needs.plan.outputs.pending == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    container:
+      image: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:6e3fb709361521eb27161606e6da6d2674e5e89fa16516cb37d6fdd91372273d
+      options: --user 1001 --ipc=host --init
+    env:
+      HUSKY: "0"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+
+      # No caches in a release: everything is installed fresh, so a poisoned
+      # cache can't reach it.
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm verify
+
+  # Runs whenever the plan job ran, even if verify failed, so the finishing
+  # steps still repair releases left unfinished by earlier runs. It publishes
+  # only what the verify job verified in this run.
+  publish:
+    name: publish
+    needs: [version, plan, verify]
+    if: ${{ !cancelled() && needs.plan.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     # The npm trusted publisher is bound to this workflow and environment.
@@ -112,9 +187,8 @@ jobs:
       # assets) goes to $RUNNER_TEMP, outside the checkout, so that pnpm verify
       # never lints or tests them.
 
-      # Lists the versions not yet on npm. Most pushes to main have none: then
-      # nothing is published, and only the finishing steps at the end check
-      # that every release has its files.
+      # The plan again, here, because the packing and publishing steps write
+      # their results into it.
       - name: Plan the release
         id: plan
         run: |
@@ -133,12 +207,18 @@ jobs:
             exit 1
           fi
 
-      - name: Install the browsers
+      # Never publish what the verify job didn't verify: it failed, or the
+      # plan job found nothing to publish and it didn't run. The finishing
+      # steps below still run.
+      - name: Check that this release was verified
         if: steps.plan.outputs.pending == 'true'
-        run: pnpm --filter @hussmartinez/sdk-core exec playwright install --with-deps chromium firefox webkit
-
-      - if: steps.plan.outputs.pending == 'true'
-        run: pnpm verify
+        env:
+          VERIFIED: ${{ needs.verify.result }}
+        run: |
+          if [ "$VERIFIED" != "success" ]; then
+            echo "::error title=Release not verified::The verify job's result is \"$VERIFIED\", so nothing is published. Fix the cause, then re-run the workflow."
+            exit 1
+          fi
 
       # changeset pack rewrites catalog: and workspace: ranges into real
       # versions, and records each tarball's integrity in the plan.

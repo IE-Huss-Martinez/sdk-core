@@ -28,3 +28,4 @@ Use [`template.md`](template.md) for new records. Name files `NNNN-short-title.m
 | [0020](0020-file-policy.md) | File policy: typed limits with warnings, shared by every SDK | Accepted; supersedes [0018](0018-worker-rpc-protocol.md)'s abort-reason rule |
 | [0021](0021-version-and-release-with-changesets.md) | Version and release with Changesets | Accepted; supersedes [0015](0015-verification-and-releases.md)'s release tooling |
 | [0022](0022-storybook-for-the-component-catalogue.md) | Storybook for the component catalogue | Accepted |
+| [0023](0023-verify-releases-in-an-unprivileged-job.md) | Verify releases in an unprivileged job | Accepted; refines how [0021](0021-version-and-release-with-changesets.md) verifies releases |
