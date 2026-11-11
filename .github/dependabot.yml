@@ -17,6 +17,18 @@ updates:
       github-actions:
         patterns: ["*"]
 
+  # The pinned Playwright image CI's verify jobs run in. Its tag must move
+  # together with the playwright package; test/ci-image.test.js fails until
+  # the Dockerfile, both workflows and the lockfile agree.
+  - package-ecosystem: docker
+    directory: /.github/ci-image
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: ci
+
   # Workspace dependencies, including the pnpm catalog in pnpm-workspace.yaml.
   - package-ecosystem: npm
     directory: /
