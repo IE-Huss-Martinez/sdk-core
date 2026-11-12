@@ -11,7 +11,7 @@ These rules apply to `sdk-core`, `ui` and every `<kind>-sdk` repository. Each ru
 | `ie-huss-martinez/ui` | `@hussmartinez/ui` | Design system: tokens, themes, base styles, shared React components |
 | `ie-huss-martinez/<kind>-sdk` | `@hussmartinez/<kind>-sdk` | One media kind: `pdf`, `image`, `video`, `audio`, … |
 
-The repositories live in the `ie-huss-martinez` GitHub organisation, and the npm scope is `@hussmartinez`. Everything specific to one media kind stays in that SDK. `sdk-core` and `ui` stay small and stable.
+The repositories live in the `ie-huss-martinez` GitHub organisation, and the npm scope is `@hussmartinez`. `pnpm create-sdk-repo <name>` in `sdk-core` creates a repository and keeps its GitHub settings, environments, branch protection and required checks to the family's (CONTRIBUTING.md, "Setting up a new repository"). Everything specific to one media kind stays in that SDK. `sdk-core` and `ui` stay small and stable.
 
 ## Naming ([ADR 0003](docs/adr/0003-hm-namespace.md))
 

@@ -115,6 +115,29 @@ Nobody publishes by hand.
 
 **npm can take several minutes** to serve a version it has just accepted. The workflow waits up to 10 minutes from each publish, and logs a "Visible on npm" notice with the time it took. If a version still isn't visible by then, the run fails after finishing the other packages; re-run the failed job once npm shows the version, and it repairs the release from npm.
 
+## Setting up a new repository
+
+`scripts/create-sdk-repo.mjs` gives a repository of the family its GitHub settings ([ADR 0024](docs/adr/0024-github-organisation-for-the-sdk-family.md)), so a new SDK needs no manual GitHub steps:
+
+```sh
+pnpm create-sdk-repo pdf-sdk --description "…"          # shows what it would change
+pnpm create-sdk-repo pdf-sdk --description "…" --apply  # changes it
+```
+
+- **Names:** `<kind>-sdk` in lowercase letters, or one of the shared repositories, `sdk-core` and `ui`.
+- **What it sets:** it creates the public repository in `ie-huss-martinez` if it's missing, then makes its settings match `sdk-core`'s and `ui`'s:
+  - squash merging only, with the pull request title and a blank message, and branches deleted on merge;
+  - no wiki or projects;
+  - private vulnerability reporting, secret scanning with push protection, Dependabot alerts and Dependabot security updates, all on;
+  - a read-only `GITHUB_TOKEN` by default, which can't approve pull requests;
+  - the `release` and `npm` environments, limited to `main`, with no secrets: the release App and its credentials are organisation-level;
+  - protection for `main`: pull requests with no required approvals, admins included, linear history, no force pushes or deletions, and up-to-date required checks from GitHub Actions.
+- **Required checks follow the workflows on `main`:** `pr-title` once `pr-title.yml` is there, `verify` once `verify.yml` is, and `changeset` once `release.yml` and `.changeset/` are. **Run the script again after each setup pull request is merged,** so the next check becomes required. It's the one way to keep them in sync.
+- **It's safe to run any time.** Without `--apply`, it only reads. With it, it changes only what differs from the family's settings, and reports it. It uses the `gh` CLI with the `repo` scope.
+- **Not its job:** the repository's contents, which come from pull requests. Until `main` exists, it skips the protection and says so.
+
+It ends with the steps it can't do: npm's first publish of each new package, with a bootstrap token, and configuring its trusted publisher, as below.
+
 ## Setting up releases
 
 These are one-time steps for the maintainer ([ADR 0021](docs/adr/0021-version-and-release-with-changesets.md), [ADR 0024](docs/adr/0024-github-organisation-for-the-sdk-family.md)).
@@ -126,11 +149,11 @@ The App and its credentials are shared by every repository in the `ie-huss-marti
 1. **Create a GitHub App owned by the organisation.** It needs repository permissions *Contents: read and write* and *Pull requests: read and write* (*Metadata: read* is implied), and no webhook. Install it on all the organisation's repositories.
 2. **Store its credentials at organisation level,** under Organisation settings → Secrets and variables → Actions: its client ID as the variable `RELEASE_APP_CLIENT_ID`, and a private key as the secret `RELEASE_APP_PRIVATE_KEY`. Give both access only to the repositories that release.
 
-In each repository, **create a `release` environment** under Settings → Environments, restricted to `main`, so the `version` job only runs there. The `version` job fails with these instructions until the App's credentials are available.
+Each repository's **`release` environment**, restricted to `main` so the `version` job only runs there, is created by `pnpm create-sdk-repo` (see above). The `version` job fails with these instructions until the App's credentials are available.
 
 ### npm
 
-1. **Create an `npm` environment,** restricted to `main`. Add yourself as a required reviewer if you want to approve each publish.
+1. **The `npm` environment,** restricted to `main`, is created by `pnpm create-sdk-repo`. Add yourself as a required reviewer if you want to approve each publish.
 2. **Bootstrap the first publish.** npm can only configure a trusted publisher for a package that already exists, so the first version needs a token:
    1. Create a granular access token that can publish only `@hussmartinez/sdk-core` and `@hussmartinez/sdk-config`, with an expiry of a few days. Store it only as the secret `NPM_TOKEN` in the `npm` environment.
    2. Merge the first version pull request. The publish job uses the token, logs a warning that it did, and still attaches provenance.
