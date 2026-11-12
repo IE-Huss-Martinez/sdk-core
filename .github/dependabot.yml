@@ -17,11 +17,15 @@ updates:
       github-actions:
         patterns: ["*"]
 
-  # The pinned Playwright image CI's verify jobs run in. Its tag must move
-  # together with the playwright package; test/ci-image.test.js fails until
-  # the Dockerfile, both workflows and the lockfile agree.
+  # The browser test image, in its only copy (ADR 0025): both workflows read
+  # it from ci/Dockerfile, so this one update changes CI and releases
+  # together. Its tag must move together with the playwright package;
+  # test/ci-image.test.js fails until both match. The short directory keeps
+  # titles such as "ci: bump playwright from v1.65.0-noble to v1.66.0-noble in
+  # /ci" within the 65-character limit, as Dependabot always appends
+  # "in /<directory>".
   - package-ecosystem: docker
-    directory: /.github/ci-image
+    directory: /ci
     schedule:
       interval: weekly
     cooldown:

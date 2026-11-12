@@ -1,22 +1,25 @@
-import { readFile } from "node:fs/promises";
+import { execFileSync } from "node:child_process";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
 
 const read = (/** @type {string} */ path) =>
   readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
-/** The image the Dockerfile pins, which Dependabot updates. */
+/** The browser test image, in its only copy (ADR 0025). */
 async function pinnedImage() {
-  const image = /^FROM (\S+)$/m.exec(await read(".github/ci-image/Dockerfile"))?.[1];
+  const image = /^FROM (\S+)$/m.exec(await read("ci/Dockerfile"))?.[1];
   if (!image) {
-    throw new Error(".github/ci-image/Dockerfile has no FROM line");
+    throw new Error("ci/Dockerfile has no FROM line");
   }
   return image;
 }
 
 /**
- * @typedef {{ container?: { image?: string, options?: string }, env?: Record<string, string>, steps: Array<Record<string, unknown>>, permissions?: Record<string, string> }} Job
+ * @typedef {{ name?: string, needs?: string | string[], if?: string, uses?: string, container?: { image?: string, options?: string }, env?: Record<string, string>, steps: Array<Record<string, unknown>>, permissions?: Record<string, string> }} Job
  * @param {string} workflow
  * @param {string} job
  * @returns {Promise<Job>}
@@ -29,10 +32,20 @@ async function job(workflow, job) {
   return found;
 }
 
-describe("the CI image", () => {
-  it("is pinned by digest", async () => {
+const VERIFY_JOBS = [
+  ["verify.yml", "verify"],
+  ["release.yml", "verify"],
+];
+
+/** What each verify job's `container.image` must be: the image job's output. */
+// A GitHub Actions expression, not a JavaScript placeholder. The fallback is
+// pinned to an all-zero digest, which can't be pulled.
+const FROM_THE_IMAGE_JOB = `\${{ needs.image.outputs.ref || 'the-image-job-failed@sha256:${"0".repeat(64)}' }}`;
+
+describe("the browser test image", () => {
+  it("is pinned by tag and digest", async () => {
     expect(await pinnedImage()).toMatch(
-      /^mcr\.microsoft\.com\/playwright:v[\d.]+-\w+@sha256:[0-9a-f]{64}$/,
+      /^mcr\.microsoft\.com\/playwright:v\d+\.\d+\.\d+-noble@sha256:[0-9a-f]{64}$/,
     );
   });
 
@@ -41,20 +54,38 @@ describe("the CI image", () => {
     // Resolved from sdk-core, whose browser tests use it.
     const require = createRequire(new URL("../packages/sdk-core/package.json", import.meta.url));
     const installed = require("playwright/package.json").version;
-    expect(tag, "update .github/ci-image/Dockerfile's tag and digest with playwright").toBe(
-      installed,
-    );
+    expect(tag, "update ci/Dockerfile's tag and digest with playwright").toBe(installed);
   });
 
-  it.each([
-    ["verify.yml", "verify"],
-    ["release.yml", "verify"],
-  ])("is the image %s's %s job runs in, as user 1001", async (workflow, name) => {
-    const { container } = await job(workflow, name);
-    expect(container?.image, `keep ${workflow}'s image equal to the Dockerfile's`).toBe(
-      await pinnedImage(),
-    );
-    expect(container?.options).toBe("--user 1001 --ipc=host --init");
+  it.each(["verify.yml", "release.yml", "ci-image.yml"])("has no copy in %s", async (workflow) => {
+    expect(
+      await read(`.github/workflows/${workflow}`),
+      "the image belongs in ci/Dockerfile only",
+    ).not.toContain("mcr.microsoft.com/playwright:v");
+  });
+
+  it.each(VERIFY_JOBS)(
+    "is where %s's %s job takes its image from, and a failed image job fails it",
+    async (workflow, name) => {
+      const verify = await job(workflow, name);
+      expect(verify.container).toEqual({
+        image: FROM_THE_IMAGE_JOB,
+        options: "--user 1001 --ipc=host --init",
+      });
+      expect([verify.needs].flat()).toContain("image");
+      // Without !cancelled(), a failed image job would skip verify, and a
+      // skipped required check counts as passing.
+      expect(verify.if).toMatch(/^\$\{\{ !cancelled\(\)/);
+      const image = await job(workflow, "image");
+      expect(image.uses).toBe("./.github/workflows/ci-image.yml");
+    },
+  );
+
+  it("is read from ci/Dockerfile with read-only permissions", async () => {
+    const workflow = parse(await read(".github/workflows/ci-image.yml"));
+    expect(Object.keys(workflow.on)).toEqual(["workflow_call"]);
+    expect(workflow.permissions).toEqual({ contents: "read" });
+    expect((await job("release.yml", "image")).permissions).toEqual({ contents: "read" });
   });
 
   it("verifies a release exactly as pull requests are verified", async () => {
@@ -85,5 +116,69 @@ describe("the CI image", () => {
     );
     // No browsers are installed where the OIDC token is.
     expect(JSON.stringify(publish.steps)).not.toContain("playwright install");
+  });
+});
+
+/**
+ * Runs ci-image.yml's "Read the image" step on a Dockerfile, as the workflow
+ * does, and returns its exit code and the output it wrote.
+ *
+ * @param {string} dockerfile
+ */
+async function readImage(dockerfile) {
+  const { steps } = await job("ci-image.yml", "image");
+  const script = String(steps.find((step) => step["name"] === "Read the image")?.["run"]);
+  const dir = await mkdtemp(join(tmpdir(), "hm-ci-image-"));
+  try {
+    await mkdir(join(dir, "ci"));
+    await writeFile(join(dir, "ci", "Dockerfile"), dockerfile);
+    const output = join(dir, "github-output");
+    await writeFile(output, "");
+    let code = 0;
+    try {
+      execFileSync("bash", ["-e", "-c", script], {
+        cwd: dir,
+        env: { ...process.env, GITHUB_OUTPUT: output },
+        stdio: "pipe",
+      });
+    } catch (error) {
+      code = /** @type {{ status?: number }} */ (error).status ?? 1;
+    }
+    return { code, output: await readFile(output, "utf8") };
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
+describe("the image job's validation", () => {
+  const DIGEST = "a".repeat(64);
+  const VALID = `mcr.microsoft.com/playwright:v1.65.0-noble@sha256:${DIGEST}`;
+
+  it("outputs the repository's image", async () => {
+    const image = await pinnedImage();
+    await expect(readImage(await read("ci/Dockerfile"))).resolves.toEqual({
+      code: 0,
+      output: `ref=${image}\n`,
+    });
+  });
+
+  it("accepts exactly one pinned Playwright FROM line", async () => {
+    await expect(readImage(`# A comment\nFROM ${VALID}\n`)).resolves.toEqual({
+      code: 0,
+      output: `ref=${VALID}\n`,
+    });
+  });
+
+  it.each([
+    ["no FROM line", "# nothing here\n"],
+    ["two FROM lines", `FROM ${VALID}\nFROM ${VALID}\n`],
+    ["a tag without a digest", "FROM mcr.microsoft.com/playwright:v1.65.0-noble\n"],
+    ["a digest without a tag", `FROM mcr.microsoft.com/playwright@sha256:${DIGEST}\n`],
+    ["another registry", `FROM docker.io/playwright:v1.65.0-noble@sha256:${DIGEST}\n`],
+    ["another base", `FROM mcr.microsoft.com/playwright:v1.65.0-jammy@sha256:${DIGEST}\n`],
+    ["a short digest", "FROM mcr.microsoft.com/playwright:v1.65.0-noble@sha256:abc\n"],
+    ["trailing text", `FROM ${VALID} AS base\n`],
+  ])("rejects %s", async (_, dockerfile) => {
+    await expect(readImage(dockerfile)).resolves.toEqual({ code: 1, output: "" });
   });
 });

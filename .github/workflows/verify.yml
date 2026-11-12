@@ -18,18 +18,26 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # Reads the browser test image from ci/Dockerfile (ADR 0025).
+  image:
+    name: image
+    uses: ./.github/workflows/ci-image.yml
+
   verify:
     name: verify
+    needs: image
+    # A job whose dependency failed is skipped, and a skipped required check
+    # counts as passing. So verify still runs then, and fails on the fallback
+    # image name below, which can't be pulled.
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # The pinned Playwright image of .github/ci-image/Dockerfile, with the
-    # browsers and their system libraries preinstalled, so nothing is
-    # downloaded or installed with apt. A test in test/ci-image.test.js keeps
-    # this image equal to the Dockerfile's, and its Playwright version equal
-    # to the lockfile's. User 1001 owns the runner's workspace, and Firefox
-    # won't start as root with a home directory owned by another user.
+    # The browser test image from ci/Dockerfile, with the browsers and their
+    # system libraries preinstalled, so nothing is installed with apt. User
+    # 1001 owns the runner's workspace, and Firefox won't start as root with a
+    # home directory owned by another user.
     container:
-      image: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:6e3fb709361521eb27161606e6da6d2674e5e89fa16516cb37d6fdd91372273d
+      image: ${{ needs.image.outputs.ref || 'the-image-job-failed@sha256:0000000000000000000000000000000000000000000000000000000000000000' }}
       options: --user 1001 --ipc=host --init
     env:
       HUSKY: "0"
