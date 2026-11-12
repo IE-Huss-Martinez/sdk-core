@@ -19,6 +19,7 @@ Install, as devDependencies, the tools for the presets you use. They are optiona
 | `commitlint` | `@commitlint/cli` |
 | `lint-staged` | `lint-staged`, plus `secretlint`, `@biomejs/biome` and `stylelint`, which it runs |
 | `secretlint` | `secretlint` |
+| `api-extractor/base.json`, `hm-check-api-reports` | `@microsoft/api-extractor` |
 
 ### TypeScript
 
@@ -94,6 +95,56 @@ Usage: hm-lint-deps [--config <file>] <path>...
 | 2 | Usage or configuration error, including running outside a git repository |
 
 It reads `.dependency-cruiser.js` by default and needs `dependency-cruiser` installed. Configurations that use `webpackConfig` or `babelConfig` aren't supported.
+
+### api-extractor
+
+The family's API report settings ([ADR 0033](../../docs/adr/0033-api-reports-for-several-entry-points.md)). Each entry point's configuration extends the preset and sets only its paths:
+
+```json
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/api-extractor/v7/api-extractor.schema.json",
+  "extends": "@hussmartinez/sdk-config/api-extractor/base.json",
+  "mainEntryPointFilePath": "<projectFolder>/temp/types/react.d.ts",
+  "apiReport": {
+    "enabled": true,
+    "reportFileName": "<unscopedPackageName>-react.api.md",
+    "reportFolder": "<projectFolder>/api/",
+    "reportTempFolder": "<projectFolder>/temp/react/"
+  },
+  "dtsRollup": { "enabled": true, "publicTrimmedFilePath": "<projectFolder>/dist/react.d.ts" }
+}
+```
+
+Use the file's full path in `extends`, because api-extractor resolves it without reading the package's `exports`.
+
+api-extractor rolls up one entry point at a time, so an entry point such as `./react` carries its own copies of the package's types that its API uses. The preset doesn't fail on those copies (`ae-forgotten-export`); it lists each one in the entry point's committed report, so a new copy shows up in review.
+
+#### `hm-check-api-reports`
+
+Packages with more than one entry point run it after api-extractor:
+
+```json
+{
+  "scripts": {
+    "check:api": "api-extractor run -c api-extractor.json && api-extractor run -c api-extractor.react.json && hm-check-api-reports --main api/pdf-sdk.api.md --types dist/index.d.ts api/pdf-sdk-react.api.md"
+  }
+}
+```
+
+For each symbol that another entry point's report lists as copied, it checks that:
+
+- **the main entry point exports it,** so users can name the type, and a copy never hides a type the package forgot to export;
+- **it isn't a class with `private`, `protected` or `#private` members.** TypeScript treats two declarations of such a class as different types, even when one is a copy of the other, so a value typed with the copy couldn't be passed where the original is expected. API reports leave those members out, so the command reads the main entry point's declaration rollup.
+
+```text
+Usage: hm-check-api-reports --main <report> --types <rollup> [<report>...]
+```
+
+| Exit code | Meaning |
+|---|---|
+| 0 | Every report passes |
+| 1 | A report copies a type the main entry point doesn't export, or a class with non-public members |
+| 2 | Usage error, or a file that can't be read |
 
 ### commitlint, lint-staged and secretlint
 

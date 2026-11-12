@@ -219,6 +219,7 @@ Every `<kind>-sdk` repository follows this structure:
 - **Code checks:** Biome, stylelint and `dependency-cruiser`.
 - **Tests:** Vitest, Playwright and `@axe-core/playwright`.
 - **Packaging and API:** `size-limit`, `api-extractor`, `publint` and `@arethetypeswrong/cli`.
+  - Every entry point's api-extractor configuration extends `sdk-config`'s preset. A package with more than one entry point runs `hm-check-api-reports` after api-extractor, and never turns `ae-forgotten-export` off ([ADR 0033](docs/adr/0033-api-reports-for-several-entry-points.md)).
 - **Component catalogue (`ui`):** Storybook 10 with the React and Vite builder, axe checks and stories run as Vitest browser tests ([ADR 0022](docs/adr/0022-storybook-for-the-component-catalogue.md)).
 - **Git hooks:** Husky with lint-staged.
 

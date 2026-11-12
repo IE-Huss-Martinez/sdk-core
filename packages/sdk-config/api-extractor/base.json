@@ -1,0 +1,19 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/api-extractor/v7/api-extractor.schema.json",
+  "newlineKind": "lf",
+  "docModel": { "enabled": false },
+  "tsdocMetadata": { "enabled": false },
+  "messages": {
+    "compilerMessageReporting": {
+      "default": { "logLevel": "error" }
+    },
+    "extractorMessageReporting": {
+      "default": { "logLevel": "error" },
+      "ae-missing-release-tag": { "logLevel": "error" },
+      "ae-forgotten-export": { "logLevel": "none", "addToApiReportFile": true }
+    },
+    "tsdocMessageReporting": {
+      "default": { "logLevel": "error" }
+    }
+  }
+}
