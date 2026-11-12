@@ -4,6 +4,8 @@
  * @packageDocumentation
  */
 
+export type { WindowReader, WindowReaderOptions } from "./bytes/window-reader.js";
+export { createWindowReader } from "./bytes/window-reader.js";
 export type { ErrorHelpers, ErrorHelpersOptions } from "./errors/helpers.js";
 export { createErrorHelpers } from "./errors/helpers.js";
 export type {
