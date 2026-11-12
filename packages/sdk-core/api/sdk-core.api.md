@@ -154,6 +154,7 @@ export function exposeWorker<Contract extends WorkerContract<Contract>>(handlers
 // @public
 export interface ExposeWorkerOptions {
     readonly includeStack?: boolean;
+    readonly packageVersion?: string;
     readonly scope?: WorkerScope;
 }
 
@@ -338,6 +339,9 @@ export type PluralMessage = {
 
 // @public
 export type Reducer<S, C> = (state: S, command: C) => Applied<S, C>;
+
+// @public
+export function resolveAssetsBase(assetsUrl: string | URL): string;
 
 // @public
 export interface ResolvedLimit {
@@ -553,7 +557,9 @@ export interface WorkerClientOptions {
     readonly errorClasses?: DeserializeErrorOptions["errorClasses"];
     readonly idleTimeout?: number;
     readonly onCrash?: (error: SdkError<SdkCoreErrorCode>) => void;
+    readonly packageVersion?: string;
     readonly startTimeout?: number;
+    readonly workerAsset?: string;
 }
 
 // @public

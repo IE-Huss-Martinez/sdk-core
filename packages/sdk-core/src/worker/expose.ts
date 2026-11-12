@@ -41,6 +41,12 @@ export interface ExposeWorkerOptions {
   readonly includeStack?: boolean;
   /** The worker's global scope. Defaults to `globalThis`. */
   readonly scope?: WorkerScope;
+  /**
+   * The version of the package the worker was built from, which the worker
+   * announces to the page. A client with `packageVersion` refuses a worker
+   * that announces another, or none (ADR 0038).
+   */
+  readonly packageVersion?: string;
 }
 
 /**
@@ -75,7 +81,7 @@ export interface ExposeWorkerOptions {
  *
  * @typeParam Contract - The worker contract.
  * @param handlers - One function per method of the contract.
- * @param options - Stack traces, and the scope for tests.
+ * @param options - Stack traces, the package version, and the scope for tests.
  * @public
  */
 export function exposeWorker<Contract extends WorkerContract<Contract>>(
@@ -182,5 +188,10 @@ export function exposeWorker<Contract extends WorkerContract<Contract>>(
     crash((event as PromiseRejectionEvent).reason);
   });
 
-  send(envelope<ReadyMessage>({ type: "ready" }));
+  send(
+    envelope<ReadyMessage>({
+      type: "ready",
+      ...(options.packageVersion === undefined ? {} : { packageVersion: options.packageVersion }),
+    }),
+  );
 }

@@ -54,8 +54,10 @@ export type SdkErrorClass = new (
  * - `ABORTED`: a worker call's `AbortSignal` was aborted.
  * - `TIMEOUT`: a worker call's signal was aborted by a timeout, such as
  *   `AbortSignal.timeout()`.
- * - `WORKER_START_FAILED`: the worker couldn't be created or loaded, or didn't
- *   announce itself within the start timeout.
+ * - `WORKER_START_FAILED`: the worker couldn't be created or loaded, didn't
+ *   announce itself within the start timeout, or announced a package version
+ *   other than the client's `packageVersion`, with `details` of
+ *   `{ asset, expected, actual }`.
  * - `WORKER_PROTOCOL_MISMATCH`: the page and the worker use different
  *   versions of the worker protocol, usually from mismatched builds.
  * - `WORKER_CRASHED`: an error escaped the worker's handlers, or a message

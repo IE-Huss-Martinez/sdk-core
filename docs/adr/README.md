@@ -42,3 +42,4 @@ Use [`template.md`](template.md) for new records. Name files `NNNN-short-title.m
 | [0034](0034-shared-error-helpers.md) | Shared helpers that adapt failures to an SDK's error class | Accepted; refines [0018](0018-worker-rpc-protocol.md) and [0020](0020-file-policy.md) |
 | [0036](0036-ui-as-a-dependency-of-the-sdks.md) | `@hussmartinez/ui` as a dependency of the SDKs | Accepted; refines [0004](0004-entry-points-and-module-format.md), [0005](0005-plain-css-with-cascade-layers.md) and [0017](0017-core-errors-and-shared-runtime-imports.md) |
 | [0037](0037-windowed-blob-reader.md) | A windowed `Blob` reader for probes and parsers | Accepted |
+| [0038](0038-self-hosted-assets-and-worker-version.md) | Self-hosted assets: one `assetsUrl`, and workers that must match the page's version | Accepted; refines [0011](0011-worker-messaging-and-assets.md) and [0018](0018-worker-rpc-protocol.md) |

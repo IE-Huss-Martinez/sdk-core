@@ -70,6 +70,25 @@ describe("exposeWorker", () => {
     expect(scope.posted).toEqual([{ protocol: "hm-rpc", version: 1, type: "ready" }]);
   });
 
+  it("announces its package version when given one", () => {
+    const scope = new FakeScope();
+    exposeWorker<Contract>(
+      {
+        echo: (input) => input,
+        slow: () => "",
+        fail: () => {
+          throw new Error("x");
+        },
+        notCloneable: () => () => undefined,
+      },
+      { scope, packageVersion: "1.4.0" },
+    );
+
+    expect(scope.posted).toEqual([
+      { protocol: "hm-rpc", version: 1, type: "ready", packageVersion: "1.4.0" },
+    ]);
+  });
+
   it("answers a call with a result message", async () => {
     const { scope } = setup();
     scope.call(7, "echo", "hi");
