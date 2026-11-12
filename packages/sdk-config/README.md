@@ -70,6 +70,8 @@ The layer rules of [ADR 0008](../../docs/adr/0008-ports-adapters-and-session.md)
 export { default } from "@hussmartinez/sdk-config/dependency-cruiser";
 ```
 
+It leaves out the repository's own build output and coverage (`dist/`, `temp/` and `coverage/`, at the root or in a workspace package under `packages/` or `apps/`) and fixtures under `src/`, `test/` or `tests/`. A dependency's files are always checked, including those in its `node_modules/<package>/dist/`, where most packages, such as `@hussmartinez/ui`, keep their code.
+
 #### `hm-lint-deps`
 
 Run dependency-cruiser through `hm-lint-deps` rather than `depcruise`:
