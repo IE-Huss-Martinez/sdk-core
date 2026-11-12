@@ -119,6 +119,8 @@ Use the file's full path in `extends`, because api-extractor resolves it without
 
 api-extractor rolls up one entry point at a time, so an entry point such as `./react` carries its own copies of the package's types that its API uses. The preset doesn't fail on those copies (`ae-forgotten-export`); it lists each one in the entry point's committed report, so a new copy shows up in review.
 
+It fails when a public type references an `@internal` one (`ae-incompatible-release-tags`). api-extractor trims `@internal` declarations from the published rollup, so that public type would reach users broken, while api-extractor's own default only notes it in the report.
+
 #### `hm-check-api-reports`
 
 Packages with more than one entry point run it after api-extractor:

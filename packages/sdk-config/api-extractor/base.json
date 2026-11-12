@@ -10,7 +10,8 @@
     "extractorMessageReporting": {
       "default": { "logLevel": "error" },
       "ae-missing-release-tag": { "logLevel": "error" },
-      "ae-forgotten-export": { "logLevel": "none", "addToApiReportFile": true }
+      "ae-forgotten-export": { "logLevel": "none", "addToApiReportFile": true },
+      "ae-incompatible-release-tags": { "logLevel": "error", "addToApiReportFile": false }
     },
     "tsdocMessageReporting": {
       "default": { "logLevel": "error" }

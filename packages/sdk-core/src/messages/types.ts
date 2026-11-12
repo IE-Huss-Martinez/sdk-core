@@ -84,6 +84,12 @@ type PlaceholderOf<Body extends string> = Body extends `${infer Name},${infer Fo
 
 type ValueOf<Format> = Format extends keyof MessageFormats ? MessageFormats[Format] : never;
 
+// Merge, TemplateParams, PluralForms and ParamNames are deliberately not
+// exported. MessageParams and MessageOverrides cover what hosts need, and
+// these helpers' shapes shouldn't be frozen under semver. They can't be
+// @internal either: the public types reference them, so trimming them from
+// the published declarations would break those types (sdk-core#66).
+
 /** Merges a union of objects into one object type. */
 type Merge<Union> = (Union extends unknown ? (value: Union) => void : never) extends (
   value: infer Intersection,
@@ -116,6 +122,7 @@ export type MessageParams<Message extends MessageValue> = Message extends string
     ? Merge<TemplateParams<PluralForms<Message>> | { readonly [Key in Message["$plural"]]: number }>
     : never;
 
+// Not exported, like Merge above (sdk-core#66).
 /** The placeholder names a message uses. */
 type ParamNames<Message> = Message extends string
   ? Placeholders<Message>[0]
