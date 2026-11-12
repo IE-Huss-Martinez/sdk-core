@@ -56,7 +56,7 @@ jobs:
           HAS_PRIVATE_KEY: ${{ secrets.RELEASE_APP_PRIVATE_KEY != '' }}
         run: |
           if [ -z "$CLIENT_ID" ] || [ "$HAS_PRIVATE_KEY" != "true" ]; then
-            echo "::error title=Release App not configured::Set the RELEASE_APP_CLIENT_ID variable and the RELEASE_APP_PRIVATE_KEY secret in the release environment (Settings → Environments → release). See CONTRIBUTING.md, \"Setting up releases\"."
+            echo "::error title=Release App not configured::Set the RELEASE_APP_CLIENT_ID variable and the RELEASE_APP_PRIVATE_KEY secret at organisation level, with access for this repository (Organisation settings → Secrets and variables → Actions). See CONTRIBUTING.md, \"Setting up releases\"."
             exit 1
           fi
 

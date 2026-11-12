@@ -6,7 +6,7 @@ The `@hussmartinez` SDKs open files from anywhere and promise that those files n
 
 **Please don't open a public issue, pull request or discussion.**
 
-Report it through GitHub's private vulnerability reporting: open the repository's **Security** tab and choose **Report a vulnerability**, or go directly to [the advisory form](https://github.com/hussmartinez/sdk-core/security/advisories/new). Only the maintainer can see the report.
+Report it through GitHub's private vulnerability reporting: open the repository's **Security** tab and choose **Report a vulnerability**, or go directly to [the advisory form](https://github.com/IE-Huss-Martinez/sdk-core/security/advisories/new). Only the maintainer can see the report.
 
 Please include:
 
