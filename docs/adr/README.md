@@ -7,7 +7,7 @@ Use [`template.md`](template.md) for new records. Name files `NNNN-short-title.m
 | # | Decision | Status |
 |---|---|---|
 | [0001](0001-record-architecture-decisions.md) | Record architecture decisions | Accepted |
-| [0002](0002-one-repository-per-sdk.md) | One repository per SDK, with shared `sdk-core` and `ui` | Accepted |
+| [0002](0002-one-repository-per-sdk.md) | One repository per SDK, with shared `sdk-core` and `ui` | Accepted; repositories moved to an organisation by [0024](0024-github-organisation-for-the-sdk-family.md) |
 | [0003](0003-hm-namespace.md) | The `hm` namespace for everything that reaches the page | Accepted |
 | [0004](0004-entry-points-and-module-format.md) | Package entry points and module format | Accepted |
 | [0005](0005-plain-css-with-cascade-layers.md) | Plain CSS with cascade layers | Accepted |
@@ -26,6 +26,7 @@ Use [`template.md`](template.md) for new records. Name files `NNNN-short-title.m
 | [0018](0018-worker-rpc-protocol.md) | The worker RPC protocol, its errors and its buffer rules | Accepted; its abort-reason rule is superseded by [0020](0020-file-policy.md) |
 | [0019](0019-message-catalogues.md) | Message catalogues as typed, plain-text data | Accepted |
 | [0020](0020-file-policy.md) | File policy: typed limits with warnings, shared by every SDK | Accepted; supersedes [0018](0018-worker-rpc-protocol.md)'s abort-reason rule |
-| [0021](0021-version-and-release-with-changesets.md) | Version and release with Changesets | Accepted; supersedes [0015](0015-verification-and-releases.md)'s release tooling |
+| [0021](0021-version-and-release-with-changesets.md) | Version and release with Changesets | Accepted; supersedes [0015](0015-verification-and-releases.md)'s release tooling; the App credentials' location superseded by [0024](0024-github-organisation-for-the-sdk-family.md) |
 | [0022](0022-storybook-for-the-component-catalogue.md) | Storybook for the component catalogue | Accepted |
 | [0023](0023-verify-releases-in-an-unprivileged-job.md) | Verify releases in an unprivileged job | Accepted; refines how [0021](0021-version-and-release-with-changesets.md) verifies releases |
+| [0024](0024-github-organisation-for-the-sdk-family.md) | A GitHub organisation for the SDK family | Accepted; supersedes where [0021](0021-version-and-release-with-changesets.md) keeps the App's credentials |

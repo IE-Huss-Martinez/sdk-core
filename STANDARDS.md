@@ -2,16 +2,16 @@
 
 These rules apply to `sdk-core`, `ui` and every `<kind>-sdk` repository. Each rule links to the architecture decision record (ADR) that explains it. When a rule and an ADR disagree, the newest accepted ADR wins, and this file must be corrected.
 
-## Repositories and packages ([ADR 0002](docs/adr/0002-one-repository-per-sdk.md))
+## Repositories and packages ([ADR 0002](docs/adr/0002-one-repository-per-sdk.md), [ADR 0024](docs/adr/0024-github-organisation-for-the-sdk-family.md))
 
 | Repository | Publishes | Role |
 |---|---|---|
-| `hussmartinez/sdk-core` | `@hussmartinez/sdk-core` | Headless shared runtime: worker messaging, errors, session primitives, tool registry, custom-element base, file policy, messages helper |
+| `IE-Huss-Martinez/sdk-core` | `@hussmartinez/sdk-core` | Headless shared runtime: worker messaging, errors, session primitives, tool registry, custom-element base, file policy, messages helper |
 | | `@hussmartinez/sdk-config` | Shared tsconfig, Biome, stylelint, dependency-cruiser, Vite and Playwright presets, and the test applications |
-| `hussmartinez/ui` | `@hussmartinez/ui` | Design system: tokens, themes, base styles, shared React components |
-| `hussmartinez/<kind>-sdk` | `@hussmartinez/<kind>-sdk` | One media kind: `pdf`, `image`, `video`, `audio`, … |
+| `IE-Huss-Martinez/ui` | `@hussmartinez/ui` | Design system: tokens, themes, base styles, shared React components |
+| `IE-Huss-Martinez/<kind>-sdk` | `@hussmartinez/<kind>-sdk` | One media kind: `pdf`, `image`, `video`, `audio`, … |
 
-Everything specific to one media kind stays in that SDK. `sdk-core` and `ui` stay small and stable.
+The repositories live in the `IE-Huss-Martinez` GitHub organisation, and the npm scope is `@hussmartinez`. Everything specific to one media kind stays in that SDK. `sdk-core` and `ui` stay small and stable.
 
 ## Naming ([ADR 0003](docs/adr/0003-hm-namespace.md))
 
