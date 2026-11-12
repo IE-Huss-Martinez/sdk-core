@@ -86,6 +86,7 @@ pnpm changeset
 It asks which packages changed and how, then writes the file. Commit it with your change.
 
 - **When you need one:** whenever a pull request changes a package's published source or its `package.json`, meaning `src/` outside tests and fixtures, or sdk-config's `biome/` and `tsconfig/` presets. The `changeset` check fails without one.
+- **Dev-only `package.json` changes don't count** ([ADR 0027](docs/adr/0027-dev-only-package-json-changes-need-no-changeset.md)): a change to `devDependencies`, `scripts`, `packageManager` or `devEngines` alone needs no changeset, so Dependabot's development updates pass. Any other field counts, including `dependencies`, `engines` and `exports`. If a toolchain update changes what the build ships, add a changeset anyway.
 - **When you don't:** for tests, fixtures, READMEs, documentation, CI and root tooling. If a change touches published files without affecting users, such as a pure refactor, add an empty changeset with `pnpm changeset --empty`.
 - **The bump:**
   - `patch` for fixes;

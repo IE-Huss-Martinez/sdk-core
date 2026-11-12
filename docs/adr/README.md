@@ -26,9 +26,10 @@ Use [`template.md`](template.md) for new records. Name files `NNNN-short-title.m
 | [0018](0018-worker-rpc-protocol.md) | The worker RPC protocol, its errors and its buffer rules | Accepted; its abort-reason rule is superseded by [0020](0020-file-policy.md) |
 | [0019](0019-message-catalogues.md) | Message catalogues as typed, plain-text data | Accepted |
 | [0020](0020-file-policy.md) | File policy: typed limits with warnings, shared by every SDK | Accepted; supersedes [0018](0018-worker-rpc-protocol.md)'s abort-reason rule |
-| [0021](0021-version-and-release-with-changesets.md) | Version and release with Changesets | Accepted; supersedes [0015](0015-verification-and-releases.md)'s release tooling; the App credentials' location superseded by [0024](0024-github-organisation-for-the-sdk-family.md) |
+| [0021](0021-version-and-release-with-changesets.md) | Version and release with Changesets | Accepted; supersedes [0015](0015-verification-and-releases.md)'s release tooling; the App credentials' location superseded by [0024](0024-github-organisation-for-the-sdk-family.md); the rule for `package.json` changes narrowed by [0027](0027-dev-only-package-json-changes-need-no-changeset.md) |
 | [0022](0022-storybook-for-the-component-catalogue.md) | Storybook for the component catalogue | Accepted |
 | [0023](0023-verify-releases-in-an-unprivileged-job.md) | Verify releases in an unprivileged job | Accepted; refines how [0021](0021-version-and-release-with-changesets.md) verifies releases; the image's location superseded by [0025](0025-one-browser-test-image-in-one-place.md) |
 | [0024](0024-github-organisation-for-the-sdk-family.md) | A GitHub organisation for the SDK family | Accepted; supersedes where [0021](0021-version-and-release-with-changesets.md) keeps the App's credentials |
 | [0025](0025-one-browser-test-image-in-one-place.md) | One browser test image, in one place | Accepted; supersedes where [0023](0023-verify-releases-in-an-unprivileged-job.md) keeps the image |
 | [0026](0026-share-ci-steps-from-sdk-ci.md) | Share the family's CI steps from `sdk-ci` | Accepted |
+| [0027](0027-dev-only-package-json-changes-need-no-changeset.md) | Dev-only `package.json` changes need no changeset | Accepted; supersedes part of [0021](0021-version-and-release-with-changesets.md) |
