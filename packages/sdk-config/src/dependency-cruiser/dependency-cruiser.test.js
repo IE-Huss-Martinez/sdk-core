@@ -67,6 +67,35 @@ describe("dependency-cruiser preset", () => {
     ]);
   });
 
+  it("keeps React and ui out of the adapters, the workers and everything the . entry reaches (ADR 0036)", async () => {
+    // The fixture installs no packages, so its npm imports are also unresolvable.
+    expect(withoutRule(await violations("ui-reach"), "not-to-unresolvable")).toEqual([
+      "core-no-ui: adapters/engine/engine.ts -> react",
+      "core-no-ui: workers/render.worker.ts -> @hussmartinez/ui",
+      // Reached through the toolbar feature, which may import ui itself;
+      // react.ts reaching the same feature is allowed, so it isn't listed.
+      "entry-no-ui: index.ts -> @hussmartinez/ui/react",
+    ]);
+  });
+
+  it("names the path from the . entry to ui", async () => {
+    const baseDir = fileURLToPath(new URL("../../test/fixtures/ui-reach", import.meta.url));
+    const { output } = await cruise(["src"], {
+      ...config.options,
+      baseDir,
+      ruleSet: { forbidden: config.forbidden ?? [] },
+      validate: true,
+    });
+    if (typeof output === "string") {
+      throw new TypeError("expected a structured cruise result");
+    }
+    const entry = output.summary.violations.find(({ rule }) => rule.name === "entry-no-ui");
+    expect(entry?.via?.map(({ name }) => name)).toEqual([
+      "src/features/toolbar/toolbar.ts",
+      "@hussmartinez/ui/react",
+    ]);
+  });
+
   it("reports cycles", async () => {
     await expect(violations("cycle")).resolves.toEqual(["no-circular: a.ts -> b.ts"]);
   });
