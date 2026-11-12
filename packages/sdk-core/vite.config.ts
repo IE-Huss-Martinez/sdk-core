@@ -17,6 +17,10 @@ export default defineConfig({
         // Code both entries use goes in shared/, so the size budgets count
         // it with each entry (.size-limit.js).
         chunkFileNames: "shared/[name]-[hash].js",
+        // TSDoc reaches users through the .d.ts files and the source maps, so
+        // the JavaScript keeps only legal and @__PURE__ annotation comments,
+        // and the size budgets measure code.
+        comments: { legal: true, annotation: true, jsdoc: false },
       },
     },
   },
