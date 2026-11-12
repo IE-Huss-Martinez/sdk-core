@@ -20,6 +20,19 @@ const npmPackage = (names) => `(?:^|/node_modules/)(?:${names})(?:/|$)`;
 const UI_PACKAGES = npmPackage("react|react-dom|@hussmartinez/ui");
 const SDK_CORE = npmPackage("@hussmartinez/sdk-core");
 
+/**
+ * Layers that run without a page, or ship in the headless entry: the core,
+ * the adapters and the workers. None of them imports React or ui (ADR 0017,
+ * ADR 0036).
+ */
+const HEADLESS_LAYERS = `(?:^|/)src/(?:core|adapters|workers)/`;
+
+/**
+ * The module behind an SDK's `.` entry, in a repository or a workspace
+ * package. Everything it reaches ships to headless users.
+ */
+const ROOT_ENTRY = "(?:^|/)src/index\\.[cm]?[jt]sx?$";
+
 /** Layers outside the core, which the core never imports. */
 const OUTER_LAYERS = ["adapters", "features", "react", "element", "workers"];
 
@@ -72,7 +85,7 @@ const LAYER_RULES = [
 
 /**
  * dependency-cruiser preset for the SDK family. It enforces the layer rules of
- * ADR 0008, as clarified by ADR 0017, and keeps production code away from
+ * ADR 0008, as clarified by ADR 0017 and ADR 0036, and keeps production code away from
  * tests, cycles and undeclared packages. Paths work both in `<kind>-sdk`
  * repositories and in workspaces.
  *
@@ -105,10 +118,19 @@ const config = {
     },
     {
       name: "core-no-ui",
-      comment: "The core is headless and server-safe, so no React or ui (ADR 0017).",
+      comment:
+        "The core, adapters and workers are headless and server-safe, so no React or ui (ADR 0017, ADR 0036).",
       severity: "error",
-      from: { path: layer("core") },
+      from: { path: HEADLESS_LAYERS },
       to: { path: UI_PACKAGES },
+    },
+    {
+      name: "entry-no-ui",
+      comment:
+        "Nothing the . entry reaches may import React or ui: headless users install them but must never load them (ADR 0036).",
+      severity: "error",
+      from: { path: ROOT_ENTRY },
+      to: { path: UI_PACKAGES, reachable: true },
     },
     {
       name: "no-circular",
