@@ -39,6 +39,8 @@ const ORG = "ie-huss-martinez";
 const SHARED = new Map([
   ["sdk-core", { publishes: true }],
   ["ui", { publishes: true }],
+  // The AI provider layer, the only package with network code (ADR 0035).
+  ["ai-core", { publishes: true }],
   // GitHub Actions, released as tags (ADR 0026).
   ["sdk-ci", { publishes: false }],
 ]);

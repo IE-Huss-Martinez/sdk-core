@@ -178,7 +178,7 @@ describe.concurrent("create-sdk-repo", () => {
   it("accepts the shared repositories' names", async ({ onTestFinished }) => {
     const gh = await github(onTestFinished, { "sdk-core": SDK_CORE });
 
-    for (const name of ["sdk-core", "ui", "sdk-ci"]) {
+    for (const name of ["sdk-core", "ui", "sdk-ci", "ai-core"]) {
       expect((await gh.run([name])).code).toBe(0);
     }
   });
@@ -210,6 +210,23 @@ describe.concurrent("create-sdk-repo", () => {
     });
     expect(repo.dependabotSecurityUpdates).toBe(true);
     expect((await gh.run(["sdk-ci", "--apply"])).stdout).toContain("Nothing to change.");
+  });
+
+  it("gives ai-core, a shared repository that publishes, the release and npm environments", async ({
+    onTestFinished,
+  }) => {
+    const gh = await github(onTestFinished);
+
+    const dry = await gh.run(["ai-core", "--description", "AI providers"]);
+
+    expect(dry.code, dry.stderr).toBe(0);
+    expect(dry.stdout).toContain(
+      "ie-huss-martinez/ai-core (dry run: nothing is changed without --apply)",
+    );
+    expect(dry.stdout).toContain("would change: limit the release environment to main");
+    expect(dry.stdout).toContain("would change: limit the npm environment to main");
+    expect(dry.stdout).not.toContain("publishes no npm packages");
+    expect(writes(await gh.calls())).toEqual([]);
   });
 
   it("only reads in a dry run of a new repository, and lists what it would do", async ({
