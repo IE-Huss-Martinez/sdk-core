@@ -1,5 +1,13 @@
 # @hussmartinez/sdk-config
 
+## 0.3.0
+
+### Minor Changes
+
+- [#93](https://github.com/ie-huss-martinez/sdk-core/pull/93) [`20c2f29`](https://github.com/ie-huss-martinez/sdk-core/commit/20c2f29d7d365fea7bfd96d4880cb7c3bc9569bf) Thanks [@hussmartinez](https://github.com/hussmartinez)! - The dependency-cruiser preset adds a `no-ai-core` rule: published source under `src/` may no longer import `@hussmartinez/ai-core`, not even its types (ADR 0035). Tests and anything under `examples/` may still import it, so examples can show hosts how to pass an `ai-core` provider.
+  
+  If your SDK needs AI, define a provider port in `src/core/ports` with only what it needs, such as `complete()` and `stream()` taking an `AbortSignal`, plus a fake and contract tests, and let the host pass a provider built with `ai-core` or its own backend. No package in the family imports `ai-core` today, so `hm-lint-deps` passes unchanged for existing repositories.
+
 ## 0.2.1
 
 ### Patch Changes
