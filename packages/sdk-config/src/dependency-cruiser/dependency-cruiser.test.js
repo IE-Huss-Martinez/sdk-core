@@ -45,6 +45,29 @@ const withRule = (list, rule) => list.filter((violation) => violation.startsWith
  */
 const withoutRule = (list, rule) => list.filter((violation) => !violation.startsWith(`${rule}:`));
 
+/**
+ * Cruises the `ai-core-import` fixture's `src/` and `examples/`, and lists the
+ * `no-ai-core` violations as `from -> to`.
+ *
+ * @returns {Promise<string[]>}
+ */
+async function aiCoreViolations() {
+  const baseDir = fileURLToPath(new URL("../../test/fixtures/ai-core-import", import.meta.url));
+  const { output } = await cruise(["src", "examples"], {
+    ...config.options,
+    baseDir,
+    ruleSet: { forbidden: config.forbidden ?? [] },
+    validate: true,
+  });
+  if (typeof output === "string") {
+    throw new TypeError("expected a structured cruise result");
+  }
+  return output.summary.violations
+    .filter(({ rule }) => rule.name === "no-ai-core")
+    .map(({ from, to }) => `${from} -> ${to}`)
+    .sort();
+}
+
 describe("dependency-cruiser preset", () => {
   it("reports every forbidden edge between the layers of ADR 0008 and ADR 0017", async () => {
     // The fixture installs no packages, so its npm imports are also unresolvable.
@@ -121,6 +144,49 @@ describe("dependency-cruiser preset", () => {
       `${ui}/dist/index.d.ts`,
       `${ui}/dist/shared/pair-BrwWt2Rz.js`,
       "node_modules/react-markdown/index.js",
+    ]) {
+      expect(matches(path), path).toBe(false);
+    }
+  });
+
+  it("keeps ai-core out of published source, as values and as types (ADR 0035)", async () => {
+    expect(await aiCoreViolations()).toEqual([
+      "src/core/ports/assistant.ts -> @hussmartinez/ai-core",
+      "src/features/summary/summary.ts -> @hussmartinez/ai-core",
+    ]);
+  });
+
+  it("lets examples import ai-core", async () => {
+    // Tests are covered in lint-deps.test.js: a fixture test file here would
+    // be collected by Vitest.
+    const reported = await aiCoreViolations();
+    expect(reported.filter((violation) => violation.startsWith("examples/"))).toEqual([]);
+  });
+
+  it("says why ai-core is forbidden and what to do instead", () => {
+    const rule = (config.forbidden ?? []).find(({ name }) => name === "no-ai-core");
+    expect(rule?.comment).toContain("ADR 0035");
+    expect(rule?.comment).toContain("provider port");
+  });
+
+  it("matches ai-core as written and as installed, but no other package", () => {
+    const rule = /** @type {{ to: { path?: string | string[] } } | undefined} */ (
+      (config.forbidden ?? []).find(({ name }) => name === "no-ai-core")
+    );
+    const patterns = [rule?.to.path ?? []].flat().map((path) => new RegExp(path));
+    const matches = (/** @type {string} */ path) => patterns.some((pattern) => pattern.test(path));
+    for (const path of [
+      "@hussmartinez/ai-core",
+      "@hussmartinez/ai-core/server",
+      "node_modules/@hussmartinez/ai-core/dist/index.js",
+      "node_modules/.pnpm/@hussmartinez+ai-core@0.1.0/node_modules/@hussmartinez/ai-core/dist/index.d.ts",
+    ]) {
+      expect(matches(path), path).toBe(true);
+    }
+    for (const path of [
+      "@hussmartinez/ai-core-extra",
+      "@hussmartinez/sdk-core",
+      "node_modules/@other/ai-core/index.js",
     ]) {
       expect(matches(path), path).toBe(false);
     }
