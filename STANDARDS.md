@@ -10,6 +10,7 @@ These rules apply to `sdk-core`, `ui` and every `<kind>-sdk` repository. Each ru
 | | `@hussmartinez/sdk-config` | Shared tsconfig, Biome, stylelint, dependency-cruiser, Vite and Playwright presets, and the test applications |
 | `ie-huss-martinez/ui` | `@hussmartinez/ui` | Design system: tokens, themes, base styles, shared React components |
 | `ie-huss-martinez/<kind>-sdk` | `@hussmartinez/<kind>-sdk` | One media kind: `pdf`, `image`, `video`, `audio`, … |
+| `ie-huss-martinez/sdk-ci` | (none: GitHub Actions) | The family's shared CI and release steps, as versioned composite actions ([ADR 0026](docs/adr/0026-share-ci-steps-from-sdk-ci.md)) |
 
 The repositories live in the `ie-huss-martinez` GitHub organisation, and the npm scope is `@hussmartinez`. `pnpm create-sdk-repo <name>` in `sdk-core` creates a repository and keeps its GitHub settings, environments, branch protection and required checks to the family's (CONTRIBUTING.md, "Setting up a new repository"). Everything specific to one media kind stays in that SDK. `sdk-core` and `ui` stay small and stable.
 
@@ -235,6 +236,7 @@ Each repository extends the presets in `@hussmartinez/sdk-config` instead of cop
   - every pull request and push to `main` runs `pnpm verify`, with browser tests on Chromium, Firefox and WebKit, in the pinned Playwright image, read from its only copy in `ci/Dockerfile` ([ADR 0023](docs/adr/0023-verify-releases-in-an-unprivileged-job.md), [ADR 0025](docs/adr/0025-one-browser-test-image-in-one-place.md));
   - `verify` and `pr-title` are required checks, and branches must be up to date;
   - actions are pinned to commit SHAs, with least-privilege permissions, `pull_request` events only, and no secrets in pull request workflows.
+  - the CI and release steps come from `sdk-ci`'s composite actions, pinned by SHA and updated by Dependabot. Each repository keeps its own job skeleton, with its permissions and environments, and `sdk-ci`'s `check-workflows` keeps it identical to the pinned version ([ADR 0026](docs/adr/0026-share-ci-steps-from-sdk-ci.md)).
 - **Pull requests:**
   - every change goes through a small, focused pull request describing what changed, why, and how it was tested;
   - squash merges only, with linear history on `main`;

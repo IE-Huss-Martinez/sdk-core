@@ -178,7 +178,7 @@ describe.concurrent("create-sdk-repo", () => {
   it("accepts the shared repositories' names", async ({ onTestFinished }) => {
     const gh = await github(onTestFinished, { "sdk-core": SDK_CORE });
 
-    for (const name of ["sdk-core", "ui"]) {
+    for (const name of ["sdk-core", "ui", "sdk-ci"]) {
       expect((await gh.run([name])).code).toBe(0);
     }
   });

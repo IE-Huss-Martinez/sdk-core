@@ -124,7 +124,7 @@ pnpm create-sdk-repo pdf-sdk --description "…"          # shows what it would 
 pnpm create-sdk-repo pdf-sdk --description "…" --apply  # changes it
 ```
 
-- **Names:** `<kind>-sdk` in lowercase letters, or one of the shared repositories, `sdk-core` and `ui`.
+- **Names:** `<kind>-sdk` in lowercase letters, or one of the shared repositories: `sdk-core`, `ui` and `sdk-ci`.
 - **What it sets:** it creates the public repository in `ie-huss-martinez` if it's missing, then makes its settings match `sdk-core`'s and `ui`'s:
   - squash merging only, with the pull request title and a blank message, and branches deleted on merge;
   - no wiki or projects;

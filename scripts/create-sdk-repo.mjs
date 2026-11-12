@@ -32,7 +32,7 @@ import { execFileSync } from "node:child_process";
 
 const ORG = "ie-huss-martinez";
 /** Shared repositories, whose names don't follow `<kind>-sdk`. */
-const SHARED = new Set(["sdk-core", "ui"]);
+const SHARED = new Set(["sdk-core", "ui", "sdk-ci"]);
 const NAME = /^[a-z]+-sdk$/;
 /** The GitHub Actions app: required checks only accept its results. */
 const GITHUB_ACTIONS_APP_ID = 15368;
