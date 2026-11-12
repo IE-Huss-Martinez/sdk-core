@@ -53,6 +53,12 @@ export type {
   ResolvedLimit,
 } from "./policy/limits.js";
 export { coreLimits, defineLimits } from "./policy/limits.js";
+export type { History, HistoryStep } from "./session/history.js";
+export { createHistory } from "./session/history.js";
+export type { Applied, Reducer } from "./session/reducer.js";
+export { applyCommands } from "./session/reducer.js";
+export type { Store } from "./session/store.js";
+export { createStore } from "./session/store.js";
 export type {
   WorkerCallOptions,
   WorkerClient,

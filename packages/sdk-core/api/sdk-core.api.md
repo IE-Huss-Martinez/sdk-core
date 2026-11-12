@@ -4,6 +4,20 @@
 
 ```ts
 
+// @public
+export interface Applied<S, C> {
+    // (undocumented)
+    readonly inverse: C;
+    // (undocumented)
+    readonly state: S;
+}
+
+// @public
+export function applyCommands<S, C>(reducer: Reducer<S, C>, state: S, commands: readonly C[]): {
+    readonly state: S;
+    readonly inverses: C[];
+};
+
 // Warning: (ae-forgotten-export) The symbol "ParamNames" needs to be exported by the entry point index.d.ts
 //
 // @public
@@ -49,6 +63,11 @@ export const coreLimits: {
 export function createDecodedSizeBudget(policy: FilePolicy<CoreLimits>): DecodedSizeBudget;
 
 // @public
+export function createHistory<C extends {
+    readonly type: string;
+}>(): History_2<C>;
+
+// @public
 export function createMessages<const Catalogue extends MessageCatalogue & {
     readonly "errors.UNKNOWN": MessageValue;
 }, const Overrides extends MessageOverrides<Catalogue> = Record<never, never>>(catalogue: Catalogue, options?: CreateMessagesOptions<Overrides & CheckedOverrides<Catalogue, Overrides>>): Messages<Catalogue>;
@@ -58,6 +77,9 @@ export interface CreateMessagesOptions<Overrides> {
     readonly locale?: string;
     readonly overrides?: Overrides;
 }
+
+// @public
+export function createStore<S>(initial: S): Store<S>;
 
 // @public
 export function createWorkerClient<Contract extends WorkerContract<Contract>>(options: WorkerClientOptions): WorkerClient<Contract>;
@@ -120,6 +142,32 @@ export interface FilePolicy<Definitions extends LimitDefinitions> {
 export type FilePolicyOverrides<Definitions extends LimitDefinitions> = {
     readonly [Limit in keyof Definitions]?: LimitSetting;
 };
+
+// @public
+interface History_2<C extends {
+    readonly type: string;
+}> {
+    readonly canRedo: boolean;
+    readonly canUndo: boolean;
+    clear(): void;
+    drop(count: number): void;
+    readonly dropOrder: readonly HistoryStep<C>[];
+    group<T>(fn: () => T): T;
+    push(step: HistoryStep<C>): void;
+    redo(): HistoryStep<C> | undefined;
+    restore(direction: "undo" | "redo"): void;
+    readonly steps: readonly HistoryStep<C>[];
+    readonly trimmed: boolean;
+    undo(): HistoryStep<C> | undefined;
+}
+export { History_2 as History }
+
+// @public
+export interface HistoryStep<C> {
+    // (undocumented)
+    readonly commands: readonly C[];
+    readonly inverses: readonly C[];
+}
 
 // @public
 export function isSdkError<Code extends string = string>(value: unknown, code?: Code): value is SdkError<Code>;
@@ -217,6 +265,9 @@ export type PluralMessage = {
 };
 
 // @public
+export type Reducer<S, C> = (state: S, command: C) => Applied<S, C>;
+
+// @public
 export interface ResolvedLimit {
     readonly maximum: number;
     readonly warning: number;
@@ -286,6 +337,13 @@ export function serializeError(error: unknown, options?: SerializeErrorOptions):
 export interface SerializeErrorOptions {
     readonly includeStack?: boolean;
     readonly maxDepth?: number;
+}
+
+// @public
+export interface Store<S> {
+    getSnapshot(): S;
+    set(next: S | ((current: S) => S)): void;
+    subscribe(listener: () => void): () => void;
 }
 
 // @public
