@@ -47,10 +47,11 @@ It turns the editor's props into resolved, ordered data:
 - **Conflicts:** registering a chord that another tool already has, on the same platform, throws a `TypeError` naming both tools.
 - **`match(eventLike)`** returns the id of the tool a keyboard event triggers, or `undefined`. It reads only `key`, `code`, the modifier flags, `repeat`, `isComposing`, `defaultPrevented` and the event's `target`, which it inspects by duck typing. So it works with DOM and React events, and in tests, without importing the DOM. Its rules:
   - **Ignored:** events that are already handled (`defaultPrevented`), that are part of an IME composition (`isComposing`), or that repeat because a key is held down, unless the shortcut allows repeats.
-  - **Modifiers must match exactly.** Letters match case-insensitively. When `Alt` on macOS turns a letter into a symbol, the physical key (`code`) decides.
+  - **`Control`, `Meta` and `Alt` must match exactly.** Letters match case-insensitively, and match `Shift` exactly too, so `Mod+Z` isn't `Mod+Shift+Z`. When `Alt` on macOS turns a letter into a symbol, the physical key (`code`) decides.
+  - **`Shift` is ignored when a chord's key is a printable character other than a letter,** because `Shift` may be what produced the character. On a US layout, `+` is `Shift` and `=`, and on AZERTY every digit needs `Shift`. So `+` matches `{ key: "+", shiftKey: true }`, and `0` matches `{ key: "0", shiftKey: true }`. The shortcut registry's tests cover both.
   - **Fields keep their keys:** in an editable target (a text input, `textarea`, `select` or `contenteditable`), no shortcut fires unless it opts in with `inEditable`. `Mod+Z` in a text field is that field's own undo.
   - **Controls keep their keys:** on a button, link, checkbox, switch, menu item, tab or slider, unmodified `Space`, `Enter` and arrow keys belong to the control, so those shortcuts don't fire. Space on a focused button presses the button; it doesn't toggle playback.
-- **The editor listens on its own root, never on `window`,** so shortcuts only apply while focus is inside it. It calls `preventDefault` only for an event it handles.
+- **The editor listens on its own root, never on `window`,** so shortcuts only apply while focus is inside it. This is an accessibility requirement, not a style choice: it's what lets the family's single-character shortcuts meet WCAG 2.1.4 (see "Family shortcuts"). It calls `preventDefault` only for an event it handles.
 - **`ariaKeyShortcuts(id)`** returns the tool's chords for `aria-keyshortcuts`, such as `Meta+Z` or `Control+Z Control+Y`.
 - **`describe(id)`** returns each chord as modifier and key parts. The SDK renders them as labels from messages: `sdkCoreMessages` adds `keys.*` messages, such as `⌘` on Apple platforms and `Ctrl` elsewhere, so labels can be translated ([ADR 0014](0014-accessibility-and-translatable-text.md)).
 
@@ -70,6 +71,8 @@ These are the same in every SDK. A tool takes them with `shortcuts: "<action>"`.
 
 **The editor never takes `Mod+=`, `Mod+-` or `Mod+0`.** Those are the browser's page zoom, which people with low vision depend on (WCAG 1.4.4). The editor's own zoom uses the same keys without a modifier, while focus is in the editor.
 
+**Single-character shortcuts are active only while the editor has focus.** `+`, `=`, `-` and `0` are character-key shortcuts under WCAG 2.1.4 (Level A), which speech-input and keyboard users can trigger by accident. They meet it through the criterion's exception for shortcuts that are active only when the component has focus. The registry fires only from events inside the editor's root, and never in fields. `Space` isn't a character key under 2.1.4, but the same scoping keeps it from taking over the page.
+
 ## Alternatives considered
 
 - **Each SDK writes its own:** shortcuts would differ between SDKs, and the hard parts would be solved several times, differently.
@@ -80,6 +83,7 @@ These are the same in every SDK. A tool takes them with `shortcuts: "<action>"`.
 ## Consequences
 
 - Every SDK gets the same shortcuts, accessible names (`aria-keyshortcuts`) and translatable labels, and the field, control and zoom rules are tested once.
+- **Listening on the editor's root, never on `window`, is required for accessibility.** The single-character zoom shortcuts meet WCAG 2.1.4 only because they're active only while the editor has focus. An SDK that bound the registry to `window` would break that criterion.
 - Hosts configure tools with plain data, and an unknown or misspelled id fails when the editor is created, not silently.
 - `pdf-sdk`'s thumbnails keep their own arrow-key navigation, a widget's internal keys, and move undo, delete and selection to the registry.
 - These become public API of `@hussmartinez/sdk-core`, and `sdkCoreMessages` gains the `keys.*` messages.
