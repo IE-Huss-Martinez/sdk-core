@@ -9,8 +9,8 @@ Use [`template.md`](template.md) for new records. Name files `NNNN-short-title.m
 | [0001](0001-record-architecture-decisions.md) | Record architecture decisions | Accepted |
 | [0002](0002-one-repository-per-sdk.md) | One repository per SDK, with shared `sdk-core` and `ui` | Accepted; repositories moved to an organisation by [0024](0024-github-organisation-for-the-sdk-family.md); `sdk-ci` added by [0026](0026-share-ci-steps-from-sdk-ci.md) |
 | [0003](0003-hm-namespace.md) | The `hm` namespace for everything that reaches the page | Accepted |
-| [0004](0004-entry-points-and-module-format.md) | Package entry points and module format | Accepted |
-| [0005](0005-plain-css-with-cascade-layers.md) | Plain CSS with cascade layers | Accepted |
+| [0004](0004-entry-points-and-module-format.md) | Package entry points and module format | Accepted; `ui` as an SDK dependency settled by [0036](0036-ui-as-a-dependency-of-the-sdks.md) |
+| [0005](0005-plain-css-with-cascade-layers.md) | Plain CSS with cascade layers | Accepted; one required copy of `ui`'s stylesheet per host by [0036](0036-ui-as-a-dependency-of-the-sdks.md) |
 | [0006](0006-design-tokens-and-theming.md) | Design tokens and full theming | Accepted |
 | [0007](0007-server-rendering-and-nextjs.md) | Server rendering and Next.js compatibility | Accepted |
 | [0008](0008-ports-adapters-and-session.md) | Ports and adapters with a framework-agnostic session | Accepted; its session primitives are shared through [0029](0029-session-store-and-history.md) |
@@ -22,7 +22,7 @@ Use [`template.md`](template.md) for new records. Name files `NNNN-short-title.m
 | [0014](0014-accessibility-and-translatable-text.md) | Accessibility and translatable text | Accepted |
 | [0015](0015-verification-and-releases.md) | Verification, releases and trusted publishing | Accepted; release tooling superseded by [0021](0021-version-and-release-with-changesets.md) |
 | [0016](0016-git-hooks-and-merge-guards.md) | Git hooks and merge guards | Accepted |
-| [0017](0017-core-errors-and-shared-runtime-imports.md) | Where `core/errors` and `@hussmartinez/sdk-core` sit in the core layers | Accepted |
+| [0017](0017-core-errors-and-shared-runtime-imports.md) | Where `core/errors` and `@hussmartinez/sdk-core` sit in the core layers | Accepted; `ui`'s place outside the core extended by [0036](0036-ui-as-a-dependency-of-the-sdks.md) |
 | [0018](0018-worker-rpc-protocol.md) | The worker RPC protocol, its errors and its buffer rules | Accepted; its abort-reason rule is superseded by [0020](0020-file-policy.md); refined for engines' own workers by [0028](0028-third-party-engines.md) |
 | [0019](0019-message-catalogues.md) | Message catalogues as typed, plain-text data | Accepted |
 | [0020](0020-file-policy.md) | File policy: typed limits with warnings, shared by every SDK | Accepted; supersedes [0018](0018-worker-rpc-protocol.md)'s abort-reason rule; refined for page-only decoders by [0031](0031-platform-decoders-on-the-page.md) |
@@ -40,4 +40,5 @@ Use [`template.md`](template.md) for new records. Name files `NNNN-short-title.m
 | [0032](0032-duration-format-and-hertz-unit.md) | A duration format for messages and a hertz unit for limits | Accepted; refines [0019](0019-message-catalogues.md) and [0020](0020-file-policy.md) |
 | [0033](0033-api-reports-for-several-entry-points.md) | API reports for packages with several entry points | Accepted |
 | [0034](0034-shared-error-helpers.md) | Shared helpers that adapt failures to an SDK's error class | Accepted; refines [0018](0018-worker-rpc-protocol.md) and [0020](0020-file-policy.md) |
+| [0036](0036-ui-as-a-dependency-of-the-sdks.md) | `@hussmartinez/ui` as a dependency of the SDKs | Accepted; refines [0004](0004-entry-points-and-module-format.md), [0005](0005-plain-css-with-cascade-layers.md) and [0017](0017-core-errors-and-shared-runtime-imports.md) |
 | [0037](0037-windowed-blob-reader.md) | A windowed `Blob` reader for probes and parsers | Accepted |

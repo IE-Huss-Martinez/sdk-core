@@ -32,7 +32,7 @@ The repositories live in the `ie-huss-martinez` GitHub organisation, and the npm
 
 Everything that reaches the page starts with `hm-`. States use ARIA attributes, then `data-hm-*`. Never use generic state classes such as `.is-active`.
 
-## Package shape ([ADR 0004](docs/adr/0004-entry-points-and-module-format.md))
+## Package shape ([ADR 0004](docs/adr/0004-entry-points-and-module-format.md), [ADR 0036](docs/adr/0036-ui-as-a-dependency-of-the-sdks.md))
 
 | Entry | Contents |
 |---|---|
@@ -44,6 +44,7 @@ Everything that reaches the page starts with `hm-`. States use ARIA attributes, 
 
 - **Module format:** ESM only, with `"type": "module"`, `types` first in every `exports` condition, and `"sideEffects": ["**/*.css"]`.
 - **Peer dependencies:** `react` and `react-dom` are optional, `>=18.3`.
+- **`@hussmartinez/ui`:** a regular dependency of every SDK, on the current minor (`^0.N.0` during `0.x`), imported only by `features/`, `react/` and `element/`. Applications that use `ui` themselves depend on the same minor, so there's one copy; `ui` warns in development when there are two.
 - **No CSS from JavaScript:** library code never imports CSS.
 
 ## React API
@@ -75,9 +76,10 @@ Every editor accepts the same configuration props:
 
 Programmatic control goes through a ref handle, such as `open(file)`, `export()` and `undo()`. Refs use `forwardRef`.
 
-## Styling and theming ([ADR 0005](docs/adr/0005-plain-css-with-cascade-layers.md), [ADR 0006](docs/adr/0006-design-tokens-and-theming.md))
+## Styling and theming ([ADR 0005](docs/adr/0005-plain-css-with-cascade-layers.md), [ADR 0006](docs/adr/0006-design-tokens-and-theming.md), [ADR 0036](docs/adr/0036-ui-as-a-dependency-of-the-sdks.md))
 
 - **Plain CSS** in the layer order `@layer hm.tokens, hm.base, hm.components, hm.sdk;`. SDKs write only into `hm.sdk`.
+- **One copy of `ui`'s stylesheet:** hosts import `@hussmartinez/ui/styles.css` once, before the SDKs' stylesheets. It's required for every surface that renders `ui`'s components, whose focus rings and target sizes live there. An SDK's `styles.css` never bundles or `@import`s it, and a custom element never ships its own copy.
 - **No global selectors.** Nothing targets `html`, `body`, `*` or bare elements outside a component root.
 - **No literal values.** Colours, lengths, durations, shadows, z-indexes and font values come from `--hm-*` tokens. stylelint enforces this.
 - **Three token levels:** base scale, then semantic, then component. Components use only semantic and component tokens.
@@ -103,7 +105,7 @@ Programmatic control goes through a ref handle, such as `open(file)`, `export()`
 - **Ports and adapters:**
   - the core defines ports, such as `PdfEngine` and `PdfProcessor`;
   - adapters implement them and run in workers;
-  - every core layer may import `@hussmartinez/sdk-core`, but never `@hussmartinez/ui`, `react` or `react-dom`;
+  - every core layer may import `@hussmartinez/sdk-core`, but never `@hussmartinez/ui`, `react` or `react-dom`, and neither may `adapters/`, `workers/` or anything the `.` entry reaches ([ADR 0036](docs/adr/0036-ui-as-a-dependency-of-the-sdks.md));
   - `core/errors` is a leaf: it imports only `core/model` and `@hussmartinez/sdk-core`, and every layer may import it;
   - the dependency rules are enforced with `dependency-cruiser`.
 - **Framework-agnostic session:** the store exposes `getSnapshot()`, `subscribe()` and commands. React binds with `useSyncExternalStore`, and the element binds to the same store. Sessions build on `sdk-core`'s `createStore`, `createHistory` and `Reducer` ([ADR 0029](docs/adr/0029-session-store-and-history.md)).
