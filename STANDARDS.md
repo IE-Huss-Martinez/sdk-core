@@ -232,7 +232,7 @@ Each repository extends the presets in `@hussmartinez/sdk-config` instead of cop
   - `--no-verify` is never used.
 - **Before a pull request is ready:** run `pnpm verify` locally, using Chromium, and report the result in the description.
 - **CI:**
-  - every pull request and push to `main` runs `pnpm verify`, with browser tests on Chromium, Firefox and WebKit, in the pinned Playwright image ([ADR 0023](docs/adr/0023-verify-releases-in-an-unprivileged-job.md));
+  - every pull request and push to `main` runs `pnpm verify`, with browser tests on Chromium, Firefox and WebKit, in the pinned Playwright image, read from its only copy in `ci/Dockerfile` ([ADR 0023](docs/adr/0023-verify-releases-in-an-unprivileged-job.md), [ADR 0025](docs/adr/0025-one-browser-test-image-in-one-place.md));
   - `verify` and `pr-title` are required checks, and branches must be up to date;
   - actions are pinned to commit SHAs, with least-privilege permissions, `pull_request` events only, and no secrets in pull request workflows.
 - **Pull requests:**

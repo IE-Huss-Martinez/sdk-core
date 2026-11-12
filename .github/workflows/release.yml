@@ -112,22 +112,34 @@ jobs:
           echo "Versions to publish: $count"
           echo "pending=$([ "$count" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
-  # The same pnpm verify as verify.yml's job, in the same pinned Playwright
-  # image, before anything is published. It runs on its own, with read-only
+  # Reads the browser test image from ci/Dockerfile (ADR 0025), the same
+  # single source as verify.yml's, when there's something to release.
+  image:
+    name: image
+    needs: plan
+    if: needs.plan.outputs.pending == 'true'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci-image.yml
+
+  # The same pnpm verify as verify.yml's job, in the same browser test image,
+  # before anything is published. It runs on its own, with read-only
   # permissions, so the test suite never runs where the OIDC token and write
   # permissions are. A test in test/ci-image.test.js keeps its image and steps
   # equal to verify.yml's.
   verify:
     # Not "verify", the name of verify.yml's required check.
     name: verify release
-    needs: plan
-    if: needs.plan.outputs.pending == 'true'
+    needs: [plan, image]
+    # Runs even if the image job failed, and then fails on the fallback image
+    # name, which can't be pulled. publish then refuses to publish.
+    if: ${{ !cancelled() && needs.plan.outputs.pending == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       contents: read
     container:
-      image: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:6e3fb709361521eb27161606e6da6d2674e5e89fa16516cb37d6fdd91372273d
+      image: ${{ needs.image.outputs.ref || 'the-image-job-failed@sha256:0000000000000000000000000000000000000000000000000000000000000000' }}
       options: --user 1001 --ipc=host --init
     env:
       HUSKY: "0"
