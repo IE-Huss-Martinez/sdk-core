@@ -90,6 +90,6 @@ This supersedes the part of `pdf-sdk`'s ADR 0005 that bundles `ui`'s styles into
 ## Consequences
 
 - An SDK's element is a definition and a mount function. The image SDK starts with one, and `pdf-sdk` and `audio-sdk` replace their stubs before shipping `./element`.
-- `sdk-core` gains its second entry point, with its own API report and size budget. With more than one entry point, its `check:api` runs `hm-check-api-reports` ([ADR 0033](0033-api-reports-for-several-entry-points.md)).
+- `sdk-core` gains its second entry point, with its own API report and a build test that importing it touches no browser API. With more than one entry point, its `check:api` runs `hm-check-api-reports` ([ADR 0033](0033-api-reports-for-several-entry-points.md)).
 - Plain-HTML pages with several standalone SDKs apply one copy of `ui`'s styles per `ui` minor, and a mismatch is visible on the console.
 - `pdf-sdk` updates its ADR 0005 when it builds its element, to point here for the standalone styles.
