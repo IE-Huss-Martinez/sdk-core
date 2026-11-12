@@ -1,15 +1,18 @@
 name: Release
 
-# Versions and publishes the packages with Changesets (ADR 0021).
+# Versions and publishes the packages with Changesets (ADR 0021, in sdk-core).
 #
 # - With changesets on main, the version job opens or updates the
 #   "chore: version packages" pull request.
 # - Once that pull request is merged, the plan job finds the versions not yet
-#   on npm, and the verify job runs pnpm verify for them in the pinned
-#   Playwright image, with read-only permissions. The publish job then
-#   publishes the new versions to npm with trusted publishing and provenance,
-#   creates the tags and GitHub Releases, and attaches the tarballs with
-#   SHA256SUMS and attestations.
+#   on npm, and the verify job runs pnpm verify for them in the browser test
+#   image, with read-only permissions (ADR 0023). The publish job then
+#   publishes them with trusted publishing and provenance, creates the tags
+#   and GitHub Releases, and attaches the tarballs with SHA256SUMS and
+#   attestations.
+#
+# The npm trusted publisher of each package is bound to this file's name and
+# the npm environment, so keep both.
 on:
   push:
     branches: [main]
@@ -26,61 +29,20 @@ jobs:
     name: version
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # The GitHub App's key lives only in this environment, which is
-    # restricted to main, so no other branch or pull request can read it.
+    # Restricted to main, so the version job only runs there.
     environment: release
     permissions:
       contents: write # push the version commit to the release branch
       pull-requests: write # open and update the version pull request
     outputs:
-      has-changesets: ${{ steps.changesets.outputs.has-changesets }}
+      has-changesets: ${{ steps.version.outputs.has-changesets }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .node-version
-
-      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
-
-      - run: pnpm install --frozen-lockfile
-
-      # The version pull request is opened with a GitHub App token (ADR 0021).
-      # A pull request opened with GITHUB_TOKEN doesn't trigger workflows, so
-      # it could never pass the required checks.
-      - name: Check the release App configuration
-        env:
-          CLIENT_ID: ${{ vars.RELEASE_APP_CLIENT_ID }}
-          HAS_PRIVATE_KEY: ${{ secrets.RELEASE_APP_PRIVATE_KEY != '' }}
-        run: |
-          if [ -z "$CLIENT_ID" ] || [ "$HAS_PRIVATE_KEY" != "true" ]; then
-            echo "::error title=Release App not configured::Set the RELEASE_APP_CLIENT_ID variable and the RELEASE_APP_PRIVATE_KEY secret at organisation level, with access for this repository (Organisation settings → Secrets and variables → Actions). See CONTRIBUTING.md, \"Setting up releases\"."
-            exit 1
-          fi
-
-      - id: app-token
-        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+      - id: version
+        uses: ie-huss-martinez/sdk-ci/version@4fd30ccfb06f8854b3744201dccaaf000567af4b # v1.0.0
         with:
           client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
-          # Scope the token to what this job needs, whatever the App can do.
-          permission-contents: write
-          permission-pull-requests: write
 
-      # Without publish-script, the action only versions: it opens or updates
-      # the version pull request when there are changesets.
-      - id: changesets
-        uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
-        with:
-          github-token: ${{ steps.app-token.outputs.token }}
-          pr-title: "chore: version packages"
-          commit-message: "chore: version packages"
-
-  # Lists the versions not yet on npm. Most pushes to main have none: then
-  # nothing is verified or published, and the publish job only checks that
-  # every release has its files.
   plan:
     name: plan
     needs: version
@@ -92,41 +54,23 @@ jobs:
     outputs:
       pending: ${{ steps.plan.outputs.pending }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
+      - id: plan
+        uses: ie-huss-martinez/sdk-ci/plan@4fd30ccfb06f8854b3744201dccaaf000567af4b # v1.0.0
 
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .node-version
-
-      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Plan the release
-        id: plan
-        run: |
-          pnpm changeset publish-plan --output "$RUNNER_TEMP/publish-plan.json"
-          count=$(jq '[.plan[][] | select(.kind == "publish")] | length' "$RUNNER_TEMP/publish-plan.json")
-          echo "Versions to publish: $count"
-          echo "pending=$([ "$count" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
-
-  # Reads the browser test image from ci/Dockerfile (ADR 0025), the same
-  # single source as verify.yml's, when there's something to release.
   image:
     name: image
     needs: plan
     if: needs.plan.outputs.pending == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       contents: read
-    uses: ./.github/workflows/ci-image.yml
+    outputs:
+      ref: ${{ steps.image.outputs.ref }}
+    steps:
+      - id: image
+        uses: ie-huss-martinez/sdk-ci/image@4fd30ccfb06f8854b3744201dccaaf000567af4b # v1.0.0
 
-  # The same pnpm verify as verify.yml's job, in the same browser test image,
-  # before anything is published. It runs on its own, with read-only
-  # permissions, so the test suite never runs where the OIDC token and write
-  # permissions are. A test in test/ci-image.test.js keeps its image and steps
-  # equal to verify.yml's.
   verify:
     # Not "verify", the name of verify.yml's required check.
     name: verify release
@@ -144,21 +88,9 @@ jobs:
     env:
       HUSKY: "0"
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ie-huss-martinez/sdk-ci/verify@4fd30ccfb06f8854b3744201dccaaf000567af4b # v1.0.0
         with:
-          persist-credentials: false
-
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .node-version
-
-      # No caches in a release: everything is installed fresh, so a poisoned
-      # cache can't reach it.
-      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
-
-      - run: pnpm install --frozen-lockfile
-
-      - run: pnpm verify
+          cache: "false"
 
   # Runs whenever the plan job ran, even if verify failed, so the finishing
   # steps still repair releases left unfinished by earlier runs. It publishes
@@ -169,123 +101,13 @@ jobs:
     if: ${{ !cancelled() && needs.plan.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # The npm trusted publisher is bound to this workflow and environment.
     environment: npm
     permissions:
       contents: write # push tags, create GitHub Releases and upload their files
       id-token: write # npm trusted publishing and provenance, through OIDC
       attestations: write # create the artifact attestations
-    env:
-      # Direct publishing, as decided in ADR 0021. "stage publish" would upload
-      # each version privately until a maintainer approves it on npm with 2FA.
-      NPM_PUBLISH_COMMAND: publish
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ie-huss-martinez/sdk-ci/publish@4fd30ccfb06f8854b3744201dccaaf000567af4b # v1.0.0
         with:
-          persist-credentials: false
-
-      # No registry-url: trusted publishing needs no token or .npmrc.
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .node-version
-
-      # No caches in a job that publishes: everything is installed fresh, so a
-      # poisoned cache can't reach a release.
-      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
-
-      - run: pnpm install --frozen-lockfile
-
-      # Every release file (the plan, the packed tarballs and the release
-      # assets) goes to $RUNNER_TEMP, outside the checkout, so that pnpm verify
-      # never lints or tests them.
-
-      # The plan again, here, because the packing and publishing steps write
-      # their results into it.
-      - name: Plan the release
-        id: plan
-        run: |
-          pnpm changeset publish-plan --output "$RUNNER_TEMP/publish-plan.json"
-          count=$(jq '[.plan[][] | select(.kind == "publish")] | length' "$RUNNER_TEMP/publish-plan.json")
-          echo "Versions to publish: $count"
-          echo "pending=$([ "$count" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
-
-      - name: Check the npm version
-        if: steps.plan.outputs.pending == 'true'
-        run: |
-          required=11.5.1
-          current=$(npm --version)
-          if [ "$(printf '%s\n' "$required" "$current" | sort -V | head -n 1)" != "$required" ]; then
-            echo "::error::npm $current is too old for trusted publishing; $required or newer is needed."
-            exit 1
-          fi
-
-      # Never publish what the verify job didn't verify: it failed, or the
-      # plan job found nothing to publish and it didn't run. The finishing
-      # steps below still run.
-      - name: Check that this release was verified
-        if: steps.plan.outputs.pending == 'true'
-        env:
-          VERIFIED: ${{ needs.verify.result }}
-        run: |
-          if [ "$VERIFIED" != "success" ]; then
-            echo "::error title=Release not verified::The verify job's result is \"$VERIFIED\", so nothing is published. Fix the cause, then re-run the workflow."
-            exit 1
-          fi
-
-      # changeset pack rewrites catalog: and workspace: ranges into real
-      # versions, and records each tarball's integrity in the plan.
-      - name: Pack the packages
-        if: steps.plan.outputs.pending == 'true'
-        run: pnpm changeset pack --from-publish-plan "$RUNNER_TEMP/publish-plan.json" --out-dir "$RUNNER_TEMP/release-packs"
-
-      # Bootstrap only (ADR 0021): npm can't configure a trusted publisher for
-      # a package that doesn't exist yet, so the first release uses a
-      # short-lived token stored as NPM_TOKEN in the npm environment. Without
-      # that secret, this step does nothing and publishing is pure trusted
-      # publishing. Provenance still comes from this job's OIDC token.
-      - name: Use the bootstrap npm token, if there is one
-        if: steps.plan.outputs.pending == 'true'
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          if [ -n "$NPM_TOKEN" ]; then
-            npm config set "//registry.npmjs.org/:_authToken" "$NPM_TOKEN" --location user
-            echo "::warning title=Bootstrap npm token in use::Publishing with NPM_TOKEN. After this release, configure the trusted publishers, delete the secret and revoke the token (CONTRIBUTING.md, \"Setting up releases\")."
-          fi
-
-      # With no changesets pending, the action runs the publish script, which
-      # reports each published version; the action then pushes its tag and
-      # creates its GitHub Release. If one package fails, this step fails and
-      # the job fails, but the steps below still finish the others.
-      - id: changesets
-        if: steps.plan.outputs.pending == 'true'
-        uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
-        env:
-          PUBLISHED_RECORD: ${{ runner.temp }}/published.ndjson
-        with:
-          publish-script: node scripts/publish-packages.mjs ${{ runner.temp }}/release-packs
-          create-github-releases: true
-
-      # Finishes every version that's on npm but whose GitHub Release lacks its
-      # files: the ones this run published, even if another package failed,
-      # and any left unfinished by an earlier run. Complete releases are left
-      # alone, so nothing is attested twice.
-      - name: Prepare the release files
-        id: finish
-        if: ${{ !cancelled() && steps.plan.outcome == 'success' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PUBLISHED_RECORD: ${{ runner.temp }}/published.ndjson
-          PUBLISH_PLAN: ${{ runner.temp }}/publish-plan.json
-        run: node scripts/finish-releases.mjs prepare "$RUNNER_TEMP/release-assets"
-
-      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
-        if: ${{ !cancelled() && steps.finish.outputs.count > 0 }}
-        with:
-          subject-path: ${{ runner.temp }}/release-assets/*/*.tgz
-
-      - name: Attach the files to each GitHub Release
-        if: ${{ !cancelled() && steps.finish.outputs.count > 0 }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: node scripts/finish-releases.mjs attach "$RUNNER_TEMP/release-assets"
+          verified: ${{ needs.verify.result }}
+          npm-token: ${{ secrets.NPM_TOKEN }}
