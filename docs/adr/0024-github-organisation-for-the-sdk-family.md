@@ -15,7 +15,7 @@
 
 ## Decision
 
-- **The SDK family lives in the `IE-Huss-Martinez` organisation:** `IE-Huss-Martinez/sdk-core`, `IE-Huss-Martinez/ui` and `IE-Huss-Martinez/<kind>-sdk`.
+- **The SDK family lives in the `ie-huss-martinez` organisation:** `ie-huss-martinez/sdk-core`, `ie-huss-martinez/ui` and `ie-huss-martinez/<kind>-sdk`.
 - **The npm scope stays `@hussmartinez`.** Package names don't change.
 - **The release App belongs to the organisation** and is installed on all its repositories, with the same permissions as before: *Contents* and *Pull requests*, read and write.
 - **Its credentials are organisation-level:** the variable `RELEASE_APP_CLIENT_ID` and the secret `RELEASE_APP_PRIVATE_KEY`, under the organisation's Actions settings. The release workflow reads them under the same names, so it doesn't change. They replace the per-repository `release` environment copies.
@@ -31,7 +31,7 @@
 ## Consequences
 
 - **Old URLs redirect.** GitHub redirects `github.com/hussmartinez/<repo>` and git remotes to the organisation. Links in existing changelogs keep working, so they aren't rewritten.
-- **Each package's npm trusted publisher must name the new owner,** `IE-Huss-Martinez`. npm provenance also rejects a publish whose `repository.url` doesn't match the repository the workflow runs in. So packages must be released from the new owner, with updated metadata, only after their trusted publishers are updated.
+- **Each package's npm trusted publisher must name the new owner,** `ie-huss-martinez`. npm provenance also rejects a publish whose `repository.url` doesn't match the repository the workflow runs in. So packages must be released from the new owner, with updated metadata, only after their trusted publishers are updated.
 - **The App's key is no longer limited to `main`.** An organisation secret can be limited to selected repositories, but not to a branch, so a workflow on any branch of a repository with access can read it. Why that's accepted is under "Alternatives considered". The mitigations:
   - the secret is shared only with the repositories that release;
   - the App can only write *Contents* and *Pull requests*;

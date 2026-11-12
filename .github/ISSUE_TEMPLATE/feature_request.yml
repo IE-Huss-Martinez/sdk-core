@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        sdk-core and sdk-config stay small and stable, because every SDK depends on them. Anything specific to one media kind belongs in that SDK's repository ([ADR 0002](https://github.com/IE-Huss-Martinez/sdk-core/blob/main/docs/adr/0002-one-repository-per-sdk.md)).
+        sdk-core and sdk-config stay small and stable, because every SDK depends on them. Anything specific to one media kind belongs in that SDK's repository ([ADR 0002](https://github.com/ie-huss-martinez/sdk-core/blob/main/docs/adr/0002-one-repository-per-sdk.md)).
   - type: dropdown
     id: package
     attributes:

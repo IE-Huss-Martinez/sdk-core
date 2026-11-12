@@ -121,7 +121,7 @@ These are one-time steps for the maintainer ([ADR 0021](docs/adr/0021-version-an
 
 ### The GitHub App for the version pull request
 
-The App and its credentials are shared by every repository in the `IE-Huss-Martinez` organisation, so they're set up once for the organisation:
+The App and its credentials are shared by every repository in the `ie-huss-martinez` organisation, so they're set up once for the organisation:
 
 1. **Create a GitHub App owned by the organisation.** It needs repository permissions *Contents: read and write* and *Pull requests: read and write* (*Metadata: read* is implied), and no webhook. Install it on all the organisation's repositories.
 2. **Store its credentials at organisation level,** under Organisation settings → Secrets and variables → Actions: its client ID as the variable `RELEASE_APP_CLIENT_ID`, and a private key as the secret `RELEASE_APP_PRIVATE_KEY`. Give both access only to the repositories that release.
@@ -134,7 +134,7 @@ In each repository, **create a `release` environment** under Settings → Enviro
 2. **Bootstrap the first publish.** npm can only configure a trusted publisher for a package that already exists, so the first version needs a token:
    1. Create a granular access token that can publish only `@hussmartinez/sdk-core` and `@hussmartinez/sdk-config`, with an expiry of a few days. Store it only as the secret `NPM_TOKEN` in the `npm` environment.
    2. Merge the first version pull request. The publish job uses the token, logs a warning that it did, and still attaches provenance.
-   3. **Straight away,** configure the trusted publisher for each package: Package settings → Trusted Publisher → GitHub Actions, with organisation or user `IE-Huss-Martinez`, repository `sdk-core`, workflow `release.yml`, environment `npm`, and direct `npm publish` allowed. npm expires a configuration that hasn't published within two days, which is why this comes right after the bootstrap.
+   3. **Straight away,** configure the trusted publisher for each package: Package settings → Trusted Publisher → GitHub Actions, with organisation or user `ie-huss-martinez`, repository `sdk-core`, workflow `release.yml`, environment `npm`, and direct `npm publish` allowed. npm expires a configuration that hasn't published within two days, which is why this comes right after the bootstrap.
    4. Delete the `NPM_TOKEN` secret, revoke the token on npm, and turn on "Require two-factor authentication and disallow tokens" for each package, under Settings → Publishing access.
 
 From then on, publishing uses trusted publishing only, with no token anywhere.

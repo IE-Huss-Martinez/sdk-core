@@ -3,7 +3,7 @@
   "changelog": [
     "@changesets/changelog-github",
     {
-      "repo": "IE-Huss-Martinez/sdk-core"
+      "repo": "ie-huss-martinez/sdk-core"
     }
   ],
   "commit": false,

@@ -5,13 +5,13 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/IE-Huss-Martinez/sdk-core.git",
+    "url": "git+https://github.com/ie-huss-martinez/sdk-core.git",
     "directory": "packages/sdk-core"
   },
   "bugs": {
-    "url": "https://github.com/IE-Huss-Martinez/sdk-core/issues"
+    "url": "https://github.com/ie-huss-martinez/sdk-core/issues"
   },
-  "homepage": "https://github.com/IE-Huss-Martinez/sdk-core/tree/main/packages/sdk-core#readme",
+  "homepage": "https://github.com/ie-huss-martinez/sdk-core/tree/main/packages/sdk-core#readme",
   "type": "module",
   "sideEffects": false,
   "exports": {

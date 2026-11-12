@@ -1,4 +1,4 @@
-const ADR_BASE_URL = "https://github.com/IE-Huss-Martinez/sdk-core/blob/main/docs/adr/";
+const ADR_BASE_URL = "https://github.com/ie-huss-martinez/sdk-core/blob/main/docs/adr/";
 
 /**
  * Builds the documentation link shown next to a rule's warnings.

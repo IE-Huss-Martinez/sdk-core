@@ -50,7 +50,7 @@ if (!["prepare", "attach"].includes(command ?? "") || !dir) {
 }
 const repository = process.env.GITHUB_REPOSITORY;
 if (!repository) {
-  fail("GITHUB_REPOSITORY must be set, such as IE-Huss-Martinez/sdk-core.");
+  fail("GITHUB_REPOSITORY must be set, such as ie-huss-martinez/sdk-core.");
   process.exit(2);
 }
 
