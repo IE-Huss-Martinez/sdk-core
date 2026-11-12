@@ -38,7 +38,7 @@ jobs:
       has-changesets: ${{ steps.version.outputs.has-changesets }}
     steps:
       - id: version
-        uses: ie-huss-martinez/sdk-ci/version@69e03daf07e604daf0ab98d6032ff15d30cfd3e4 # v2.0.0
+        uses: ie-huss-martinez/sdk-ci/version@b566576ae9a71f0e6dac0048e4cc79e60283c4f2 # v2.0.1
         with:
           client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
@@ -55,7 +55,7 @@ jobs:
       pending: ${{ steps.plan.outputs.pending }}
     steps:
       - id: plan
-        uses: ie-huss-martinez/sdk-ci/plan@69e03daf07e604daf0ab98d6032ff15d30cfd3e4 # v2.0.0
+        uses: ie-huss-martinez/sdk-ci/plan@b566576ae9a71f0e6dac0048e4cc79e60283c4f2 # v2.0.1
 
   image:
     name: image
@@ -69,7 +69,7 @@ jobs:
       ref: ${{ steps.image.outputs.ref }}
     steps:
       - id: image
-        uses: ie-huss-martinez/sdk-ci/image@69e03daf07e604daf0ab98d6032ff15d30cfd3e4 # v2.0.0
+        uses: ie-huss-martinez/sdk-ci/image@b566576ae9a71f0e6dac0048e4cc79e60283c4f2 # v2.0.1
 
   verify:
     # Not "verify", the name of verify.yml's required check.
@@ -95,7 +95,7 @@ jobs:
       # Builds and verifies, then packs, checks and uploads the tarballs that
       # the publish job publishes, so nothing it publishes is built there.
       - id: verify
-        uses: ie-huss-martinez/sdk-ci/verify@69e03daf07e604daf0ab98d6032ff15d30cfd3e4 # v2.0.0
+        uses: ie-huss-martinez/sdk-ci/verify@b566576ae9a71f0e6dac0048e4cc79e60283c4f2 # v2.0.1
         with:
           cache: "false"
           pack: "true"
@@ -115,7 +115,7 @@ jobs:
       id-token: write # npm trusted publishing and provenance, through OIDC
       attestations: write # create the artifact attestations
     steps:
-      - uses: ie-huss-martinez/sdk-ci/publish@69e03daf07e604daf0ab98d6032ff15d30cfd3e4 # v2.0.0
+      - uses: ie-huss-martinez/sdk-ci/publish@b566576ae9a71f0e6dac0048e4cc79e60283c4f2 # v2.0.1
         with:
           verified: ${{ needs.verify.result }}
           packs: ${{ needs.verify.outputs.packs }}
