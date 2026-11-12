@@ -2,11 +2,12 @@ import { SdkError, type SdkErrorClass } from "../errors/sdk-error.js";
 
 /**
  * The unit of a limit, used in error details and to format messages:
- * `hertz` is for rates, such as a sample rate or a frame rate.
+ * `hertz` is for rates, such as a sample rate or a frame rate, and
+ * `bitsPerSecond` for data rates, such as a video's bitrate.
  *
  * @public
  */
-export type LimitUnit = "bytes" | "count" | "milliseconds" | "pixels" | "hertz";
+export type LimitUnit = "bytes" | "count" | "milliseconds" | "pixels" | "hertz" | "bitsPerSecond";
 
 /**
  * One resource limit: the error code for exceeding it, its unit, and its
