@@ -39,3 +39,4 @@ Use [`template.md`](template.md) for new records. Name files `NNNN-short-title.m
 | [0031](0031-platform-decoders-on-the-page.md) | Platform decoders that only run on the page | Accepted; refines [0012](0012-hostile-input-and-no-network.md) and [0020](0020-file-policy.md) |
 | [0032](0032-duration-format-and-hertz-unit.md) | A duration format for messages and a hertz unit for limits | Accepted; refines [0019](0019-message-catalogues.md) and [0020](0020-file-policy.md) |
 | [0033](0033-api-reports-for-several-entry-points.md) | API reports for packages with several entry points | Accepted |
+| [0034](0034-shared-error-helpers.md) | Shared helpers that adapt failures to an SDK's error class | Accepted; refines [0018](0018-worker-rpc-protocol.md) and [0020](0020-file-policy.md) |

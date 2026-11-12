@@ -61,6 +61,11 @@ export const coreLimits: {
 export function createDecodedSizeBudget(policy: FilePolicy<CoreLimits>): DecodedSizeBudget;
 
 // @public
+export function createErrorHelpers<Code extends string, ErrorType extends SdkError<Code>>(errorClass: new (code: Code, message: string, options?: SdkErrorOptions) => ErrorType, options: ErrorHelpersOptions<NoInfer<Code>> & ("ABORTED" | "TIMEOUT" extends Code ? unknown : {
+    readonly fallbackCode: "The error class's codes must include ABORTED and TIMEOUT.";
+})): ErrorHelpers<ErrorType>;
+
+// @public
 export function createHistory<C extends {
     readonly type: string;
 }>(): History_2<C>;
@@ -126,6 +131,19 @@ export type ErrorDetails = {
 export type ErrorDetailValue = string | number | boolean | null | readonly ErrorDetailValue[] | {
     readonly [key: string]: ErrorDetailValue;
 };
+
+// @public
+export interface ErrorHelpers<ErrorType extends SdkError> {
+    abortError(signal: AbortSignal): ErrorType;
+    adapt(reason: unknown, message?: string): ErrorType;
+    throwIfAborted(signal: AbortSignal | undefined): void;
+}
+
+// @public
+export interface ErrorHelpersOptions<Code extends string> {
+    readonly fallbackCode: Code;
+    readonly fallbackMessage: string;
+}
 
 // @public
 export function exposeWorker<Contract extends WorkerContract<Contract>>(handlers: WorkerHandlers<Contract>, options?: ExposeWorkerOptions): void;
