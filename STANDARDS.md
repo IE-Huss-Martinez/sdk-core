@@ -6,12 +6,12 @@ These rules apply to `sdk-core`, `ui` and every `<kind>-sdk` repository. Each ru
 
 | Repository | Publishes | Role |
 |---|---|---|
-| `IE-Huss-Martinez/sdk-core` | `@hussmartinez/sdk-core` | Headless shared runtime: worker messaging, errors, session primitives, tool registry, custom-element base, file policy, messages helper |
+| `ie-huss-martinez/sdk-core` | `@hussmartinez/sdk-core` | Headless shared runtime: worker messaging, errors, session primitives, tool registry, custom-element base, file policy, messages helper |
 | | `@hussmartinez/sdk-config` | Shared tsconfig, Biome, stylelint, dependency-cruiser, Vite and Playwright presets, and the test applications |
-| `IE-Huss-Martinez/ui` | `@hussmartinez/ui` | Design system: tokens, themes, base styles, shared React components |
-| `IE-Huss-Martinez/<kind>-sdk` | `@hussmartinez/<kind>-sdk` | One media kind: `pdf`, `image`, `video`, `audio`, … |
+| `ie-huss-martinez/ui` | `@hussmartinez/ui` | Design system: tokens, themes, base styles, shared React components |
+| `ie-huss-martinez/<kind>-sdk` | `@hussmartinez/<kind>-sdk` | One media kind: `pdf`, `image`, `video`, `audio`, … |
 
-The repositories live in the `IE-Huss-Martinez` GitHub organisation, and the npm scope is `@hussmartinez`. Everything specific to one media kind stays in that SDK. `sdk-core` and `ui` stay small and stable.
+The repositories live in the `ie-huss-martinez` GitHub organisation, and the npm scope is `@hussmartinez`. Everything specific to one media kind stays in that SDK. `sdk-core` and `ui` stay small and stable.
 
 ## Naming ([ADR 0003](docs/adr/0003-hm-namespace.md))
 

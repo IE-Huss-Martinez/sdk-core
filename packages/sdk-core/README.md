@@ -1,6 +1,6 @@
 # @hussmartinez/sdk-core
 
-[![npm version of @hussmartinez/sdk-core](https://img.shields.io/npm/v/@hussmartinez/sdk-core)](https://www.npmjs.com/package/@hussmartinez/sdk-core) [![Verify workflow status on main](https://github.com/IE-Huss-Martinez/sdk-core/actions/workflows/verify.yml/badge.svg?branch=main)](https://github.com/IE-Huss-Martinez/sdk-core/actions/workflows/verify.yml?query=branch%3Amain) [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](https://github.com/IE-Huss-Martinez/sdk-core/blob/main/LICENSE)
+[![npm version of @hussmartinez/sdk-core](https://img.shields.io/npm/v/@hussmartinez/sdk-core)](https://www.npmjs.com/package/@hussmartinez/sdk-core) [![Verify workflow status on main](https://github.com/ie-huss-martinez/sdk-core/actions/workflows/verify.yml/badge.svg?branch=main)](https://github.com/ie-huss-martinez/sdk-core/actions/workflows/verify.yml?query=branch%3Amain) [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](https://github.com/ie-huss-martinez/sdk-core/blob/main/LICENSE)
 
 Headless runtime shared by the `@hussmartinez` SDK family: worker messaging, errors, session primitives, the tool registry, the custom-element base, file policy and the messages helper.
 

@@ -256,7 +256,7 @@ export async function createSandbox(packages) {
               ...TIMING,
               PATH: `${bin}:${process.env["PATH"]}`,
               FAKE_STATE: state,
-              GITHUB_REPOSITORY: "IE-Huss-Martinez/sdk-core",
+              GITHUB_REPOSITORY: "ie-huss-martinez/sdk-core",
               GITHUB_OUTPUT: output,
               NPM_REGISTRY_URL: `http://127.0.0.1:${port}/`,
               ...env,

@@ -1,6 +1,6 @@
 # sdk-core
 
-[![npm version of @hussmartinez/sdk-core](https://img.shields.io/npm/v/@hussmartinez/sdk-core)](https://www.npmjs.com/package/@hussmartinez/sdk-core) [![npm version of @hussmartinez/sdk-config](https://img.shields.io/npm/v/@hussmartinez/sdk-config)](https://www.npmjs.com/package/@hussmartinez/sdk-config) [![Verify workflow status on main](https://github.com/IE-Huss-Martinez/sdk-core/actions/workflows/verify.yml/badge.svg?branch=main)](https://github.com/IE-Huss-Martinez/sdk-core/actions/workflows/verify.yml?query=branch%3Amain) [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+[![npm version of @hussmartinez/sdk-core](https://img.shields.io/npm/v/@hussmartinez/sdk-core)](https://www.npmjs.com/package/@hussmartinez/sdk-core) [![npm version of @hussmartinez/sdk-config](https://img.shields.io/npm/v/@hussmartinez/sdk-config)](https://www.npmjs.com/package/@hussmartinez/sdk-config) [![Verify workflow status on main](https://github.com/ie-huss-martinez/sdk-core/actions/workflows/verify.yml/badge.svg?branch=main)](https://github.com/ie-huss-martinez/sdk-core/actions/workflows/verify.yml?query=branch%3Amain) [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
 Shared foundation for the `@hussmartinez` SDK family: client-side SDKs for working with PDFs, images, video and audio, where files never leave the user's device.
 
@@ -47,12 +47,12 @@ The git hooks ([ADR 0016](docs/adr/0016-git-hooks-and-merge-guards.md)) run auto
 Each package is versioned and released on its own, from changesets ([ADR 0021](docs/adr/0021-version-and-release-with-changesets.md)). Versions stay at `0.x` until the API settles, and during `0.x` a breaking change bumps the minor version.
 
 - **Changelogs:** each package's `CHANGELOG.md`, written for users. The first release creates them.
-- **Release notes and files:** the [Releases page](https://github.com/IE-Huss-Martinez/sdk-core/releases) has each version's notes, its npm tarball and a `SHA256SUMS` file, tagged like `@hussmartinez/sdk-core@0.1.0`.
+- **Release notes and files:** the [Releases page](https://github.com/ie-huss-martinez/sdk-core/releases) has each version's notes, its npm tarball and a `SHA256SUMS` file, tagged like `@hussmartinez/sdk-core@0.1.0`.
 - **npm:** [`@hussmartinez/sdk-core`](https://www.npmjs.com/package/@hussmartinez/sdk-core) and [`@hussmartinez/sdk-config`](https://www.npmjs.com/package/@hussmartinez/sdk-config), published from GitHub Actions with provenance.
 - **Checking a download:** confirm that a tarball was built by this repository's release workflow:
 
   ```sh
-  gh attestation verify hussmartinez-sdk-core-0.1.0.tgz --repo IE-Huss-Martinez/sdk-core
+  gh attestation verify hussmartinez-sdk-core-0.1.0.tgz --repo ie-huss-martinez/sdk-core
   sha256sum --check SHA256SUMS
   ```
 

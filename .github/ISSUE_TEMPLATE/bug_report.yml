@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for reporting a bug. **Security vulnerabilities** go through [private reporting](https://github.com/IE-Huss-Martinez/sdk-core/security/advisories/new) instead.
+        Thanks for reporting a bug. **Security vulnerabilities** go through [private reporting](https://github.com/ie-huss-martinez/sdk-core/security/advisories/new) instead.
 
         **Don't attach files with personal or confidential content.** If a particular file triggers the bug, attach one made for the purpose that reproduces it.
   - type: dropdown
