@@ -91,6 +91,9 @@ export function createStore<S>(initial: S): Store<S>;
 export function createToolRegistry<T extends Tool<never, never, unknown>>(tools: readonly T[], options?: ToolRegistryOptions): ToolRegistry<T>;
 
 // @public
+export function createWindowReader(file: Blob, options?: WindowReaderOptions): WindowReader;
+
+// @public
 export function createWorkerClient<Contract extends WorkerContract<Contract>>(options: WorkerClientOptions): WorkerClient<Contract>;
 
 // @public
@@ -502,6 +505,17 @@ export interface ToolRegistryOptions {
     readonly capabilities?: Iterable<string>;
     readonly toolbar?: readonly (readonly string[])[];
     readonly tools?: readonly string[];
+}
+
+// @public
+export interface WindowReader {
+    bytes(offset: number, length: number): Promise<Uint8Array>;
+    readonly size: number;
+}
+
+// @public
+export interface WindowReaderOptions {
+    readonly windowSize?: number;
 }
 
 // @public
