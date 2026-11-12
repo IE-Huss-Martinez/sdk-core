@@ -164,7 +164,7 @@ async function extract(root, entry) {
       }
     },
   });
-  expect(errors).toEqual([]);
+  return errors;
 }
 
 describe("checkApiReports", () => {
@@ -197,7 +197,7 @@ describe("checkApiReports", () => {
   let root;
   beforeAll(async () => {
     root = await fixture(PACKAGE);
-    await extract(root, "index");
+    expect(await extract(root, "index")).toEqual([]);
   });
 
   /**
@@ -206,7 +206,7 @@ describe("checkApiReports", () => {
    */
   async function secondary(name, lines) {
     await writeFile(join(root, `types/${name}.d.ts`), `${lines.join("\n")}\n`);
-    await extract(root, name);
+    expect(await extract(root, name)).toEqual([]);
     return join(root, `api/${name}.api.md`);
   }
 
@@ -287,8 +287,8 @@ describe("checkApiReports", () => {
         "",
       ].join("\n"),
     });
-    await extract(helpers, "index");
-    await extract(helpers, "react");
+    expect(await extract(helpers, "index")).toEqual([]);
+    expect(await extract(helpers, "react")).toEqual([]);
 
     const report = join(helpers, "api/index.api.md");
     const react = join(helpers, "api/react.api.md");
@@ -304,6 +304,32 @@ describe("checkApiReports", () => {
     ).toEqual([
       `${react}: "Internal" is copied from the package, but the main entry point doesn't export it.`,
     ]);
+  });
+
+  it("fails the build when a public type references an @internal one", async () => {
+    const trimmed = await fixture({
+      ...PACKAGE,
+      "types/index.d.ts": [
+        "/**",
+        " * A helper.",
+        " *",
+        " * @internal",
+        " */",
+        "export type Helper<T> = { readonly value: T };",
+        "/** @public */",
+        "export type Wrapped = Helper<string>;",
+        "",
+      ].join("\n"),
+    });
+
+    expect(await extract(trimmed, "index")).toEqual([
+      expect.stringContaining(
+        '"Wrapped" is marked as @public, but its signature references "Helper"',
+      ),
+    ]);
+    expect(await readFile(join(trimmed, "api/index.api.md"), "utf8").catch(() => "")).not.toContain(
+      "ae-incompatible-release-tags",
+    );
   });
 
   it("throws a UsageError for a file it can't read", async () => {

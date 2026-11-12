@@ -2,6 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-11-12
+- **Amended:** 2026-11-12, by [sdk-core#66](https://github.com/ie-huss-martinez/sdk-core/issues/66): the preset fails when a public type references a non-public one
 
 ## Context
 
@@ -19,13 +20,13 @@ Turning the message off has two costs:
 
 ## Decision
 
-- **A shared preset:** `@hussmartinez/sdk-config/api-extractor/base.json` holds the family's message settings, and every entry point's configuration extends it and sets only its paths. It keeps every message an error, except `ae-forgotten-export`, which is written into the report (`logLevel: "none"`, `addToApiReportFile: true`). Every copied symbol is listed in the committed report, so a new one appears in review as a diff.
+- **A shared preset:** `@hussmartinez/sdk-config/api-extractor/base.json` holds the family's message settings, and every entry point's configuration extends it and sets only its paths. It keeps every message an error, except `ae-forgotten-export`, which is written into the report (`logLevel: "none"`, `addToApiReportFile: true`). Every copied symbol is listed in the committed report, so a new one appears in review as a diff. It also makes `ae-incompatible-release-tags` a build error rather than a comment in the report: a public type that references an `@internal` one would otherwise ship a published rollup where that type has been trimmed away, which breaks the public type for every consumer while api-extractor still succeeds.
 - **A check, `hm-check-api-reports`,** in `@hussmartinez/sdk-config`, runs after api-extractor in packages with more than one entry point. For every symbol another entry point's report lists as copied, it fails unless:
   - **the main entry point's report exports it,** and
   - **it isn't a class with `private`, `protected` or `#private` members** (constructors aside). API reports leave those members out, so it reads the main entry point's declaration rollup.
 - **This check is what keeps copies interchangeable.** Today's error classes, such as `PdfError`, have only public members, so their copies are compatible. The check keeps it that way for `PdfError`, `AudioError` and any later class, at the moment a member would change it.
 - **Adoption:** `sdk-core`'s own configuration extends the preset now; with one entry point, it has no copies to check. `ui` and `pdf-sdk` adopt it in their own pull requests, once a release of `@hussmartinez/sdk-config` with it has passed their `minimumReleaseAge`, and remove their per-repository exceptions.
-- **The main entry point's own forgotten exports aren't checked.** They're internal helper types, such as `sdk-core`'s `TemplateParams`, listed in its report. Whether to make them public is a separate decision.
+- **The main entry point's own forgotten exports aren't checked.** They're internal helper types, such as `sdk-core`'s `TemplateParams`, listed in its report. [sdk-core#66](https://github.com/ie-huss-martinez/sdk-core/issues/66) keeps `sdk-core`'s four unexported: public types already cover what hosts need, and they can't be `@internal`, because public types reference them.
 
 ## Alternatives considered
 
