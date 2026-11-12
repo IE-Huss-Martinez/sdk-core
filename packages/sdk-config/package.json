@@ -14,9 +14,11 @@
   "homepage": "https://github.com/ie-huss-martinez/sdk-core/tree/main/packages/sdk-config#readme",
   "type": "module",
   "bin": {
+    "hm-check-api-reports": "./src/api-extractor/cli.js",
     "hm-lint-deps": "./src/dependency-cruiser/cli.js"
   },
   "exports": {
+    "./api-extractor/base.json": "./api-extractor/base.json",
     "./biome": "./biome/base.jsonc",
     "./commitlint": "./src/commitlint/index.js",
     "./dependency-cruiser": "./src/dependency-cruiser/index.js",
@@ -27,6 +29,7 @@
     "./tsconfig/*": "./tsconfig/*.json"
   },
   "files": [
+    "api-extractor",
     "biome",
     "src",
     "tsconfig",
@@ -49,6 +52,7 @@
   "peerDependencies": {
     "@biomejs/biome": "^2.6.2",
     "@commitlint/cli": "catalog:",
+    "@microsoft/api-extractor": "catalog:",
     "dependency-cruiser": "catalog:",
     "lint-staged": "catalog:",
     "secretlint": "catalog:",
@@ -60,6 +64,9 @@
       "optional": true
     },
     "@commitlint/cli": {
+      "optional": true
+    },
+    "@microsoft/api-extractor": {
       "optional": true
     },
     "dependency-cruiser": {
@@ -85,6 +92,7 @@
     "@commitlint/lint": "catalog:",
     "@commitlint/load": "catalog:",
     "@commitlint/types": "catalog:",
+    "@microsoft/api-extractor": "catalog:",
     "@secretlint/node": "catalog:",
     "@types/node": "catalog:",
     "@types/picomatch": "catalog:",

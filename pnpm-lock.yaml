@@ -326,6 +326,9 @@ importers:
       '@commitlint/types':
         specifier: 'catalog:'
         version: 21.2.3
+      '@microsoft/api-extractor':
+        specifier: 'catalog:'
+        version: 7.60.1(@types/node@24.19.2)
       '@secretlint/node':
         specifier: 'catalog:'
         version: 13.1.0(supports-color@10.2.2)
