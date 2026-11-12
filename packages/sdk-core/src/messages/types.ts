@@ -59,6 +59,12 @@ export interface MessageFormats {
    * seconds, such as "3 hr, 5 min".
    */
   readonly duration: number;
+  /**
+   * `{name, megapixels}`: a pixel count in millions, with up to one fraction
+   * digit, such as "24.2" for 24 159 744. The message gives the unit, such as
+   * `{actual, megapixels} megapixels`, so translators can word it.
+   */
+  readonly megapixels: number;
   /** `{name, date}`: a date, as a `Date` or a timestamp in milliseconds. */
   readonly date: Date | number;
   /** `{name, time}`: a time of day, as a `Date` or a timestamp in milliseconds. */

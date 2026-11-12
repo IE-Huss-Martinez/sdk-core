@@ -21,6 +21,7 @@ const NAMED_FORMATS: ReadonlySet<string> = new Set<Format>([
   "number",
   "fileSize",
   "duration",
+  "megapixels",
   "date",
   "time",
 ]);

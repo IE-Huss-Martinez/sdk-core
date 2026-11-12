@@ -11,6 +11,7 @@ const en = defineMessages({
   "file.opened": "Opened {name}",
   "result.saved": "Saved {size, fileSize}",
   "audio.length": "Length: {length, duration}",
+  "image.size": "The image is {actual, megapixels} megapixels.",
   "pages.total": "{count, number} pages",
   "file.modified": "Modified {when, date} at {when, time}",
   "pages.selected": plural("count", {
@@ -34,6 +35,12 @@ afterEach(() => {
 });
 
 describe("message types", () => {
+  it("types a megapixels parameter as a number", () => {
+    expectTypeOf<MessageParams<"{actual, megapixels} MP">>().toEqualTypeOf<{
+      readonly actual: number;
+    }>();
+  });
+
   it("types a duration parameter as a number", () => {
     expectTypeOf<MessageParams<"Length: {length, duration}">>().toEqualTypeOf<{
       readonly length: number;
@@ -104,6 +111,39 @@ describe("createMessages", () => {
     expect(messages.t("result.saved", { size: 1_300_000 })).toBe("Saved 1.3 MB");
     expect(messages.t("result.saved", { size: 2_000_000_000 })).toBe("Saved 2 GB");
     expect(de.t("result.saved", { size: 1_300_000 })).toBe("Saved 1,3 MB");
+  });
+
+  describe("megapixels", () => {
+    it("formats a pixel count in millions, with up to one fraction digit, for the locale", () => {
+      const messages = createMessages(en);
+      const de = createMessages(en, { locale: "de" });
+
+      expect(messages.t("image.size", { actual: 50_000_000 })).toBe("The image is 50 megapixels.");
+      expect(messages.t("image.size", { actual: 24_159_744 })).toBe(
+        "The image is 24.2 megapixels.",
+      );
+      expect(messages.t("image.size", { actual: 1_234_567_890 })).toBe(
+        "The image is 1,234.6 megapixels.",
+      );
+      expect(messages.t("image.size", { actual: 0 })).toBe("The image is 0 megapixels.");
+      expect(de.t("image.size", { actual: 24_159_744 })).toBe("The image is 24,2 megapixels.");
+    });
+
+    it.each([Number.NaN, Number.POSITIVE_INFINITY, -1, "50"])(
+      "leaves out %s, with a warning",
+      (actual) => {
+        const messages = createMessages(en);
+
+        expect(messages.t("image.size", { actual: actual as number })).toBe(
+          "The image is  megapixels.",
+        );
+        expect(warnings).toEqual([
+          expect.stringContaining(
+            'The message "image.size" is missing a valid "actual" parameter.',
+          ),
+        ]);
+      },
+    );
   });
 
   describe("durations", () => {

@@ -284,6 +284,10 @@ function formatValue(value: unknown, format: Format, locale: string): string | u
       return typeof value === "number" && Number.isFinite(value)
         ? formatFileSize(locale, value)
         : undefined;
+    case "megapixels":
+      return typeof value === "number" && Number.isFinite(value) && value >= 0
+        ? numberFormat(locale, { maximumFractionDigits: 1 }).format(value / 1_000_000)
+        : undefined;
     case "duration":
       return typeof value === "number" && Number.isFinite(value) && value >= 0
         ? formatDuration(locale, value)
