@@ -7,7 +7,7 @@ Use [`template.md`](template.md) for new records. Name files `NNNN-short-title.m
 | # | Decision | Status |
 |---|---|---|
 | [0001](0001-record-architecture-decisions.md) | Record architecture decisions | Accepted |
-| [0002](0002-one-repository-per-sdk.md) | One repository per SDK, with shared `sdk-core` and `ui` | Accepted; repositories moved to an organisation by [0024](0024-github-organisation-for-the-sdk-family.md); `sdk-ci` added by [0026](0026-share-ci-steps-from-sdk-ci.md) |
+| [0002](0002-one-repository-per-sdk.md) | One repository per SDK, with shared `sdk-core` and `ui` | Accepted; repositories moved to an organisation by [0024](0024-github-organisation-for-the-sdk-family.md); `sdk-ci` added by [0026](0026-share-ci-steps-from-sdk-ci.md); `ai-core` and non-media kinds added by [0035](0035-ai-core-and-host-configured-network.md) |
 | [0003](0003-hm-namespace.md) | The `hm` namespace for everything that reaches the page | Accepted |
 | [0004](0004-entry-points-and-module-format.md) | Package entry points and module format | Accepted; `ui` as an SDK dependency settled by [0036](0036-ui-as-a-dependency-of-the-sdks.md) |
 | [0005](0005-plain-css-with-cascade-layers.md) | Plain CSS with cascade layers | Accepted; one required copy of `ui`'s stylesheet per host by [0036](0036-ui-as-a-dependency-of-the-sdks.md) |
@@ -17,7 +17,7 @@ Use [`template.md`](template.md) for new records. Name files `NNNN-short-title.m
 | [0009](0009-features-as-tools.md) | Features as registered tool modules | Accepted; `defineTool` and the registries defined by [0030](0030-tools-and-keyboard-shortcuts.md) |
 | [0010](0010-edits-as-commands.md) | Edits as commands with undo history | Accepted; its history is shared through [0029](0029-session-store-and-history.md) |
 | [0011](0011-worker-messaging-and-assets.md) | Typed worker messaging, with inline or self-hosted assets | Accepted; refined for engines' own workers by [0028](0028-third-party-engines.md) |
-| [0012](0012-hostile-input-and-no-network.md) | Treat every input file as hostile, and make no network requests | Accepted; its pdf.js `isEvalSupported` rule superseded by [0028](0028-third-party-engines.md); "parse only in workers" refined for page-only decoders by [0031](0031-platform-decoders-on-the-page.md) |
+| [0012](0012-hostile-input-and-no-network.md) | Treat every input file as hostile, and make no network requests | Accepted; its pdf.js `isEvalSupported` rule superseded by [0028](0028-third-party-engines.md); "parse only in workers" refined for page-only decoders by [0031](0031-platform-decoders-on-the-page.md); network rule superseded for `ai-core` by [0035](0035-ai-core-and-host-configured-network.md) |
 | [0013](0013-browser-and-react-support.md) | Browser and React support | Accepted |
 | [0014](0014-accessibility-and-translatable-text.md) | Accessibility and translatable text | Accepted |
 | [0015](0015-verification-and-releases.md) | Verification, releases and trusted publishing | Accepted; release tooling superseded by [0021](0021-version-and-release-with-changesets.md) |
@@ -40,6 +40,7 @@ Use [`template.md`](template.md) for new records. Name files `NNNN-short-title.m
 | [0032](0032-duration-format-and-hertz-unit.md) | A duration format for messages and a hertz unit for limits | Accepted; refines [0019](0019-message-catalogues.md) and [0020](0020-file-policy.md) |
 | [0033](0033-api-reports-for-several-entry-points.md) | API reports for packages with several entry points | Accepted |
 | [0034](0034-shared-error-helpers.md) | Shared helpers that adapt failures to an SDK's error class | Accepted; refines [0018](0018-worker-rpc-protocol.md) and [0020](0020-file-policy.md) |
+| [0035](0035-ai-core-and-host-configured-network.md) | `ai-core` for AI providers, and network access only to host-configured endpoints | Accepted; refines [0002](0002-one-repository-per-sdk.md)'s family; supersedes [0012](0012-hostile-input-and-no-network.md)'s network rule for `ai-core` |
 | [0036](0036-ui-as-a-dependency-of-the-sdks.md) | `@hussmartinez/ui` as a dependency of the SDKs | Accepted; refines [0004](0004-entry-points-and-module-format.md), [0005](0005-plain-css-with-cascade-layers.md) and [0017](0017-core-errors-and-shared-runtime-imports.md) |
 | [0037](0037-windowed-blob-reader.md) | A windowed `Blob` reader for probes and parsers | Accepted |
 | [0038](0038-self-hosted-assets-and-worker-version.md) | Self-hosted assets: one `assetsUrl`, and workers that must match the page's version | Accepted; refines [0011](0011-worker-messaging-and-assets.md) and [0018](0018-worker-rpc-protocol.md) |

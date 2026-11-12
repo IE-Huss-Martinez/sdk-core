@@ -1,18 +1,19 @@
 # Standards for the `@hussmartinez` SDK family
 
-These rules apply to `sdk-core`, `ui` and every `<kind>-sdk` repository. Each rule links to the architecture decision record (ADR) that explains it. When a rule and an ADR disagree, the newest accepted ADR wins, and this file must be corrected.
+These rules apply to `sdk-core`, `ui`, `ai-core` and every `<kind>-sdk` repository. Each rule links to the architecture decision record (ADR) that explains it. When a rule and an ADR disagree, the newest accepted ADR wins, and this file must be corrected.
 
-## Repositories and packages ([ADR 0002](docs/adr/0002-one-repository-per-sdk.md), [ADR 0024](docs/adr/0024-github-organisation-for-the-sdk-family.md))
+## Repositories and packages ([ADR 0002](docs/adr/0002-one-repository-per-sdk.md), [ADR 0024](docs/adr/0024-github-organisation-for-the-sdk-family.md), [ADR 0035](docs/adr/0035-ai-core-and-host-configured-network.md))
 
 | Repository | Publishes | Role |
 |---|---|---|
 | `ie-huss-martinez/sdk-core` | `@hussmartinez/sdk-core` | Headless shared runtime: worker messaging, errors, session primitives, tool registry, custom-element base, file policy, messages helper |
 | | `@hussmartinez/sdk-config` | Shared tsconfig, Biome, stylelint, dependency-cruiser, api-extractor, commitlint, lint-staged and secretlint presets |
 | `ie-huss-martinez/ui` | `@hussmartinez/ui` | Design system: tokens, themes, base styles, shared React components |
-| `ie-huss-martinez/<kind>-sdk` | `@hussmartinez/<kind>-sdk` | One media kind: `pdf`, `image`, `video`, `audio`, … |
+| `ie-huss-martinez/ai-core` | `@hussmartinez/ai-core` | Headless AI provider layer: message model, provider adapters, errors, server handler and browser transport. Renders nothing, and is the only package with network code |
+| `ie-huss-martinez/<kind>-sdk` | `@hussmartinez/<kind>-sdk` | One kind: media such as `pdf`, `image`, `video` and `audio`, or another product area such as `chat` |
 | `ie-huss-martinez/sdk-ci` | (none: GitHub Actions) | The family's shared CI and release steps, as versioned composite actions ([ADR 0026](docs/adr/0026-share-ci-steps-from-sdk-ci.md)) |
 
-The repositories live in the `ie-huss-martinez` GitHub organisation, and the npm scope is `@hussmartinez`. `pnpm create-sdk-repo <name>` in `sdk-core` creates a repository and keeps its GitHub settings, environments, branch protection and required checks to the family's (CONTRIBUTING.md, "Setting up a new repository"). Everything specific to one media kind stays in that SDK. `sdk-core` and `ui` stay small and stable.
+The repositories live in the `ie-huss-martinez` GitHub organisation, and the npm scope is `@hussmartinez`. `pnpm create-sdk-repo <name>` in `sdk-core` creates a repository and keeps its GitHub settings, environments, branch protection and required checks to the family's (CONTRIBUTING.md, "Setting up a new repository"). Everything specific to one kind stays in that SDK. `sdk-core` and `ui` stay small and stable. AI provider code lives in `ai-core`, never in `sdk-core`.
 
 ## Naming ([ADR 0003](docs/adr/0003-hm-namespace.md))
 
@@ -104,6 +105,7 @@ Programmatic control goes through a ref handle, such as `open(file)`, `export()`
 
 - **Ports and adapters:**
   - the core defines ports, such as `PdfEngine` and `PdfProcessor`;
+  - an SDK that needs AI defines its own provider port, such as `AiProvider` with `complete()` and `stream()` taking an `AbortSignal`, with a fake and contract tests; hosts pass a provider from `ai-core` or their own backend ([ADR 0035](docs/adr/0035-ai-core-and-host-configured-network.md));
   - adapters implement them and run in workers;
   - every core layer may import `@hussmartinez/sdk-core`, but never `@hussmartinez/ui`, `react` or `react-dom`, and neither may `adapters/` or `workers/`. Nothing the `.` entry reaches may import React or `ui`'s React entry, even as types; it may reach `ui`'s server-safe root entry through `features/` ([ADR 0036](docs/adr/0036-ui-as-a-dependency-of-the-sdks.md));
   - `core/errors` is a leaf: it imports only `core/model` and `@hussmartinez/sdk-core`, and every layer may import it;
@@ -125,7 +127,7 @@ Programmatic control goes through a ref handle, such as `open(file)`, `export()`
 - **Errors:** one `SdkError` subclass per SDK, with a stable `code`, `details` and `cause`. User-facing text comes from messages, never from error text.
 - **Contract tests:** every adapter passes the contract-test suite for its port.
 
-## Security and privacy ([ADR 0012](docs/adr/0012-hostile-input-and-no-network.md), [ADR 0020](docs/adr/0020-file-policy.md), [ADR 0028](docs/adr/0028-third-party-engines.md))
+## Security and privacy ([ADR 0012](docs/adr/0012-hostile-input-and-no-network.md), [ADR 0020](docs/adr/0020-file-policy.md), [ADR 0028](docs/adr/0028-third-party-engines.md), [ADR 0035](docs/adr/0035-ai-core-and-host-configured-network.md))
 
 - **Treat every file as hostile** ([ADR 0020](docs/adr/0020-file-policy.md)):
   - parse only in workers, except with a browser decoder that only exists on the page, such as `decodeAudioData`, and then only for files a worker has probed and bounded, with the decoded output checked against that bound ([ADR 0031](docs/adr/0031-platform-decoders-on-the-page.md));
@@ -138,7 +140,20 @@ Programmatic control goes through a ref handle, such as `open(file)`, `export()`
   - link protocols are allowlisted;
   - links get `rel="noopener noreferrer"`.
 - **Never insert file-derived strings as HTML.** Sanitise SVG, or display it only through `<img>`.
-- **No network requests** by default. End-to-end tests fail on any request to another origin.
+- **No network requests** by default. End-to-end tests fail on any request to an origin the test didn't configure.
+  - No `@hussmartinez` SDK, and neither `sdk-core` nor `ui`, makes any request.
+  - None of them imports `@hussmartinez/ai-core`, for code or types: the `sdk-config` dependency-cruiser preset forbids it, with no opt-in. An SDK that needs AI defines its own provider port, and the host passes a provider ([ADR 0035](docs/adr/0035-ai-core-and-host-configured-network.md)).
+  - `ai-core` is the only package with network code. It requests only endpoints the host configures, and only for calls the host or the user started. A unit test proves that nothing is requested on import, event callbacks never carry prompts, outputs or keys, and the documented CSP limits `connect-src` to the host's endpoint.
+- **AI secrets stay on the server** ([ADR 0035](docs/adr/0035-ai-core-and-host-configured-network.md)):
+  - `ai-core`'s provider adapters run behind the host's request handler, and the browser talks only to the host's endpoint;
+  - an adapter refuses to run in a browser unless the host passes `dangerouslyAllowBrowser: true`;
+  - keys never reach an error's `message`, `details` or `cause`, serialised errors, event payloads or logs; `cause` never holds a request, headers or a raw response; request and response bodies stay out of `details`; a sentinel test covers every adapter's failure paths.
+- **Provider responses and model output are hostile input** ([ADR 0035](docs/adr/0035-ai-core-and-host-configured-network.md)):
+  - an SDK treats whatever its provider port returns as hostile, whichever provider the host passed;
+  - `ai-core` limits response size, stream duration and idle time with `defineLimits`, failing with `RESPONSE_TOO_LARGE`, `STREAM_TIMEOUT` and `STREAM_IDLE`, and hosts set them through `limits`;
+  - model output is displayed as text, or as a strict formatting subset rendered to elements, never as HTML, with no remote resources by default;
+  - tool calls are never executed automatically: running one needs a host handler for its name, and a `maxSteps` limit;
+  - `ai-core`'s tests replay recorded provider responses, SDKs test against their fake provider, and CI never calls a provider.
 - **Third-party engines are proven offline** ([ADR 0028](docs/adr/0028-third-party-engines.md)): every data file an engine needs, such as character maps, fonts, colour profiles, decoders or models, comes from the SDK's asset provider, never from the engine's default URLs; fallbacks that load code by URL aren't bundled; unknown asset requests fail closed; and end-to-end fixtures exercise every data path the engines have.
 - **Supply chain:**
   - minimal, justified dependencies;
