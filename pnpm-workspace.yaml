@@ -49,3 +49,11 @@ minimumReleaseAge: 1440
 trustPolicy: no-downgrade
 # Transitive dependencies must come from the registry, not git or tarball URLs.
 blockExoticSubdeps: true
+
+# Transitive versions forced past a known advisory, each with when to remove it.
+overrides:
+  # GHSA-g3hv-75wg-m249, fixed in minimatch 11.0.1. API Extractor, up to
+  # 7.60.1, pins minimatch 10.2.3. It calls only minimatch(name, pattern),
+  # for bundledPackages, which neither package's configuration sets. Remove
+  # once API Extractor depends on minimatch 11.
+  "@microsoft/api-extractor>minimatch": ^11.0.1
