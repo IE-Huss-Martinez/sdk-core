@@ -5,7 +5,7 @@
 Shared keyboard shortcuts for SDK editors (ADR 0030), from the root entry:
 
 - **`createShortcutRegistry({ platform, tools })`** registers your tools' shortcuts and matches keyboard events to them:
-  - **`match(event)`** works with DOM and React events and plain objects, and returns the tool id to run. Call it from a listener on the editor's root, never on `window`.
+  - **`match(event)`** works with DOM events and plain objects, and returns the tool id to run. From a React handler, pass `event.nativeEvent`: React's synthetic event has no `composedPath`, which `match` needs to recognise fields inside shadow roots. Call it from a listener on the editor's root, never on `window`.
   - **It won't take keys that belong to something else.** It never fires in text fields unless a shortcut sets `inEditable`, never takes `Space`, `Enter` or arrows from focused buttons, links and other controls, and ignores IME input, handled events, and held-down keys unless a shortcut sets `repeat`.
   - **`Shift` is ignored for symbol keys,** so `+` and `0` work on every keyboard layout.
   - **Letters work on every layout:** a Latin layout, including Dvorak and AZERTY, follows its printed letter, and on Cyrillic, Greek, Hebrew or Arabic layouts the physical key decides, so `Ctrl+Z` is still undo.
