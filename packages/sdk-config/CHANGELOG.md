@@ -1,5 +1,13 @@
 # @hussmartinez/sdk-config
 
+## 0.2.1
+
+### Patch Changes
+
+- [#82](https://github.com/ie-huss-martinez/sdk-core/pull/82) [`e4c8dfd`](https://github.com/ie-huss-martinez/sdk-core/commit/e4c8dfd9cda0bfe7e7a4af56b389e0121a9a1ee4) Thanks [@hussmartinez](https://github.com/hussmartinez)! - The dependency-cruiser preset now checks imports that resolve into a dependency's `dist/`. It used to leave out every path with a `dist/` segment, including `node_modules/<package>/dist/`, where most packages keep their code, such as `@hussmartinez/ui`, so rules such as `core-no-ui`, `entry-no-react` and `not-to-dev-dep` couldn't see imports of them. Only the repository's own `dist/`, `temp/` and `coverage/`, and fixtures under `src/`, `test/` or `tests/`, are left out now. Packages installed flat, as `node_modules/<name>`, are matched as well as pnpm's store paths, and `layer-errors` lets tests in `core/errors` import test tools. `hm-lint-deps` may now report violations it missed before: fix them, as the rule's message says.
+
+- [#85](https://github.com/ie-huss-martinez/sdk-core/pull/85) [`64a998d`](https://github.com/ie-huss-martinez/sdk-core/commit/64a998d88c65fbaa258880265f64e8252da70f28) Thanks [@hussmartinez](https://github.com/hussmartinez)! - 0.2.0 was never published; its changes ship in this release.
+
 ## 0.2.0
 
 ### Minor Changes
