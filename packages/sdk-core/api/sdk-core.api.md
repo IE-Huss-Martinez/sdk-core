@@ -271,6 +271,7 @@ export interface MessageFormats {
     readonly default: string | number;
     readonly duration: number;
     readonly fileSize: number;
+    readonly megapixels: number;
     readonly number: number;
     readonly time: Date | number;
 }

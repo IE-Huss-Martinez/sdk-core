@@ -3,6 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-11-12
 - **Refines:** [ADR 0019](0019-message-catalogues.md)'s placeholder formats and [ADR 0020](0020-file-policy.md)'s limit units
+- **Amended:** 2026-11-12, to add `{name, megapixels}` for pixel counts
 
 ## Context
 
@@ -20,6 +21,14 @@ The audio SDK needs to show lengths, such as a file's duration or the limit it e
 - **It's formatted for the locale** with `Intl.DurationFormat` and `style: "short"`, cached like the other formatters. `Intl.DurationFormat` is only Baseline "newly available" (2025), not the "widely available" that [ADR 0013](0013-browser-and-react-support.md) prefers, so where it's missing, sdk-core falls back to `Intl.NumberFormat`'s unit style joined with `Intl.ListFormat`, which gives the same text in English.
 - **An invalid value is left out:** a negative, non-finite or non-number value is treated like a missing parameter, with the development warning [ADR 0019](0019-message-catalogues.md) already defines.
 - **Fractions of a second and days aren't shown.** Editing precision, such as a playhead's position, isn't message text; an SDK formats it in its own UI.
+
+### `{name, megapixels}` (amendment)
+
+`IMAGE_TOO_LARGE`, in `pdf-sdk` and the image SDK, carries pixel counts in its `details`, and the image SDK's [ADR 0004](https://github.com/ie-huss-martinez/image-sdk/blob/main/docs/adr/0004-image-limits.md) shows them as megapixels, such as "50 megapixels". Their messages showed no number, because no format could.
+
+- **It takes a pixel count,** the unit of `pixels` limits, and shows it in millions with `Intl.NumberFormat` for the locale, with up to one fraction digit: 24 159 744 is "24.2" in English and "24,2" in German.
+- **It's only the number.** The message gives the unit, such as "{actual, megapixels} megapixels" or "MP", so translators can word it. `Intl` has no megapixel unit to format it with.
+- **Invalid values are left out,** with the development warning, as for durations.
 
 ### `hertz`
 

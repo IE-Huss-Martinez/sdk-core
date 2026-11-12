@@ -67,7 +67,7 @@ messages.t("pages.selected", { count: 3 });       // "3 pages selected"
 messages.error(error);                            // text for error.code, never error.message
 ```
 
-- **Placeholders:** `{name}` takes a string or a number. `{name, number}`, `{name, fileSize}` (decimal units), `{name, duration}` (milliseconds, shown as "3 hr, 5 min"), `{name, date}` and `{name, time}` are formatted with `Intl` for the locale. Unknown keys and missing or wrongly typed parameters are type errors.
+- **Placeholders:** `{name}` takes a string or a number. `{name, number}`, `{name, fileSize}` (decimal units), `{name, duration}` (milliseconds, shown as "3 hr, 5 min"), `{name, megapixels}` (pixels, shown in millions, such as "24.2"), `{name, date}` and `{name, time}` are formatted with `Intl` for the locale. Unknown keys and missing or wrongly typed parameters are type errors.
 - **Plurals:** plain objects, `{ "$plural": "count", "one": "…", "other": "…" }`, whose form is chosen with `Intl.PluralRules`. Translations may add forms, such as `few` and `many`.
 - **Errors:** `messages.error()` looks up `errors.<CODE>` with the error's `details` as parameters, and falls back to `errors.UNKNOWN`. Include `sdkCoreMessages` for sdk-core's own codes.
 - **Plain text only:** the output is a string, never markup, so render it as text.
