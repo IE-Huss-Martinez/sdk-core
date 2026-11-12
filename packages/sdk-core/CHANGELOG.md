@@ -1,5 +1,51 @@
 # @hussmartinez/sdk-core
 
+## 0.3.0
+
+### Minor Changes
+
+- [#79](https://github.com/ie-huss-martinez/sdk-core/pull/79) [`74ea418`](https://github.com/ie-huss-martinez/sdk-core/commit/74ea4186a9030af078cdd297d146e286b6911a15) Thanks [@hussmartinez](https://github.com/hussmartinez)! - Limits can use the new `"bitsPerSecond"` unit, for data rates such as a video's bitrate. It's reported in a violation's `details.unit`, like the other units.
+
+- [#62](https://github.com/ie-huss-martinez/sdk-core/pull/62) [`fee1a01`](https://github.com/ie-huss-martinez/sdk-core/commit/fee1a0137408e3e3579d467fd1fcbea697e49262) Thanks [@hussmartinez](https://github.com/hussmartinez)! - Messages can format durations with `{name, duration}`. It takes milliseconds and shows hours, minutes and seconds for the locale, leaving out units that are zero: `"Length: {length, duration}"` with `{ length: 11_100_000 }` reads "Length: 3 hr, 5 min" in English. Durations are rounded to the nearest second, and zero is "0 sec". A negative or non-finite value is left out, with a development warning, as a missing parameter is.
+  
+  Limits can use the new `"hertz"` unit, for rates such as a sample rate or a frame rate.
+
+- [#68](https://github.com/ie-huss-martinez/sdk-core/pull/68) [`cfc781e`](https://github.com/ie-huss-martinez/sdk-core/commit/cfc781e4e294492ccfaf6a63692a7e5748724fdd) Thanks [@hussmartinez](https://github.com/hussmartinez)! - Adds `createErrorHelpers(errorClass, { fallbackCode, fallbackMessage })`, which returns `adapt`, `abortError` and `throwIfAborted` for an SDK's own error class:
+  
+  - `adapt(reason, message?)` returns the SDK's error as it is, keeps another `SdkError`'s code, message and details, and gives anything else the fallback code. The original is the `cause`.
+  - `abortError(signal)` keeps an `SdkError` reason's code, such as `PROCESSING_TIME_EXCEEDED`, makes a `TimeoutError` `TIMEOUT`, and anything else `ABORTED`.
+  - `throwIfAborted(signal)` throws that error once the signal has aborted.
+  
+  ```ts
+  export const { adapt: asAudioError, abortError, throwIfAborted } = createErrorHelpers(AudioError, {
+    fallbackCode: "UNKNOWN",
+    fallbackMessage: "Audio processing failed.",
+  });
+  ```
+
+- [#75](https://github.com/ie-huss-martinez/sdk-core/pull/75) [`d3c5306`](https://github.com/ie-huss-martinez/sdk-core/commit/d3c5306683e9e8e42bf9a05cc8d2f65936285d57) Thanks [@hussmartinez](https://github.com/hussmartinez)! - Messages can format pixel counts with `{name, megapixels}`. It shows the count in millions for the locale, with up to one fraction digit, and the message gives the unit: `"The image is {actual, megapixels} megapixels."` with `{ actual: 24_159_744 }` reads "The image is 24.2 megapixels." in English. A negative or non-finite value is left out, with a development warning.
+
+- [#69](https://github.com/ie-huss-martinez/sdk-core/pull/69) [`ac41fd4`](https://github.com/ie-huss-martinez/sdk-core/commit/ac41fd48edbc9d5df2f9a84d5fa529b1b88a6cc2) Thanks [@hussmartinez](https://github.com/hussmartinez)! - Adds `createWindowReader(file, { windowSize })`, for probes and parsers that walk a `Blob` in small steps. `bytes(offset, length)` answers from a window read 1 MiB at a time by default, returns fewer bytes at the end of the file and none past it, and never holds more than the rest of the file. Results are views into the window, so don't modify them. An offset, length or window size that isn't a non-negative integer (positive, for the window size) throws `RangeError`.
+  
+  ```ts
+  const reader = createWindowReader(file);
+  const header = await reader.bytes(0, 12);
+  ```
+
+- [#71](https://github.com/ie-huss-martinez/sdk-core/pull/71) [`a8f3005`](https://github.com/ie-huss-martinez/sdk-core/commit/a8f3005d319faf460b9f213ae1201bcde780ec05) Thanks [@hussmartinez](https://github.com/hussmartinez)! - Adds support for self-hosted workers that must match the page's version, and for resolving `assetsUrl`:
+  
+  - `exposeWorker(handlers, { packageVersion })` announces the version the worker was built from.
+  - `createWorkerClient({ packageVersion, workerAsset })` refuses a worker that announces another version, or none, with `WORKER_START_FAILED` and `details` of `{ asset, expected, actual }`, before any call reaches it. This catches a self-hosted worker left over from before an upgrade. Clients without `packageVersion` behave as before.
+  - `resolveAssetsBase(assetsUrl)` resolves an SDK's `assetsUrl` against the page to an absolute URL ending in `/`, and throws `TypeError` for a relative URL with no page, as during server rendering, or a URL with a query or fragment.
+  
+  The worker protocol's version is unchanged: the new field is optional, and older clients ignore it.
+
+### Patch Changes
+
+- [#76](https://github.com/ie-huss-martinez/sdk-core/pull/76) [`703189a`](https://github.com/ie-huss-martinez/sdk-core/commit/703189a0b6f7dd5707de6b1bdce6cdba3c254663) Thanks [@hussmartinez](https://github.com/hussmartinez)! - Production bundles no longer carry the text of sdk-core's development warnings. Each warning is now guarded inline by `process.env.NODE_ENV`, which bundlers replace and fold away, so an application that only uses `createMessages` ships about 200 bytes less, compressed. Behaviour is unchanged: warnings still print in development, and never in production.
+
+- [#81](https://github.com/ie-huss-martinez/sdk-core/pull/81) [`2b59dc2`](https://github.com/ie-huss-martinez/sdk-core/commit/2b59dc2f37251315bb3cd6851e7bf95a69466a9e) Thanks [@hussmartinez](https://github.com/hussmartinez)! - 0.1.3 and 0.2.0 were published without their built files (`dist/`), so importing them failed. This release is built and checked before publishing: every file that `package.json` points to must be in the tarball. If you're on 0.1.3 or 0.2.0, upgrade.
+
 ## 0.2.0
 
 ### Minor Changes

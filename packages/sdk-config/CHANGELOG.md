@@ -1,5 +1,22 @@
 # @hussmartinez/sdk-config
 
+## 0.2.0
+
+### Minor Changes
+
+- [#65](https://github.com/ie-huss-martinez/sdk-core/pull/65) [`16a28aa`](https://github.com/ie-huss-martinez/sdk-core/commit/16a28aa2705bea21b8657f95258e7dc540aa91bb) Thanks [@hussmartinez](https://github.com/hussmartinez)! - Adds an api-extractor preset and the `hm-check-api-reports` command, for packages with more than one entry point.
+  
+  - **`@hussmartinez/sdk-config/api-extractor/base.json`:** extend it from each entry point's `api-extractor.json`, using that full path, and set only the paths. It lists the package types a secondary entry point copies in its API report (`ae-forgotten-export`), instead of failing or hiding them.
+  - **`hm-check-api-reports --main <report> --types <rollup> [<report>...]`:** run it after api-extractor. It fails when another entry point copies a type the main entry point doesn't export, or a class with `private`, `protected` or `#private` members, whose copy TypeScript would treat as a different type.
+  
+  If your configuration turns `ae-forgotten-export` off, extend the preset and run the command instead. It needs `@microsoft/api-extractor`, an optional peer dependency.
+
+- [#67](https://github.com/ie-huss-martinez/sdk-core/pull/67) [`267f273`](https://github.com/ie-huss-martinez/sdk-core/commit/267f273681160a664f488614eddec2b2145e42a2) Thanks [@hussmartinez](https://github.com/hussmartinez)! - The api-extractor preset now fails when a public type references an `@internal` one (`ae-incompatible-release-tags`). api-extractor trims `@internal` declarations from the published declaration rollup, so that public type would reach users broken; api-extractor's own default only notes it in the report. To fix the failure, export the referenced type as `@public`, or leave it unexported without a release tag.
+
+- [#80](https://github.com/ie-huss-martinez/sdk-core/pull/80) [`6360866`](https://github.com/ie-huss-martinez/sdk-core/commit/63608667c83da50ed0833cc3b77ba052f570862d) Thanks [@hussmartinez](https://github.com/hussmartinez)! - The dependency-cruiser preset's `entry-no-ui` rule is now `entry-no-react` (ADR 0036, amended). Nothing the `.` entry reaches may import `react`, `react-dom` or `@hussmartinez/ui/react`, even as types, but it may now reach `@hussmartinez/ui`'s root entry through `src/features`, so headless tool definitions can import `IconName`. `core-no-ui` still keeps `src/core`, `src/adapters` and `src/workers` free of ui entirely. If your `.dependency-cruiser.js` adjusts the rule by name, rename `entry-no-ui` to `entry-no-react`.
+
+- [#72](https://github.com/ie-huss-martinez/sdk-core/pull/72) [`f007269`](https://github.com/ie-huss-martinez/sdk-core/commit/f007269b245925f0ffd89557d2bd3c15fd5abb54) Thanks [@hussmartinez](https://github.com/hussmartinez)! - The dependency-cruiser preset keeps React and `@hussmartinez/ui` out of every headless part of an SDK (ADR 0036). `core-no-ui` now also covers `src/adapters` and `src/workers`, and the new `entry-no-ui` rule fails when anything the `.` entry module, `src/index.*`, reaches imports `react`, `react-dom` or `@hussmartinez/ui`, naming the path it took. A headless entry that reaches them through a feature or an adapter now fails `hm-lint-deps`: move that import behind the `./react` or `./element` entry.
+
 ## 0.1.5
 
 ### Patch Changes
