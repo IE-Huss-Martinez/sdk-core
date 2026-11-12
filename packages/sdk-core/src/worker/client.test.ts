@@ -25,8 +25,13 @@ class FakeWorker extends EventTarget implements WorkerLike {
     this.dispatchEvent(new MessageEvent("message", { data }));
   }
 
-  ready(version = 1): void {
-    this.reply({ protocol: "hm-rpc", version, type: "ready" });
+  ready(version = 1, packageVersion?: unknown): void {
+    this.reply({
+      protocol: "hm-rpc",
+      version,
+      type: "ready",
+      ...(packageVersion === undefined ? {} : { packageVersion }),
+    });
   }
 
   respond(id: unknown, output: unknown): void {
@@ -44,6 +49,8 @@ function setup(
     cancelTimeout?: number;
     idleTimeout?: number;
     onCrash?: (error: unknown) => void;
+    packageVersion?: string;
+    workerAsset?: string;
   } = {},
 ) {
   const workers: FakeWorker[] = [];
@@ -120,6 +127,85 @@ describe("createWorkerClient", () => {
     const error = await rejection(call);
     expect(isSdkError(error, "WORKER_PROTOCOL_MISMATCH")).toBe(true);
     expect(workers[0]?.terminated).toBe(true);
+  });
+
+  describe("packageVersion", () => {
+    it("accepts a worker that announces the same version", async () => {
+      const { client, workers } = setup({ packageVersion: "1.4.0" });
+      const call = client.call("echo", "x");
+      await flush();
+      workers[0]?.ready(1, "1.4.0");
+      await flush();
+      workers[0]?.respond(1, "x");
+
+      expect(await call).toBe("x");
+    });
+
+    it("refuses a worker from another version with WORKER_START_FAILED and its details", async () => {
+      const onCrash = vi.fn();
+      const { client, workers } = setup({
+        packageVersion: "1.4.0",
+        workerAsset: "https://example.com/assets/audio/audio.worker.js",
+        onCrash,
+      });
+      const call = client.call("echo", "x");
+      await flush();
+      workers[0]?.ready(1, "1.3.2");
+
+      const error = await rejection(call);
+      expect(isSdkError(error, "WORKER_START_FAILED")).toBe(true);
+      expect(error).toMatchObject({
+        details: {
+          asset: "https://example.com/assets/audio/audio.worker.js",
+          expected: "1.4.0",
+          actual: "1.3.2",
+        },
+      });
+      expect(workers[0]?.terminated).toBe(true);
+      expect(workers[0]?.calls()).toEqual([]);
+      expect(onCrash).toHaveBeenCalledWith(error);
+    });
+
+    it("refuses a worker that announces no version, or not a string, with actual null", async () => {
+      for (const announced of [undefined, 14]) {
+        const { client, workers } = setup({ packageVersion: "1.4.0" });
+        const call = client.call("echo", "x");
+        await flush();
+        workers[0]?.ready(1, announced);
+
+        expect(await rejection(call)).toMatchObject({
+          code: "WORKER_START_FAILED",
+          details: { asset: null, expected: "1.4.0", actual: null },
+        });
+      }
+    });
+
+    it("tries a new worker on the next call after refusing one", async () => {
+      const { client, workers } = setup({ packageVersion: "1.4.0" });
+      const first = client.call("echo", "x");
+      await flush();
+      workers[0]?.ready(1, "1.3.2");
+      await rejection(first);
+
+      const second = client.call("echo", "y");
+      await flush();
+      workers[1]?.ready(1, "1.4.0");
+      await flush();
+      workers[1]?.respond(2, "y");
+
+      expect(await second).toBe("y");
+    });
+
+    it("ignores the worker's version when the client doesn't expect one", async () => {
+      const { client, workers } = setup();
+      const call = client.call("echo", "x");
+      await flush();
+      workers[0]?.ready(1, "0.0.1");
+      await flush();
+      workers[0]?.respond(1, "x");
+
+      expect(await call).toBe("x");
+    });
   });
 
   it("fails with WORKER_START_FAILED when the worker can't be created", async () => {

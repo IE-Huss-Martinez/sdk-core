@@ -80,6 +80,7 @@ export type { ToolRegistry, ToolRegistryOptions } from "./tools/registry.js";
 export { createToolRegistry } from "./tools/registry.js";
 export type { Tool, ToolDefinition } from "./tools/tool.js";
 export { defineTool } from "./tools/tool.js";
+export { resolveAssetsBase } from "./worker/assets-url.js";
 export type {
   WorkerCallOptions,
   WorkerClient,

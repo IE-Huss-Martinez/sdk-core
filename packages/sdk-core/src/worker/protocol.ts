@@ -18,6 +18,12 @@ interface Envelope {
 /** Worker to page: posted as soon as `exposeWorker` runs. */
 export interface ReadyMessage extends Envelope {
   readonly type: "ready";
+  /**
+   * The version of the package the worker was built from, when
+   * `exposeWorker` was given one. Optional, so it needs no new protocol
+   * version: older clients ignore it.
+   */
+  readonly packageVersion?: string;
 }
 
 /** Page to worker: run a method. */

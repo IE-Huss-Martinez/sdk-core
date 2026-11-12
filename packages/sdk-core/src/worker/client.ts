@@ -1,4 +1,9 @@
-import { isSdkError, type SdkCoreErrorCode, SdkError } from "../errors/sdk-error.js";
+import {
+  type ErrorDetails,
+  isSdkError,
+  type SdkCoreErrorCode,
+  SdkError,
+} from "../errors/sdk-error.js";
 import { type DeserializeErrorOptions, deserializeError } from "../errors/serialize.js";
 import {
   type CallMessage,
@@ -68,6 +73,21 @@ export interface WorkerClientOptions {
    * Errors it throws are reported asynchronously and don't affect the client.
    */
   readonly onCrash?: (error: SdkError<SdkCoreErrorCode>) => void;
+  /**
+   * The version of the package the page was built from. When it's set, the
+   * worker must announce the same one, through `exposeWorker`'s
+   * `packageVersion`, or it's refused with `WORKER_START_FAILED` and `details`
+   * of `{ asset, expected, actual }`. `actual` is `null` for a worker that
+   * announces none. This catches a self-hosted worker left over from another
+   * version of the SDK, which speaks the same protocol but runs other code
+   * (ADR 0038).
+   */
+  readonly packageVersion?: string;
+  /**
+   * Where the worker comes from, such as its self-hosted URL, for the
+   * `asset` detail of a version mismatch. Defaults to `null`.
+   */
+  readonly workerAsset?: string;
 }
 
 /**
@@ -162,7 +182,7 @@ interface Connection {
   /** Cancelled calls the worker hasn't settled yet, with their deadline timers. */
   readonly cancelling: Map<number, ReturnType<typeof setTimeout>>;
   closed: boolean;
-  close: (code: SdkCoreErrorCode, message: string, cause?: unknown) => void;
+  close: (code: SdkCoreErrorCode, message: string, cause?: unknown, details?: ErrorDetails) => void;
 }
 
 /**
@@ -263,6 +283,21 @@ export function createWorkerClient<Contract extends WorkerContract<Contract>>(
     ready.catch(() => undefined);
 
     let isReady = false;
+    /** Whether the announced package version is the expected one; closes the connection if not. */
+    const versionMatches = (announced: unknown): boolean => {
+      const expected = options.packageVersion;
+      if (expected === undefined || announced === expected) {
+        return true;
+      }
+      const actual = typeof announced === "string" ? announced : null;
+      current.close(
+        "WORKER_START_FAILED",
+        `The worker was built from version ${actual ?? "(none)"} of the package, but the page expects ${expected}. A self-hosted worker must be copied again after every upgrade.`,
+        undefined,
+        { asset: options.workerAsset ?? null, expected, actual },
+      );
+      return false;
+    };
     const startTimer = setTimeout(() => {
       current.close("WORKER_START_FAILED", `The worker didn't start within ${startTimeout} ms.`);
     }, startTimeout);
@@ -281,6 +316,9 @@ export function createWorkerClient<Contract extends WorkerContract<Contract>>(
       }
       switch (message.type) {
         case "ready":
+          if (!isReady && !versionMatches(message.packageVersion)) {
+            return;
+          }
           if (!isReady) {
             isReady = true;
             clearTimeout(startTimer);
@@ -329,7 +367,7 @@ export function createWorkerClient<Contract extends WorkerContract<Contract>>(
       pending: new Map(),
       cancelling: new Map(),
       closed: false,
-      close(code, message, cause) {
+      close(code, message, cause, details) {
         if (current.closed) {
           return;
         }
@@ -343,7 +381,10 @@ export function createWorkerClient<Contract extends WorkerContract<Contract>>(
           clearTimeout(timer);
         }
         current.cancelling.clear();
-        const error = new SdkError(code, message, cause === undefined ? {} : { cause });
+        const error = new SdkError(code, message, {
+          ...(cause === undefined ? {} : { cause }),
+          ...(details === undefined ? {} : { details }),
+        });
         failReady(error);
         notifyCrash(error);
         for (const call of [...current.pending.values()]) {
