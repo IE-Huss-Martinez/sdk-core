@@ -1,5 +1,38 @@
 # @hussmartinez/sdk-core
 
+## 0.4.0
+
+### Minor Changes
+
+- [#87](https://github.com/ie-huss-martinez/sdk-core/pull/87) [`d53bb53`](https://github.com/ie-huss-martinez/sdk-core/commit/d53bb53faa8edfe69eb3e50d3031109fe54330ea) Thanks [@hussmartinez](https://github.com/hussmartinez)! - Adds the `@hussmartinez/sdk-core/element` entry, for SDKs' custom elements:
+  
+  - `createEditorElement({ kind, attributes, properties, methods, events, mount })` returns `define(tagName?)`, which registers `hm-<kind>-editor` and returns its class.
+    - The element renders into the light DOM through the SDK's `mount`.
+    - Properties set before the element was upgraded are applied.
+    - Changes are batched into one `update` per microtask.
+    - Moving the element keeps the editor; removing it unmounts the editor.
+    - Methods throw `InvalidStateError` while the element is disconnected.
+    - `dispatch` fires bubbling, composed `hm-<kind>-editor-<name>` events.
+    - Importing the entry touches no browser API, and `define` throws `UNSUPPORTED_ENVIRONMENT` on a server.
+  - `adoptSharedStyleSheet({ name, version, cssText })` adopts a standalone script's styles once per page. It shares them with other standalone scripts on the same minor (or major, after 1.0), and warns when two lines meet.
+
+- [#91](https://github.com/ie-huss-martinez/sdk-core/pull/91) [`9df040b`](https://github.com/ie-huss-martinez/sdk-core/commit/9df040b35fb8faa1589273d1e10fd722195dd91e) Thanks [@hussmartinez](https://github.com/hussmartinez)! - Adds timeline helpers for a sequence of items, such as clips, in whole units like samples or frames:
+  
+  - `sequenceOffsets(lengths)` returns every boundary: the items' starts, then the total length.
+  - `locate(offsets, position)` returns `{ index, within }` for the item under a position, or `undefined` at or past the end. A position on a boundary belongs to the item that starts there.
+  - `snap(position, targets, tolerance)` returns the nearest target within the tolerance, the earlier one on a tie, or the position itself.
+  
+  Lengths, positions, targets and tolerances must be safe integers, or they throw `RangeError`.
+  
+  ```ts
+  const offsets = sequenceOffsets([48_000, 24_000]); // [0, 48000, 72000]
+  locate(offsets, 50_000); // { index: 1, within: 2000 }
+  ```
+
+### Patch Changes
+
+- [#89](https://github.com/ie-huss-martinez/sdk-core/pull/89) [`f711f13`](https://github.com/ie-huss-martinez/sdk-core/commit/f711f13e1b8003dbd4f879e76aaaa540fd51b029) Thanks [@hussmartinez](https://github.com/hussmartinez)! - The built JavaScript no longer carries TSDoc comments: the `.` entry is about a third smaller before your bundler minifies it, and `./element` is about 40% smaller. The documentation is unchanged in the `.d.ts` files and the source maps, and `@__PURE__` annotations stay, so tree-shaking works as before.
+
 ## 0.3.0
 
 ### Minor Changes
