@@ -126,6 +126,53 @@ describe("hm-lint-deps", () => {
     expect(result.problems).toBe("");
   });
 
+  describe("ai-core (ADR 0035)", () => {
+    /** An installed, declared `@hussmartinez/ai-core`, so only the rule can fail. */
+    const AI_CORE = {
+      "package.json":
+        '{ "name": "fixture-sdk", "private": true, "type": "module", "dependencies": { "@hussmartinez/ai-core": "0.1.0" } }\n',
+      "node_modules/@hussmartinez/ai-core/package.json":
+        '{ "name": "@hussmartinez/ai-core", "version": "0.1.0", "type": "module", "exports": { ".": { "types": "./index.d.ts", "default": "./index.js" } } }\n',
+      "node_modules/@hussmartinez/ai-core/index.js": "export const createProvider = () => ({});\n",
+      "node_modules/@hussmartinez/ai-core/index.d.ts":
+        "export interface AiProvider {}\nexport declare const createProvider: () => AiProvider;\n",
+    };
+
+    it("fails an SDK whose source imports ai-core, as a value or as a type", async () => {
+      const cwd = await repository({
+        ...SOURCES,
+        ...AI_CORE,
+        "src/core/ports/assistant.ts":
+          'import type { AiProvider } from "@hussmartinez/ai-core";\nexport type Assistant = AiProvider;\n',
+        "src/features/summary/summary.ts":
+          'import { createProvider } from "@hussmartinez/ai-core";\nexport const provider = createProvider;\n',
+      });
+      const result = await lintDeps({ paths: ["src"], cwd });
+
+      expect(result.exitCode).toBe(EXIT_FAILED);
+      expect(result.problems).toBe("");
+      const lines = result.report.split("\n").filter((line) => line.includes("no-ai-core"));
+      expect(lines).toHaveLength(2);
+      expect(lines.join("\n")).toContain("src/core/ports/assistant.ts");
+      expect(lines.join("\n")).toContain("src/features/summary/summary.ts");
+      expect(result.report).not.toMatch(/not-to-unresolvable|no-non-package-json/);
+    });
+
+    it("passes when only tests and examples import ai-core", async () => {
+      const cwd = await repository({
+        ...SOURCES,
+        ...AI_CORE,
+        "src/helper.test.ts":
+          'import { createProvider } from "@hussmartinez/ai-core";\nexport const provider = createProvider;\n',
+        "examples/vite/src/main.ts":
+          'import { createProvider } from "@hussmartinez/ai-core";\nexport const provider = createProvider;\n',
+      });
+      const result = await lintDeps({ paths: ["src", "examples"], cwd });
+
+      expect(result).toMatchObject({ exitCode: EXIT_OK, problems: "" });
+    });
+  });
+
   it("lists at most 20 missing files, then a count", async () => {
     const many = Object.fromEntries(
       Array.from({ length: 23 }, (_, index) => [

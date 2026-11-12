@@ -49,6 +49,16 @@ const REACT_LAYER = [
   "(?:^|(?:^|/)node_modules/)@hussmartinez/ui/(?:react(?:/|$)|dist/react\\.)",
 ];
 const SDK_CORE = npmPackage("@hussmartinez/sdk-core");
+/** The AI provider layer, which no package using this preset imports (ADR 0035). */
+const AI_CORE = npmPackage("@hussmartinez/ai-core");
+
+/**
+ * Published source: everything under `src/` except tests. An SDK's examples
+ * and test applications, under `examples/`, are left out, as are its tests,
+ * so they may show hosts how to pass an `ai-core` provider (ADR 0035).
+ */
+const PUBLISHED_SOURCE = "(?:^|/)src/";
+const NOT_PUBLISHED = [TEST_FILE, "(?:^|/)examples/"];
 
 /**
  * Layers that run without a page, or ship in the headless entry: the core,
@@ -115,7 +125,8 @@ const LAYER_RULES = [
 
 /**
  * dependency-cruiser preset for the SDK family. It enforces the layer rules of
- * ADR 0008, as clarified by ADR 0017 and ADR 0036, and keeps production code away from
+ * ADR 0008, as clarified by ADR 0017 and ADR 0036, keeps `@hussmartinez/ai-core` out of
+ * published source (ADR 0035), and keeps production code away from
  * tests, cycles and undeclared packages. Paths work both in `<kind>-sdk`
  * repositories and in workspaces.
  *
@@ -162,6 +173,14 @@ const config = {
       severity: "error",
       from: { path: ROOT_ENTRY },
       to: { path: REACT_LAYER, reachable: true },
+    },
+    {
+      name: "no-ai-core",
+      comment:
+        "SDKs, sdk-core and ui never import @hussmartinez/ai-core, not even its types (ADR 0035). Define a provider port in core/ports with only what the SDK needs, plus a fake and contract tests, and let the host pass a provider built with ai-core or its own backend.",
+      severity: "error",
+      from: { path: PUBLISHED_SOURCE, pathNot: NOT_PUBLISHED },
+      to: { path: AI_CORE },
     },
     {
       name: "no-circular",
