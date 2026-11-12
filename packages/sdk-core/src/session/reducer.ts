@@ -7,7 +7,9 @@
  * @public
  */
 export interface Applied<S, C> {
+  /** The state after the command. */
   readonly state: S;
+  /** The command that undoes it, applied to `state`. */
   readonly inverse: C;
 }
 

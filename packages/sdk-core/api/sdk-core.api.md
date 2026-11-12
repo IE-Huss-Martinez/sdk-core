@@ -6,9 +6,7 @@
 
 // @public
 export interface Applied<S, C> {
-    // (undocumented)
     readonly inverse: C;
-    // (undocumented)
     readonly state: S;
 }
 
@@ -82,6 +80,9 @@ export interface CreateMessagesOptions<Overrides> {
 export function createStore<S>(initial: S): Store<S>;
 
 // @public
+export function createToolRegistry<T extends Tool<never, never, unknown>>(tools: readonly T[], options?: ToolRegistryOptions): ToolRegistry<T>;
+
+// @public
 export function createWorkerClient<Contract extends WorkerContract<Contract>>(options: WorkerClientOptions): WorkerClient<Contract>;
 
 // @public
@@ -100,6 +101,9 @@ export interface DefineLimitsOptions {
 
 // @public
 export function defineMessages<const Catalogue extends MessageCatalogue>(catalogue: Catalogue): Catalogue;
+
+// @public
+export function defineTool<State = unknown, Context = unknown, View = unknown>(definition: ToolDefinition<State, Context, View>): Tool<State, Context, View>;
 
 // @public
 export function deserializeError(data: unknown, options?: DeserializeErrorOptions): SdkError;
@@ -164,7 +168,6 @@ export { History_2 as History }
 
 // @public
 export interface HistoryStep<C> {
-    // (undocumented)
     readonly commands: readonly C[];
     readonly inverses: readonly C[];
 }
@@ -344,6 +347,39 @@ export interface Store<S> {
     getSnapshot(): S;
     set(next: S | ((current: S) => S)): void;
     subscribe(listener: () => void): () => void;
+}
+
+// @public
+export type Tool<State = unknown, Context = unknown, View = unknown> = Readonly<ToolDefinition<State, Context, View>>;
+
+// @public
+export interface ToolDefinition<State = unknown, Context = unknown, View = unknown> {
+    readonly group: string;
+    readonly icon: string;
+    readonly id: string;
+    readonly isActive?: (state: State) => boolean;
+    readonly isAvailable?: (state: State) => boolean;
+    readonly isEnabled?: (state: State) => boolean;
+    readonly label: string;
+    readonly requires?: readonly string[];
+    readonly run: (context: Context) => void | Promise<void>;
+    readonly shortcuts?: string | readonly string[];
+    readonly view?: View;
+}
+
+// @public
+export interface ToolRegistry<T extends Tool<never, never, unknown>> {
+    get(id: string): T | undefined;
+    readonly omitted: readonly string[];
+    readonly toolbar: readonly (readonly T[])[];
+    readonly tools: readonly T[];
+}
+
+// @public
+export interface ToolRegistryOptions {
+    readonly capabilities?: Iterable<string>;
+    readonly toolbar?: readonly (readonly string[])[];
+    readonly tools?: readonly string[];
 }
 
 // @public

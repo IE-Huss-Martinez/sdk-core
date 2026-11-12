@@ -6,6 +6,7 @@
  * @public
  */
 export interface HistoryStep<C> {
+  /** The commands the step ran, in order. */
   readonly commands: readonly C[];
   /** Applied in this order to undo the step. */
   readonly inverses: readonly C[];

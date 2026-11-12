@@ -59,6 +59,10 @@ export type { Applied, Reducer } from "./session/reducer.js";
 export { applyCommands } from "./session/reducer.js";
 export type { Store } from "./session/store.js";
 export { createStore } from "./session/store.js";
+export type { ToolRegistry, ToolRegistryOptions } from "./tools/registry.js";
+export { createToolRegistry } from "./tools/registry.js";
+export type { Tool, ToolDefinition } from "./tools/tool.js";
+export { defineTool } from "./tools/tool.js";
 export type {
   WorkerCallOptions,
   WorkerClient,
