@@ -139,6 +139,7 @@ describe("development warnings in the built package", () => {
       expect(code).not.toContain("[@hussmartinez/sdk-core]");
     },
   );
+});
 
 describe("the built element entry (ADR 0040)", () => {
   it("imports and creates a definition on a server, without browser APIs", async () => {
