@@ -12,5 +12,12 @@ export default defineConfig({
     target: "es2022",
     minify: false,
     sourcemap: true,
+    rolldownOptions: {
+      output: {
+        // Code both entries use goes in shared/, so the size budgets count
+        // it with each entry (.size-limit.js).
+        chunkFileNames: "shared/[name]-[hash].js",
+      },
+    },
   },
 });

@@ -180,6 +180,8 @@ The public API is recorded in [`api/sdk-core.api.md`](api/sdk-core.api.md) and [
 
 `pnpm test` runs the unit tests in Node. `pnpm test:browser` runs the browser tests, with real workers, in Chromium. `pnpm test:browser:all` runs them in Chromium, Firefox and WebKit, as CI does. Install the browsers once with `pnpm exec playwright install`.
 
+`pnpm check:size` checks the size budgets in [`.size-limit.js`](.size-limit.js): the brotli size of the `.` and `./element` entries, each with the shared code it loads.
+
 ## License
 
 [Apache-2.0](../../LICENSE)

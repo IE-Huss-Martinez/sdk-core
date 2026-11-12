@@ -266,6 +266,9 @@ describe("createEditorElement", () => {
   });
 });
 
+// Firefox's `document.adoptedStyleSheets` is an ObservableArray, not an
+// Array, so `toEqual` against an array fails even with the same sheets. These
+// tests compare a spread copy instead.
 describe("adoptSharedStyleSheet", () => {
   afterEach(() => {
     document.adoptedStyleSheets = [];
