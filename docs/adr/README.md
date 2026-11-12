@@ -44,3 +44,4 @@ Use [`template.md`](template.md) for new records. Name files `NNNN-short-title.m
 | [0037](0037-windowed-blob-reader.md) | A windowed `Blob` reader for probes and parsers | Accepted |
 | [0038](0038-self-hosted-assets-and-worker-version.md) | Self-hosted assets: one `assetsUrl`, and workers that must match the page's version | Accepted; refines [0011](0011-worker-messaging-and-assets.md) and [0018](0018-worker-rpc-protocol.md) |
 | [0039](0039-test-applications-in-each-repository.md) | Test applications live in each repository's `examples/` | Accepted; refines [0007](0007-server-rendering-and-nextjs.md) |
+| [0040](0040-editor-element-base.md) | A shared custom-element base: `@hussmartinez/sdk-core/element` | Accepted; refines [0004](0004-entry-points-and-module-format.md); supersedes the standalone styles in `pdf-sdk`'s ADR 0005 |
