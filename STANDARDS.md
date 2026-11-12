@@ -38,9 +38,9 @@ Everything that reaches the page starts with `hm-`. States use ARIA attributes, 
 |---|---|
 | `.` | Headless core. No React, no DOM access on import, server-safe |
 | `./react` | Editor, building blocks and hooks. Starts with `"use client"` |
-| `./element` | `define<Kind>EditorElement()`. Registers nothing on import |
+| `./element` | `define<Kind>EditorElement()`, built with `sdk-core/element`'s `createEditorElement`. Registers nothing on import, and renders into the light DOM ([ADR 0040](docs/adr/0040-editor-element-base.md)) |
 | `./styles.css` | All styles. Imported once by the application |
-| `./standalone` | Self-contained script for plain HTML pages |
+| `./standalone` | Self-contained script for plain HTML pages. Adopts one shared copy of `ui`'s styles per `ui` minor ([ADR 0040](docs/adr/0040-editor-element-base.md)) |
 
 - **Module format:** ESM only, with `"type": "module"`, `types` first in every `exports` condition, and `"sideEffects": ["**/*.css"]`.
 - **Peer dependencies:** `react` and `react-dom` are optional, `>=18.3`.
