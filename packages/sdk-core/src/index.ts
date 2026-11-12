@@ -4,6 +4,8 @@
  * @packageDocumentation
  */
 
+export type { ErrorHelpers, ErrorHelpersOptions } from "./errors/helpers.js";
+export { createErrorHelpers } from "./errors/helpers.js";
 export type {
   ErrorDetails,
   ErrorDetailValue,
