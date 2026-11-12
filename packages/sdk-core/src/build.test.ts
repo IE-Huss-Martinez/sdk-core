@@ -1,7 +1,7 @@
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import * as esbuild from "esbuild";
 import { build } from "vite";
 import { afterAll, describe, expect, it } from "vitest";
@@ -139,4 +139,21 @@ describe("development warnings in the built package", () => {
       expect(code).not.toContain("[@hussmartinez/sdk-core]");
     },
   );
+});
+
+describe("the built element entry (ADR 0040)", () => {
+  it("imports and creates a definition on a server, without browser APIs", async () => {
+    const directory = await builtPackage;
+    const element = (await import(
+      pathToFileURL(join(directory, "element.js")).href
+    )) as typeof import("./element.js");
+
+    const define = element.createEditorElement({
+      kind: "pdf",
+      mount: () => ({ update() {}, unmount() {}, handle: {} }),
+    });
+
+    expect(typeof HTMLElement).toBe("undefined");
+    expect(() => define()).toThrow(expect.objectContaining({ code: "UNSUPPORTED_ENVIRONMENT" }));
+  });
 });

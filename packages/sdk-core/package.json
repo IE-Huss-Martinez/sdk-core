@@ -19,6 +19,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./element": {
+      "types": "./dist/element.d.ts",
+      "default": "./dist/element.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -30,19 +34,22 @@
     "test": "vitest run --project unit",
     "test:browser": "vitest run --project browser",
     "test:browser:all": "vitest run --project browser --mode all-browsers",
-    "check:api": "tsc -p tsconfig.build.json && api-extractor run",
+    "check:api": "tsc -p tsconfig.build.json && api-extractor run && api-extractor run -c api-extractor.element.json && hm-check-api-reports --main api/sdk-core.api.md --types dist/index.d.ts api/sdk-core-element.api.md",
     "check:package": "publint run --pack pnpm --strict && attw --pack . --profile esm-only",
-    "api:update": "tsc -p tsconfig.build.json && api-extractor run --local"
+    "api:update": "tsc -p tsconfig.build.json && api-extractor run --local && api-extractor run --local -c api-extractor.element.json && hm-check-api-reports --main api/sdk-core.api.md --types dist/index.d.ts api/sdk-core-element.api.md",
+    "check:size": "size-limit"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "catalog:",
     "@hussmartinez/sdk-config": "workspace:*",
     "@microsoft/api-extractor": "catalog:",
+    "@size-limit/file": "catalog:",
     "@types/node": "catalog:",
     "@vitest/browser-playwright": "catalog:",
     "esbuild": "catalog:",
     "playwright": "catalog:",
     "publint": "catalog:",
+    "size-limit": "catalog:",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"

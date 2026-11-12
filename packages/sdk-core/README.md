@@ -145,13 +145,42 @@ const bitmap = await client.call("render", { bytes, page: 1 }, { signal, onProgr
 - **Errors:** handler errors arrive rebuilt with `deserializeError`, so `PdfError` codes survive. Errors that escape the handlers, and failures to start, arrive as `WORKER_CRASHED`, `WORKER_START_FAILED` or `WORKER_PROTOCOL_MISMATCH`.
 - **Crash reporting:** pass `onCrash` to hear about those three failures even when no call is pending. SDKs should forward it to their host's `onEvent` or error reporting. Expected shutdowns, such as the idle timeout, `destroy()` or a stuck call being stopped, don't trigger it.
 
+## Custom elements
+
+`@hussmartinez/sdk-core/element` builds an SDK's `<hm-<kind>-editor>` element from a definition and the SDK's own mount function, so `sdk-core` imports no framework ([ADR 0040](../../docs/adr/0040-editor-element-base.md)). Importing it touches no browser API.
+
+```ts
+import { createEditorElement } from "@hussmartinez/sdk-core/element";
+
+export const definePdfEditorElement = createEditorElement<PdfEditorProps, PdfEditorMethods>({
+  kind: "pdf",
+  attributes: { theme: "theme", locale: "locale" },
+  properties: ["file", "filePolicy"],
+  methods: ["undo", "redo"],
+  events: ["change", "error"],
+  mount: (host, props, { dispatch }) => mountPdfEditor(host, props, dispatch),
+});
+```
+
+- **Registration:** the returned `define(tagName?)` registers `hm-<kind>-editor`, or another name, and returns its class. On a server it throws `UNSUPPORTED_ENVIRONMENT`.
+- **Light DOM:** `mount` renders into the element itself, so the host's stylesheets apply as they do in React.
+- **Lifecycle:**
+  - properties set before the element was upgraded are applied;
+  - changes cause one `update` per microtask;
+  - the editor mounts on connect, and unmounts after a removal but not after a move.
+- **Methods and events:** methods throw `InvalidStateError` while the element is disconnected. `dispatch(name, detail)` fires `hm-<kind>-editor-<name>`.
+
+Standalone scripts use `adoptSharedStyleSheet({ name, version, cssText })` to adopt `ui`'s styles and their own once per page, shared with other standalone scripts on the same `ui` minor.
+
 ## API report
 
-The public API is recorded in [`api/sdk-core.api.md`](api/sdk-core.api.md) by api-extractor ([ADR 0015](../../docs/adr/0015-verification-and-releases.md)). `pnpm check:api`, part of `verify` and `verify:fast`, fails when the API changes without the report. After an intended change, run `pnpm api:update` and commit the updated report with the change.
+The public API is recorded in [`api/sdk-core.api.md`](api/sdk-core.api.md) and [`api/sdk-core-element.api.md`](api/sdk-core-element.api.md) by api-extractor ([ADR 0015](../../docs/adr/0015-verification-and-releases.md)). `pnpm check:api`, part of `verify` and `verify:fast`, fails when the API changes without the report. After an intended change, run `pnpm api:update` and commit the updated report with the change.
 
 ## Tests
 
 `pnpm test` runs the unit tests in Node. `pnpm test:browser` runs the browser tests, with real workers, in Chromium. `pnpm test:browser:all` runs them in Chromium, Firefox and WebKit, as CI does. Install the browsers once with `pnpm exec playwright install`.
+
+`pnpm check:size` checks the size budgets in [`.size-limit.js`](.size-limit.js): the brotli size of the `.` and `./element` entries, each with the shared code it loads.
 
 ## License
 
