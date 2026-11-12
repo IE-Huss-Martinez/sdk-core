@@ -3,6 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-11-11
 - **Refines:** how [ADR 0021](0021-version-and-release-with-changesets.md)'s release workflow verifies before publishing; none of 0021's decisions change
+- **Amended:** 2026-11-12, by [ADR 0041](0041-publish-the-verified-tarballs.md): the verify job also packs and checks the tarballs, and the publish job publishes exactly those, because packing in the publish job shipped tarballs without their build
 
 ## Context
 
