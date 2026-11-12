@@ -47,7 +47,6 @@ export interface MountedEditor<Props, Methods> {
 // @public
 export interface SharedStyleSheetOptions {
     readonly cssText: string;
-    readonly document?: Document;
     readonly name: string;
     readonly version: string;
 }

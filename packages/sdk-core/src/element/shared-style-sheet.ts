@@ -12,8 +12,6 @@ export interface SharedStyleSheetOptions {
   readonly version: string;
   /** The styles. */
   readonly cssText: string;
-  /** The document to adopt the sheet into. Defaults to `globalThis.document`. */
-  readonly document?: Document;
 }
 
 interface SharedSheet {
@@ -44,6 +42,10 @@ const linesKey = /* @__PURE__ */ Symbol.for("@hussmartinez/sdk-core/shared-style
  * minor during `0.x` and the major afterwards, and nothing modifies it after
  * it's built.
  *
+ * Within one line, the first script to load wins: a later script with
+ * another patch or minor version of the same line reuses that sheet, and its
+ * own `cssText` is ignored.
+ *
  * A different line of the same package is adopted alongside, because its
  * components need their own styles, and the console warns once, naming both
  * versions. Standalone scripts are production builds, so the warning isn't
@@ -55,6 +57,8 @@ const linesKey = /* @__PURE__ */ Symbol.for("@hussmartinez/sdk-core/shared-style
  * adoptSharedStyleSheet({ name: "@hussmartinez/pdf-sdk/styles", version, cssText: pdfCss });
  * ```
  *
+ * The sheet is adopted into the global `document`.
+ *
  * @param options - The package, its version and its styles.
  * @returns The shared sheet.
  * @throws `SdkError` `UNSUPPORTED_ENVIRONMENT` without constructable
@@ -63,7 +67,9 @@ const linesKey = /* @__PURE__ */ Symbol.for("@hussmartinez/sdk-core/shared-style
  */
 export function adoptSharedStyleSheet(options: SharedStyleSheetOptions): CSSStyleSheet {
   const { name, version, cssText } = options;
-  const document = options.document ?? globalThis.document;
+  // Always the global document: a constructed sheet belongs to the document
+  // it was constructed for, so it can't be shared with another one.
+  const document = globalThis.document as Document | undefined;
   if (
     document === undefined ||
     typeof CSSStyleSheet === "undefined" ||

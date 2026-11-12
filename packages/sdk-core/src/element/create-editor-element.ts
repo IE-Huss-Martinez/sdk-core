@@ -150,7 +150,9 @@ function checkDefinition(definition: EditorElementDefinition<unknown, unknown, s
  * Nothing happens until the returned `define` is called, so importing the
  * SDK's element entry and calling this are safe on a server.
  *
- * - Properties set before the element was upgraded are applied.
+ * - Properties set before the element was upgraded are applied. An attribute
+ *   present at the upgrade still wins over such a property, because its
+ *   `attributeChangedCallback` runs after the constructor.
  * - Changes to attributes and properties cause one `update` per microtask.
  * - The editor mounts when the element is connected, and unmounts a
  *   microtask after it's disconnected, unless it was reconnected in the
