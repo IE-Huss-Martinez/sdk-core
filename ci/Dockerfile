@@ -5,9 +5,4 @@
 # this file. Dependabot proposes digest and tag updates, and it can be pulled
 # to reproduce CI locally. The tag's Playwright version must equal the one the
 # lockfile installs; test/ci-image.test.js checks that.
-FROM line below, through
-# .github/workflows/ci-image.yml, so this is its only copy. Nothing builds this
-# file. Dependabot proposes digest and tag updates, and it can be pulled to
-# reproduce CI locally. The tag's Playwright version must equal the one the
-# lockfile installs; test/ci-image.test.js checks that.
 FROM mcr.microsoft.com/playwright:v1.65.0-noble@sha256:6e3fb709361521eb27161606e6da6d2674e5e89fa16516cb37d6fdd91372273d

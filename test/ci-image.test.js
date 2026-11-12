@@ -19,6 +19,12 @@ async function pinnedImage() {
 }
 
 describe("the browser test image", () => {
+  it("has exactly one FROM line", async () => {
+    // sdk-ci's image action requires it, and fails CI otherwise.
+    const lines = (await read("ci/Dockerfile")).split("\n");
+    expect(lines.filter((line) => line.startsWith("FROM "))).toHaveLength(1);
+  });
+
   it("is pinned by tag and digest", async () => {
     expect(await pinnedImage()).toMatch(
       /^mcr\.microsoft\.com\/playwright:v\d+\.\d+\.\d+-noble@sha256:[0-9a-f]{64}$/,
