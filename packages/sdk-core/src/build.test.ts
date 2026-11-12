@@ -73,3 +73,70 @@ describe("tree-shaking the built package", () => {
     expect(code).not.toContain("SdkError");
   });
 });
+
+/**
+ * Bundles an application that calls `createMessages` with an invalid locale,
+ * which warns in development, with `process.env.NODE_ENV` defined as an
+ * application's bundler defines it. Both esbuild and Rolldown, through Vite,
+ * must drop the warning's text from a production bundle.
+ */
+async function bundleForEnvironment(
+  bundler: "esbuild" | "rolldown",
+  environment: "production" | "development",
+): Promise<string> {
+  const directory = await builtPackage;
+  const entry = join(directory, `app-${bundler}-${environment}.js`);
+  await writeFile(
+    entry,
+    `import { createMessages } from "./index.js";\nglobalThis.messages = createMessages({}, { locale: globalThis.locale });\n`,
+  );
+  const define = { "process.env.NODE_ENV": JSON.stringify(environment) };
+  if (bundler === "esbuild") {
+    const result = await esbuild.build({
+      entryPoints: [entry],
+      bundle: true,
+      minify: true,
+      format: "esm",
+      write: false,
+      logLevel: "silent",
+      define,
+    });
+    return result.outputFiles.map((file) => file.text).join("\n");
+  }
+  const output = await build({
+    configFile: false,
+    logLevel: "silent",
+    define,
+    build: {
+      write: false,
+      minify: true,
+      lib: { entry, formats: ["es"], fileName: "app" },
+    },
+  });
+  const results = Array.isArray(output) ? output : [output];
+  return results
+    .flatMap((result) => ("output" in result ? result.output : []))
+    .map((chunk) => (chunk.type === "chunk" ? chunk.code : ""))
+    .join("\n");
+}
+
+// The text of the invalid-locale warning, which createMessages can print.
+const WARNING = "isn't a valid locale";
+
+describe("development warnings in the built package", () => {
+  it.each(["esbuild", "rolldown"] as const)(
+    "keeps them in a development bundle from %s",
+    async (bundler) => {
+      expect(await bundleForEnvironment(bundler, "development")).toContain(WARNING);
+    },
+  );
+
+  it.each(["esbuild", "rolldown"] as const)(
+    "drops their text from a production bundle from %s",
+    async (bundler) => {
+      const code = await bundleForEnvironment(bundler, "production");
+      expect(code).not.toContain(WARNING);
+      expect(code).not.toContain("[@hussmartinez/sdk-core]");
+    },
+  );
+});
