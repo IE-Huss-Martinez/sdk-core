@@ -11,6 +11,7 @@
   "scripts": {
     "prepare": "husky",
     "changeset": "changeset",
+    "create-sdk-repo": "node scripts/create-sdk-repo.mjs",
     "lint": "biome check .",
     "lint:css": "stylelint \"**/*.css\" --allow-empty-input",
     "lint:deps": "hm-lint-deps packages",
