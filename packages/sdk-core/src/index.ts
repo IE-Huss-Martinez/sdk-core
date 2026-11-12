@@ -59,6 +59,19 @@ export type { Applied, Reducer } from "./session/reducer.js";
 export { applyCommands } from "./session/reducer.js";
 export type { Store } from "./session/store.js";
 export { createStore } from "./session/store.js";
+export type { Modifier, Platform } from "./shortcuts/chord.js";
+export type { FamilyAction, ShortcutChord } from "./shortcuts/family.js";
+export { familyShortcuts } from "./shortcuts/family.js";
+export type { NavigatorLike } from "./shortcuts/platform.js";
+export { platformOf } from "./shortcuts/platform.js";
+export type {
+  KeyboardEventLike,
+  ShortcutPart,
+  ShortcutRegistry,
+  ShortcutRegistryOptions,
+  ShortcutSpec,
+} from "./shortcuts/registry.js";
+export { createShortcutRegistry } from "./shortcuts/registry.js";
 export type { ToolRegistry, ToolRegistryOptions } from "./tools/registry.js";
 export { createToolRegistry } from "./tools/registry.js";
 export type { Tool, ToolDefinition } from "./tools/tool.js";

@@ -35,6 +35,19 @@ describe("defineTool", () => {
     expect(Object.isFrozen(tool.requires)).toBe(true);
   });
 
+  it("accepts chords with options", () => {
+    const tool = defineTool(
+      definition("pdf.save", {
+        shortcuts: ["Mod+S", { keys: "Mod+Shift+S", inEditable: true, repeat: false }],
+      }),
+    );
+
+    expect(tool.shortcuts).toEqual([
+      "Mod+S",
+      { keys: "Mod+Shift+S", inEditable: true, repeat: false },
+    ]);
+  });
+
   it("keeps a family action name and an opaque view as given", () => {
     const view = { component: "RotatePanel" };
     const tool = defineTool({ ...definition("audio.undo"), shortcuts: "undo", view });
@@ -75,6 +88,17 @@ describe("defineTool", () => {
     ],
     ["no run", { ...definition("pdf.x"), run: undefined as never }, "needs a run function"],
     ["empty shortcuts", definition("pdf.x", { shortcuts: [""] }), "must give its shortcuts"],
+    ["no shortcuts in a list", definition("pdf.x", { shortcuts: [] }), "must give its shortcuts"],
+    [
+      "an unknown family action",
+      definition("pdf.x", { shortcuts: "undoo" as never }),
+      "must give its shortcuts",
+    ],
+    [
+      "a chord object with a misspelt option",
+      definition("pdf.x", { shortcuts: [{ keys: "Mod+S", inEditible: true } as never] }),
+      "must give its shortcuts",
+    ],
     [
       "a misspelt key",
       { ...definition("pdf.x"), isEnable: () => true } as never,

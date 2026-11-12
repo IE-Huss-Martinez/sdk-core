@@ -1,3 +1,6 @@
+import { familyShortcuts } from "../shortcuts/family.js";
+import type { ShortcutSpec } from "../shortcuts/registry.js";
+
 /**
  * A tool's definition: one feature of an editor, such as rotating pages or
  * splitting a clip (ADR 0009, ADR 0030). Headless: `sdk-core` never reads
@@ -27,8 +30,12 @@ export interface ToolDefinition<State = unknown, Context = unknown, View = unkno
   readonly isActive?: (state: State) => boolean;
   /** Does what the tool does. */
   readonly run: (context: Context) => void | Promise<void>;
-  /** Its key chords, such as `["Mod+Shift+R"]`, or the name of a family action, such as `"undo"`. */
-  readonly shortcuts?: string | readonly string[];
+  /**
+   * The name of a family action, such as `"undo"`, to take the family's keys,
+   * or its own chords, such as `["Mod+Shift+L"]` or
+   * `[{ keys: "Mod+S", inEditable: true }]`. Parsed by the shortcut registry.
+   */
+  readonly shortcuts?: ShortcutSpec;
   /** The SDK's UI contribution, which only its own UI layer reads. */
   readonly view?: View;
 }
@@ -77,7 +84,7 @@ const isText = (value: unknown): value is string => typeof value === "string" &&
  * ```
  *
  * @param definition - The tool.
- * @returns The same definition, frozen.
+ * @returns A frozen copy of the definition.
  * @throws `TypeError` if the definition is malformed, such as an `id` that
  *   isn't `<sdk>.<tool>`, a missing `run`, or an unknown key.
  * @public
@@ -122,10 +129,16 @@ export function defineTool<State = unknown, Context = unknown, View = unknown>(
     fail("needs a run function");
   }
   const { shortcuts } = definition;
+  const isChord = (chord: unknown) =>
+    isText(chord) ||
+    (chord !== null &&
+      typeof chord === "object" &&
+      isText((chord as { keys?: unknown }).keys) &&
+      Object.keys(chord).every((key) => ["keys", "inEditable", "repeat"].includes(key)));
   if (
     shortcuts !== undefined &&
-    !isText(shortcuts) &&
-    !(Array.isArray(shortcuts) && shortcuts.every(isText))
+    !(typeof shortcuts === "string" && Object.hasOwn(familyShortcuts, shortcuts)) &&
+    !(Array.isArray(shortcuts) && shortcuts.length > 0 && shortcuts.every(isChord))
   ) {
     fail("must give its shortcuts as chords or a family action name");
   }
