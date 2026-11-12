@@ -1,3 +1,6 @@
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { cruise } from "dependency-cruiser";
 import { describe, expect, it } from "vitest";
@@ -107,6 +110,8 @@ describe("dependency-cruiser preset", () => {
       "@hussmartinez/ui/react",
       `${ui}/dist/react.js`,
       `${ui}/dist/react.d.ts`,
+      "node_modules/react/index.js",
+      "node_modules/@hussmartinez/ui/dist/react.js",
     ]) {
       expect(matches(path), path).toBe(true);
     }
@@ -141,6 +146,115 @@ describe("dependency-cruiser preset", () => {
         ["src/features/tools/render.ts", "react"],
       ]),
     );
+  });
+
+  describe("with installed packages that live in dist/", () => {
+    /**
+     * A package with real `node_modules`, written to a temporary directory
+     * because git doesn't keep `node_modules` in fixtures. Its packages keep
+     * their code in `dist/`, as most published packages do.
+     */
+    const FILES = {
+      "package.json": JSON.stringify({
+        name: "installed-sdk",
+        type: "module",
+        dependencies: { "@hussmartinez/ui": "0.3.0", engine: "1.0.0" },
+        devDependencies: { tester: "1.0.0" },
+      }),
+      "node_modules/@hussmartinez/ui/package.json": JSON.stringify({
+        name: "@hussmartinez/ui",
+        type: "module",
+        exports: { ".": "./dist/index.js", "./react": "./dist/react.js" },
+      }),
+      "node_modules/@hussmartinez/ui/dist/index.js": "export const Button = 1;\n",
+      "node_modules/@hussmartinez/ui/dist/react.js": "export const Toolbar = 1;\n",
+      "node_modules/engine/package.json": JSON.stringify({
+        name: "engine",
+        type: "module",
+        main: "dist/index.js",
+      }),
+      "node_modules/engine/dist/index.js": "export const decode = 1;\n",
+      "node_modules/tester/package.json": JSON.stringify({
+        name: "tester",
+        type: "module",
+        main: "dist/index.js",
+      }),
+      "node_modules/tester/dist/index.js": "export const it = 1;\n",
+      "src/index.ts": 'export { Toolbar } from "@hussmartinez/ui/react";\n',
+      "src/core/model/page.ts":
+        'import { Button } from "@hussmartinez/ui";\nexport const page = Button;\n',
+      "src/adapters/engine.ts": 'import { it } from "tester";\nexport const engine = it;\n',
+      "src/core/errors/errors.ts":
+        'import { decode } from "engine";\nexport const errors = decode;\n',
+      "src/core/errors/errors.test.ts":
+        'import { it } from "tester";\nimport { errors } from "./errors.ts";\nit(errors);\n',
+      // The package's own build output and fixtures stay out of the cruise.
+      "dist/index.js": 'import "@hussmartinez/ui/react";\n',
+      "src/fixtures/leak.ts": 'import "@hussmartinez/ui/react";\n',
+    };
+
+    /** @returns {Promise<string[]>} */
+    async function installedViolations() {
+      const baseDir = await mkdtemp(join(tmpdir(), "hm-installed-sdk-"));
+      try {
+        for (const [path, content] of Object.entries(FILES)) {
+          await mkdir(dirname(join(baseDir, path)), { recursive: true });
+          await writeFile(join(baseDir, path), content);
+        }
+        const { output } = await cruise(["src", "dist"], {
+          ...config.options,
+          baseDir,
+          ruleSet: { forbidden: config.forbidden ?? [] },
+          validate: true,
+        });
+        if (typeof output === "string") {
+          throw new TypeError("expected a structured cruise result");
+        }
+        return output.summary.violations
+          .map(({ rule, from, to }) => `${rule.name}: ${from} -> ${to}`)
+          .sort();
+      } finally {
+        await rm(baseDir, { recursive: true, force: true });
+      }
+    }
+
+    it("checks imports that resolve into a package's dist/, and only the package's own dist/ is left out", async () => {
+      expect(await installedViolations()).toEqual([
+        "core-no-ui: src/core/model/page.ts -> node_modules/@hussmartinez/ui/dist/index.js",
+        "entry-no-react: src/index.ts -> node_modules/@hussmartinez/ui/dist/react.js",
+        "layer-errors: src/core/errors/errors.ts -> node_modules/engine/dist/index.js",
+        "not-to-dev-dep: src/adapters/engine.ts -> node_modules/tester/dist/index.js",
+      ]);
+    });
+  });
+
+  it("leaves out the repository's build output and fixtures, but not packages' dist/", () => {
+    const exclude = /** @type {{ path: string[] }} */ (config.options?.exclude);
+    const patterns = exclude.path.map((path) => new RegExp(path));
+    const excluded = {
+      test: (/** @type {string} */ path) => patterns.some((pattern) => pattern.test(path)),
+    };
+    for (const path of [
+      "dist/index.js",
+      "temp/types/index.d.ts",
+      "coverage/index.html",
+      "packages/sdk-core/dist/index.js",
+      "apps/docs/dist/main.js",
+      "src/worker/fixtures/echo.ts",
+      "test/fixtures/layered-sdk/src/index.ts",
+    ]) {
+      expect(excluded.test(path), path).toBe(true);
+    }
+    for (const path of [
+      "node_modules/@hussmartinez/ui/dist/react.js",
+      "node_modules/.pnpm/mediabunny@1.0.0/node_modules/mediabunny/dist/bundles/mediabunny.mjs",
+      "node_modules/react/cjs/react.production.js",
+      "node_modules/some-package/fixtures/x.js",
+      "src/core/model/page.ts",
+      "src/dist-helpers/format.ts",
+    ]) {
+      expect(excluded.test(path), path).toBe(false);
+    }
   });
 
   it("reports cycles", async () => {

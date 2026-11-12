@@ -8,14 +8,34 @@
 const layer = (folder) => `(?:^|/)src/${folder}/`;
 
 const TEST_FILE = "\\.test\\.[cm]?[jt]sx?$";
+
+/**
+ * Paths that aren't source, and are left out of the cruise:
+ *
+ * - **the repository's own build output and coverage:** `dist/`, `temp/`
+ *   (tsc's declarations and api-extractor) and `coverage/`, at the root or in
+ *   a workspace package under `packages/` or `apps/`. Anchored, so that a
+ *   dependency's `node_modules/<package>/dist/` is still resolved and checked:
+ *   most packages, such as `@hussmartinez/ui` and React's builds, live there;
+ * - **fixtures,** which break the rules on purpose, in `src/`, `test/` or
+ *   `tests/`, at any depth.
+ *
+ * One simple pattern per case, because dependency-cruiser refuses patterns
+ * with nested quantifiers, which could run slowly.
+ */
+const EXCLUDED = ["", "packages/[^/]+/", "apps/[^/]+/"].flatMap((root) => [
+  `^${root}(?:coverage|dist|temp)/`,
+  `^${root}(?:src|test|tests)/.*fixtures/`,
+]);
 /**
  * Matches an npm package, whether dependency-cruiser resolved it into
- * `node_modules` or left it as a bare name because it isn't installed.
+ * `node_modules`, flat or through pnpm's `.pnpm` store, or left it as a bare
+ * name because it isn't installed.
  *
  * @param {string} names Alternation of package names, such as `react|react-dom`.
  * @returns {string}
  */
-const npmPackage = (names) => `(?:^|/node_modules/)(?:${names})(?:/|$)`;
+const npmPackage = (names) => `(?:^|(?:^|/)node_modules/)(?:${names})(?:/|$)`;
 
 const UI_PACKAGES = npmPackage("react|react-dom|@hussmartinez/ui");
 
@@ -26,7 +46,7 @@ const UI_PACKAGES = npmPackage("react|react-dom|@hussmartinez/ui");
  */
 const REACT_LAYER = [
   npmPackage("react|react-dom"),
-  "(?:^|/node_modules/)@hussmartinez/ui/(?:react(?:/|$)|dist/react\\.)",
+  "(?:^|(?:^|/)node_modules/)@hussmartinez/ui/(?:react(?:/|$)|dist/react\\.)",
 ];
 const SDK_CORE = npmPackage("@hussmartinez/sdk-core");
 
@@ -114,7 +134,8 @@ const config = {
       name: "layer-errors",
       comment: "core/errors is a leaf that imports only core/model and sdk-core (ADR 0017).",
       severity: "error",
-      from: { path: layer("core/errors") },
+      // Its tests may import test tools, as not-to-dev-dep allows.
+      from: { path: layer("core/errors"), pathNot: TEST_FILE },
       to: {
         pathNot: [
           layer("core/errors"),
@@ -184,9 +205,7 @@ const config = {
   ],
   options: {
     doNotFollow: { path: "(?:^|/)node_modules/" },
-    // Build output (dist, and temp for tsc declarations and api-extractor)
-    // and coverage aren't source. Fixtures break the rules on purpose.
-    exclude: { path: "(?:^|/)(?:coverage|dist|fixtures|temp)/" },
+    exclude: { path: EXCLUDED },
     tsPreCompilationDeps: true,
     combinedDependencies: false,
     enhancedResolveOptions: {
