@@ -233,7 +233,7 @@ export type LimitSetting = number | {
 };
 
 // @public
-export type LimitUnit = "bytes" | "count" | "milliseconds" | "pixels";
+export type LimitUnit = "bytes" | "count" | "milliseconds" | "pixels" | "hertz";
 
 // @public
 export type MessageArgs<Message extends MessageValue> = keyof MessageParams<Message> extends never ? [] : [params: MessageParams<Message>];
@@ -247,6 +247,7 @@ export type MessageCatalogue = {
 export interface MessageFormats {
     readonly date: Date | number;
     readonly default: string | number;
+    readonly duration: number;
     readonly fileSize: number;
     readonly number: number;
     readonly time: Date | number;

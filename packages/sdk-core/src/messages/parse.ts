@@ -17,7 +17,13 @@ export type CompiledMessage =
   | { readonly kind: "plural"; readonly selector: string; readonly forms: PluralForms };
 
 /** Formats that can be named in a placeholder. `default` is implied by `{name}`. */
-const NAMED_FORMATS: ReadonlySet<string> = new Set<Format>(["number", "fileSize", "date", "time"]);
+const NAMED_FORMATS: ReadonlySet<string> = new Set<Format>([
+  "number",
+  "fileSize",
+  "duration",
+  "date",
+  "time",
+]);
 const PLURAL_CATEGORIES: ReadonlySet<string> = new Set<PluralCategory>([
   "zero",
   "one",

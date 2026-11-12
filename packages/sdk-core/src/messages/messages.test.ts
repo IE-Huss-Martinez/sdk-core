@@ -10,6 +10,7 @@ const en = defineMessages({
   "toolbar.rotate": "Rotate",
   "file.opened": "Opened {name}",
   "result.saved": "Saved {size, fileSize}",
+  "audio.length": "Length: {length, duration}",
   "pages.total": "{count, number} pages",
   "file.modified": "Modified {when, date} at {when, time}",
   "pages.selected": plural("count", {
@@ -33,6 +34,12 @@ afterEach(() => {
 });
 
 describe("message types", () => {
+  it("types a duration parameter as a number", () => {
+    expectTypeOf<MessageParams<"Length: {length, duration}">>().toEqualTypeOf<{
+      readonly length: number;
+    }>();
+  });
+
   it("derive parameters from placeholders", () => {
     expectTypeOf<keyof MessageParams<"Rotate">>().toEqualTypeOf<never>();
     expectTypeOf<MessageParams<"Opened {name}">>().toEqualTypeOf<{
@@ -97,6 +104,67 @@ describe("createMessages", () => {
     expect(messages.t("result.saved", { size: 1_300_000 })).toBe("Saved 1.3 MB");
     expect(messages.t("result.saved", { size: 2_000_000_000 })).toBe("Saved 2 GB");
     expect(de.t("result.saved", { size: 1_300_000 })).toBe("Saved 1,3 MB");
+  });
+
+  describe("durations", () => {
+    afterEach(() => {
+      clearIntlCache();
+    });
+
+    it("formats milliseconds as hours, minutes and seconds for the locale", () => {
+      const messages = createMessages(en);
+      const de = createMessages(en, { locale: "de" });
+
+      expect(messages.t("audio.length", { length: (3 * 60 + 5) * 60_000 })).toBe(
+        "Length: 3 hr, 5 min",
+      );
+      expect(messages.t("audio.length", { length: 90 * 60_000 })).toBe("Length: 1 hr, 30 min");
+      expect(messages.t("audio.length", { length: 42_000 })).toBe("Length: 42 sec");
+      expect(de.t("audio.length", { length: ((3 * 60 + 5) * 60 + 30) * 1000 })).toBe(
+        "Length: 3 Std., 5 Min. und 30 Sek.",
+      );
+    });
+
+    it("rounds to the nearest second, and shows zero as 0 seconds", () => {
+      const messages = createMessages(en);
+
+      expect(messages.t("audio.length", { length: 0 })).toBe("Length: 0 sec");
+      expect(messages.t("audio.length", { length: 499 })).toBe("Length: 0 sec");
+      expect(messages.t("audio.length", { length: 1_500 })).toBe("Length: 2 sec");
+    });
+
+    it("falls back to unit-formatted numbers where Intl.DurationFormat is missing", () => {
+      clearIntlCache();
+      // Intl's members aren't enumerable, so inherit them rather than spread them.
+      vi.stubGlobal("Intl", Object.create(Intl, { DurationFormat: { value: undefined } }));
+      try {
+        const messages = createMessages(en);
+
+        expect(messages.t("audio.length", { length: (3 * 60 + 5) * 60_000 })).toBe(
+          "Length: 3 hr, 5 min",
+        );
+        expect(messages.t("audio.length", { length: 0 })).toBe("Length: 0 sec");
+        expect(messages.t("audio.length", { length: 3_661_000 })).toBe(
+          "Length: 1 hr, 1 min, 1 sec",
+        );
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it.each([Number.NaN, Number.POSITIVE_INFINITY, -1, "90"])(
+      "leaves out %s, with a warning",
+      (length) => {
+        const messages = createMessages(en);
+
+        expect(messages.t("audio.length", { length: length as number })).toBe("Length: ");
+        expect(warnings).toEqual([
+          expect.stringContaining(
+            'The message "audio.length" is missing a valid "length" parameter.',
+          ),
+        ]);
+      },
+    );
   });
 
   it("formats dates and times", () => {

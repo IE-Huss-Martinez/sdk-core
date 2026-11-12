@@ -1,6 +1,12 @@
 import { isSdkError } from "../errors/sdk-error.js";
 import { warnInDevelopment } from "../internal/development.js";
-import { dateTimeFormat, formatFileSize, numberFormat, pluralRules } from "./intl.js";
+import {
+  dateTimeFormat,
+  formatDuration,
+  formatFileSize,
+  numberFormat,
+  pluralRules,
+} from "./intl.js";
 import {
   type CompiledMessage,
   compileMessage,
@@ -277,6 +283,10 @@ function formatValue(value: unknown, format: Format, locale: string): string | u
     case "fileSize":
       return typeof value === "number" && Number.isFinite(value)
         ? formatFileSize(locale, value)
+        : undefined;
+    case "duration":
+      return typeof value === "number" && Number.isFinite(value) && value >= 0
+        ? formatDuration(locale, value)
         : undefined;
     case "date":
     case "time": {
