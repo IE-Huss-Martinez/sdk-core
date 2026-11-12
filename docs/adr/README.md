@@ -46,3 +46,4 @@ Use [`template.md`](template.md) for new records. Name files `NNNN-short-title.m
 | [0039](0039-test-applications-in-each-repository.md) | Test applications live in each repository's `examples/` | Accepted; refines [0007](0007-server-rendering-and-nextjs.md) |
 | [0040](0040-editor-element-base.md) | A shared custom-element base: `@hussmartinez/sdk-core/element` | Accepted; refines [0004](0004-entry-points-and-module-format.md); supersedes the standalone styles in `pdf-sdk`'s ADR 0005 |
 | [0041](0041-publish-the-verified-tarballs.md) | Publish the tarballs the verify job built and checked | Accepted; amends [0023](0023-verify-releases-in-an-unprivileged-job.md) |
+| [0042](0042-timeline-sequence-helpers.md) | Timeline sequence helpers: offsets, locating a position, and snapping | Accepted |
