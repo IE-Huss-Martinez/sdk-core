@@ -126,7 +126,7 @@ Programmatic control goes through a ref handle, such as `open(file)`, `export()`
 ## Security and privacy ([ADR 0012](docs/adr/0012-hostile-input-and-no-network.md), [ADR 0020](docs/adr/0020-file-policy.md), [ADR 0028](docs/adr/0028-third-party-engines.md))
 
 - **Treat every file as hostile** ([ADR 0020](docs/adr/0020-file-policy.md)):
-  - parse only in workers;
+  - parse only in workers, except with a browser decoder that only exists on the page, such as `decodeAudioData`, and then only for files a worker has probed and bounded, with the decoded output checked against that bound ([ADR 0031](docs/adr/0031-platform-decoders-on-the-page.md));
   - enforce limits on size, count, pixels, decoded size and time, with `defineLimits` from `sdk-core`, extending `coreLimits` with the SDK's own;
   - check before or while decoding, failing with specific error codes and `details` naming the limit, and warning from each limit's warning threshold;
   - hosts configure limits through `filePolicy`, and unknown limit names are an error.
