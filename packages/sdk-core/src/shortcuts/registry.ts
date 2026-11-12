@@ -11,8 +11,9 @@ export type ShortcutSpec = FamilyAction | readonly (string | ShortcutChord)[];
 
 /**
  * What {@link ShortcutRegistry.match} reads from a keyboard event. A DOM
- * `KeyboardEvent`, a React keyboard event and a plain object in a test all
- * have this shape.
+ * `KeyboardEvent` and a plain object in a test have this shape. From a React
+ * handler, pass `event.nativeEvent`: React's synthetic event has no
+ * `composedPath`, so a field inside a shadow root would look like its host.
  *
  * @public
  */
