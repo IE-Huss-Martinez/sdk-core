@@ -24,11 +24,17 @@
 ## Alternatives considered
 
 - **Stay on the personal account:** rejected. Every new SDK would keep needing manual secret and settings work, and the App could never be installed account-wide.
-- **Keep the private key in each repository's `release` environment, set by the setup script:** branch-restricted, as ADR 0021 intended, but it means copying the key into every repository and rotating every copy.
+- **Keep the private key in each repository's `release` environment, set by the setup script,** so it stays restricted to `main`, as ADR 0021 intended: rejected.
+  - **The key would have to be kept somewhere.** GitHub never returns a secret's value, so a script that sets the key in each new repository needs the `.pem` file stored long-term on a machine. That's a worse place for it than GitHub's secret store, and rotating it would mean updating every copy.
+  - **The organisation secret's extra exposure is small.** It's readable by a workflow on a branch other than `main`, and only people who can push branches can create one. They already hold credentials stronger than the App's key. Pull requests from forks and Dependabot's runs get no Actions secrets. And a job only receives the secrets it references, so a compromised dependency in a job such as `verify` can't read the key.
 
 ## Consequences
 
 - **Old URLs redirect.** GitHub redirects `github.com/hussmartinez/<repo>` and git remotes to the organisation. Links in existing changelogs keep working, so they aren't rewritten.
 - **Each package's npm trusted publisher must name the new owner,** `IE-Huss-Martinez`. npm provenance also rejects a publish whose `repository.url` doesn't match the repository the workflow runs in. So packages must be released from the new owner, with updated metadata, only after their trusted publishers are updated.
-- **The App's key is no longer limited to `main`.** An organisation secret can be limited to selected repositories, but not to a branch. A workflow on any branch of a repository with access can read it, and the App can write to every repository in the organisation. Pull requests from forks still get no secrets. This relies on the organisation's repositories being the SDK family only, and on write access being limited to maintainers. The secret's repository access should list only the repositories that release.
+- **The App's key is no longer limited to `main`.** An organisation secret can be limited to selected repositories, but not to a branch, so a workflow on any branch of a repository with access can read it. Why that's accepted is under "Alternatives considered". The mitigations:
+  - the secret is shared only with the repositories that release;
+  - the App can only write *Contents* and *Pull requests*;
+  - the organisation holds only the SDK family;
+  - rotating the key is one update, in one place.
 - **A future `create-sdk` script** will create a repository with the organisation's settings, so adding an SDK becomes a single command plus npm's first publish.
