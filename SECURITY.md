@@ -24,7 +24,11 @@ Please include:
 
 ## Supported versions
 
-The packages are pre-1.0. Security fixes go into the latest release of each package only. No package has been published yet.
+The packages are pre-1.0, so security fixes go into the latest release of each package only. Upgrade to it to receive them; earlier `0.x` versions get no backports.
+
+Every version of `@hussmartinez/sdk-core` and `@hussmartinez/sdk-config` is published from this repository's release workflow, with npm provenance. Since 0.1.1 of each, publishing uses npm trusted publishing, with no npm token; 0.1.0 used a one-time token, removed straight afterwards, because npm can only trust a publisher for a package that exists. The `0.0.0-stage` versions are npm's placeholders from setting that up: they contain only a `package.json` and a README, and aren't releases.
+
+Each version's GitHub Release attaches the tarball, `SHA256SUMS` and an artifact attestation. To check that an installed version came from this repository, run `npm audit signatures`. For a downloaded tarball, run `gh attestation verify <tarball> --repo ie-huss-martinez/sdk-core`. Versions released before the repository moved to the `ie-huss-martinez` organisation, up to sdk-core 0.1.2 and sdk-config 0.1.4, were attested under its earlier owner, so verify those with `--owner hussmartinez` instead.
 
 ## Scope
 
