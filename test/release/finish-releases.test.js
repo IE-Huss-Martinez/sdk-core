@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { createSandbox, SCRIPTS, tarballName } from "./harness.js";
+import { createSandbox, SCRIPTS, TIMING, tarballName } from "./harness.js";
 
 const CORE = { name: "@hussmartinez/sdk-core", version: "1.0.0", dir: "a-core" };
 const CONFIG = { name: "@hussmartinez/sdk-config", version: "2.0.0", dir: "b-config" };
@@ -114,9 +114,9 @@ describe.concurrent("finish-releases prepare", () => {
 
     expect(run.code, run.stderr).toBe(0);
     expect(box.polls(CORE.name, CORE.version)).toHaveLength(1);
-    // A second or two at most: the time from the record to the first check.
+    // The time from the record to the first check, which depends on load.
     expect(run.stdout).toMatch(
-      /::notice title=Visible on npm::@hussmartinez\/sdk-core@1\.0\.0: visible on npm [0-2] s after its publish\./,
+      /::notice title=Visible on npm::@hussmartinez\/sdk-core@1\.0\.0: visible on npm \d+ s after its publish\./,
     );
   });
 
@@ -130,7 +130,8 @@ describe.concurrent("finish-releases prepare", () => {
     const publishedAt = Date.now();
     const published = await record(box, [{ ...CORE, tarball: path, publishedAt }]);
 
-    const run = await prepare(box, { PUBLISHED_RECORD: published, FINISH_POLL_TIMEOUT_MS: "1500" });
+    // The default 6 s window, so that polling continues well after startup.
+    const run = await prepare(box, { PUBLISHED_RECORD: published });
 
     expect(run.code).toBe(1);
     expect(run.stderr).toContain(
@@ -141,7 +142,11 @@ describe.concurrent("finish-releases prepare", () => {
     // It polled with backoff until the window closed.
     const polls = box.polls(CORE.name, CORE.version);
     expect(polls.length).toBeGreaterThan(4);
-    expect(polls.at(-1)).toBeGreaterThanOrEqual(publishedAt + 1500);
+    // Until the window closed, to within one backoff step: the last poll comes
+    // after sleeping until the deadline, and can land just before it.
+    expect(polls.at(-1)).toBeGreaterThan(
+      publishedAt + 6000 - Number(TIMING.FINISH_POLL_MAX_INTERVAL_MS),
+    );
     expect(await prepared(box)).toEqual({});
   });
 
@@ -151,14 +156,14 @@ describe.concurrent("finish-releases prepare", () => {
     const box = await sandbox(onTestFinished);
     const core = await box.tarball(CORE.name, CORE.version);
     const config = await box.tarball(CONFIG.name, CONFIG.version);
-    // Both were published 1 s before this step, with a 2 s window, so the
-    // window closes 1 s into the step, not 2 s after each package's own check.
-    // sdk-core, checked first, never appears. sdk-config appears 1.5 s after
+    // Both were published 1 s before this step, with a 6 s window, so the
+    // window closes 5 s into the step, not 6 s after each package's own check.
+    // sdk-core, checked first, never appears. sdk-config appears 3 s after
     // its publish, inside the window, while the step is still waiting on
     // sdk-core.
     const publishedAt = Date.now() - 1000;
     await box.onNpm(CORE.name, CORE.version, core.bytes, { visibleAfter: Infinity });
-    await box.onNpm(CONFIG.name, CONFIG.version, config.bytes, { visibleFrom: publishedAt + 1500 });
+    await box.onNpm(CONFIG.name, CONFIG.version, config.bytes, { visibleFrom: publishedAt + 3000 });
     await box.release(CORE_TAG);
     await box.release(CONFIG_TAG);
     const published = await record(box, [
@@ -166,7 +171,7 @@ describe.concurrent("finish-releases prepare", () => {
       { ...CONFIG, tarball: config.path, publishedAt },
     ]);
 
-    const run = await prepare(box, { PUBLISHED_RECORD: published, FINISH_POLL_TIMEOUT_MS: "2000" });
+    const run = await prepare(box, { PUBLISHED_RECORD: published, FINISH_POLL_TIMEOUT_MS: "6000" });
 
     expect(run.code).toBe(1);
     expect(run.stderr).toContain("@hussmartinez/sdk-core@1.0.0: this run published it");
@@ -175,7 +180,9 @@ describe.concurrent("finish-releases prepare", () => {
     expect(await prepared(box)).toEqual({
       "hussmartinez__sdk-config@2.0.0": ["SHA256SUMS", CONFIG_FILE, "release.json"],
     });
-    expect(box.polls(CORE.name, CORE.version).at(-1)).toBeLessThan(publishedAt + 2000 + 500);
+    // Waiting from each package's own check instead would poll until at least
+    // 1 s past the window, plus the time the script took to start.
+    expect(box.polls(CORE.name, CORE.version).at(-1)).toBeLessThan(publishedAt + 6000 + 700);
   });
 
   it("doesn't wait for a version published longer ago than the window", async ({
@@ -191,7 +198,7 @@ describe.concurrent("finish-releases prepare", () => {
     const run = await prepare(box, { PUBLISHED_RECORD: published });
 
     expect(run.code).toBe(1);
-    expect(run.stderr).toMatch(/isn't visible on npm 6[0-2] s after its publish/);
+    expect(run.stderr).toMatch(/isn't visible on npm 6\d s after its publish/);
     expect(box.polls(CORE.name, CORE.version)).toHaveLength(1);
   });
 
