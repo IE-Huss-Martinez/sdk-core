@@ -183,6 +183,35 @@ describe.concurrent("create-sdk-repo", () => {
     }
   });
 
+  it("gives a repository that publishes nothing no environments or npm steps", async ({
+    onTestFinished,
+  }) => {
+    const gh = await github(onTestFinished);
+
+    const dry = await gh.run(["sdk-ci"]);
+
+    expect(dry.code, dry.stderr).toBe(0);
+    expect(dry.stdout).toContain(
+      "skipped: sdk-ci publishes no npm packages, so it gets no release or npm environment.",
+    );
+    expect(dry.stdout).not.toContain("environment to main");
+    expect(dry.stdout).not.toContain("Still manual");
+
+    const applied = await gh.run(["sdk-ci", "--apply"]);
+
+    expect(applied.code, applied.stderr).toBe(0);
+    expect((await gh.calls()).some((call) => call.path.includes("/environments"))).toBe(false);
+    const repo = await gh.repo("sdk-ci");
+    expect(repo.environments).toEqual({});
+    expect(repo.settings).toMatchObject({
+      ...SDK_CORE.settings,
+      name: "sdk-ci",
+      description: null,
+    });
+    expect(repo.dependabotSecurityUpdates).toBe(true);
+    expect((await gh.run(["sdk-ci", "--apply"])).stdout).toContain("Nothing to change.");
+  });
+
   it("only reads in a dry run of a new repository, and lists what it would do", async ({
     onTestFinished,
   }) => {
