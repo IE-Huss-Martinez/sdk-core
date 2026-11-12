@@ -13,9 +13,9 @@ Use [`template.md`](template.md) for new records. Name files `NNNN-short-title.m
 | [0005](0005-plain-css-with-cascade-layers.md) | Plain CSS with cascade layers | Accepted |
 | [0006](0006-design-tokens-and-theming.md) | Design tokens and full theming | Accepted |
 | [0007](0007-server-rendering-and-nextjs.md) | Server rendering and Next.js compatibility | Accepted |
-| [0008](0008-ports-adapters-and-session.md) | Ports and adapters with a framework-agnostic session | Accepted |
-| [0009](0009-features-as-tools.md) | Features as registered tool modules | Accepted |
-| [0010](0010-edits-as-commands.md) | Edits as commands with undo history | Accepted |
+| [0008](0008-ports-adapters-and-session.md) | Ports and adapters with a framework-agnostic session | Accepted; its session primitives are shared through [0029](0029-session-store-and-history.md) |
+| [0009](0009-features-as-tools.md) | Features as registered tool modules | Accepted; `defineTool` and the registries defined by [0030](0030-tools-and-keyboard-shortcuts.md) |
+| [0010](0010-edits-as-commands.md) | Edits as commands with undo history | Accepted; its history is shared through [0029](0029-session-store-and-history.md) |
 | [0011](0011-worker-messaging-and-assets.md) | Typed worker messaging, with inline or self-hosted assets | Accepted; refined for engines' own workers by [0028](0028-third-party-engines.md) |
 | [0012](0012-hostile-input-and-no-network.md) | Treat every input file as hostile, and make no network requests | Accepted; its pdf.js `isEvalSupported` rule superseded by [0028](0028-third-party-engines.md) |
 | [0013](0013-browser-and-react-support.md) | Browser and React support | Accepted |
@@ -34,3 +34,5 @@ Use [`template.md`](template.md) for new records. Name files `NNNN-short-title.m
 | [0026](0026-share-ci-steps-from-sdk-ci.md) | Share the family's CI steps from `sdk-ci` | Accepted |
 | [0027](0027-dev-only-package-json-changes-need-no-changeset.md) | Dev-only `package.json` changes need no changeset | Accepted; supersedes part of [0021](0021-version-and-release-with-changesets.md) |
 | [0028](0028-third-party-engines.md) | Third-party engines: no code from file data, proven offline, and their own workers | Accepted; supersedes [0012](0012-hostile-input-and-no-network.md)'s pdf.js eval rule |
+| [0029](0029-session-store-and-history.md) | Shared session primitives: a store, a history and a reducer type | Accepted; refines [0008](0008-ports-adapters-and-session.md) and [0010](0010-edits-as-commands.md) |
+| [0030](0030-tools-and-keyboard-shortcuts.md) | Tools and keyboard shortcuts | Accepted; refines [0009](0009-features-as-tools.md) |

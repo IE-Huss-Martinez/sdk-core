@@ -106,13 +106,13 @@ Programmatic control goes through a ref handle, such as `open(file)`, `export()`
   - every core layer may import `@hussmartinez/sdk-core`, but never `@hussmartinez/ui`, `react` or `react-dom`;
   - `core/errors` is a leaf: it imports only `core/model` and `@hussmartinez/sdk-core`, and every layer may import it;
   - the dependency rules are enforced with `dependency-cruiser`.
-- **Framework-agnostic session:** the store exposes `getSnapshot()`, `subscribe()` and commands. React binds with `useSyncExternalStore`, and the element binds to the same store.
+- **Framework-agnostic session:** the store exposes `getSnapshot()`, `subscribe()` and commands. React binds with `useSyncExternalStore`, and the element binds to the same store. Sessions build on `sdk-core`'s `createStore`, `createHistory` and `Reducer` ([ADR 0029](docs/adr/0029-session-store-and-history.md)).
 - **Tools:**
   - every feature is a folder under `src/features/<feature>/`, registered with `defineTool`;
-  - toolbars, menus and shortcuts are built from the registered tools.
+  - toolbars, menus and shortcuts are built from the registered tools, with `createToolRegistry` and `createShortcutRegistry` from `sdk-core`, and unknown tool ids fail when the editor is created ([ADR 0030](docs/adr/0030-tools-and-keyboard-shortcuts.md)).
 - **Commands:**
   - every edit is a serialisable command;
-  - the session provides undo, redo and grouping within a memory budget;
+  - the session provides undo, redo and grouping within a memory budget, with `sdk-core`'s history and each SDK's own memory policy ([ADR 0029](docs/adr/0029-session-store-and-history.md));
   - destructive actions offer undo instead of confirmation.
 - **Workers** ([ADR 0018](docs/adr/0018-worker-rpc-protocol.md)):
   - typed, versioned RPC from `sdk-core`, with cancellation, progress and error codes preserved;
@@ -171,7 +171,7 @@ Programmatic control goes through a ref handle, such as `open(file)`, `export()`
 
 - **Long operations** show progress, can be cancelled, and recover from errors with a clear next step.
 - **Designed states:** empty, loading, error and success states are designed, never blank.
-- **Shared shortcuts:** keyboard shortcuts are consistent across SDKs, through the shared shortcut registry.
+- **Shared shortcuts:** keyboard shortcuts are consistent across SDKs, through the shared shortcut registry ([ADR 0030](docs/adr/0030-tools-and-keyboard-shortcuts.md)). Shortcuts never take a field's or a control's own keys, and never the browser's page zoom (`Mod+=`, `Mod+-`, `Mod+0`).
 - **Previews before downloads:** irreversible outputs, such as downloads of transformed files, show a preview or summary first when the result isn't obvious.
 
 ## Repository layout
