@@ -54,6 +54,11 @@ export interface MessageFormats {
   readonly number: number;
   /** `{name, fileSize}`: a byte count in decimal units, such as "1.3 MB". */
   readonly fileSize: number;
+  /**
+   * `{name, duration}`: a duration in milliseconds, in hours, minutes and
+   * seconds, such as "3 hr, 5 min".
+   */
+  readonly duration: number;
   /** `{name, date}`: a date, as a `Date` or a timestamp in milliseconds. */
   readonly date: Date | number;
   /** `{name, time}`: a time of day, as a `Date` or a timestamp in milliseconds. */

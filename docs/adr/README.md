@@ -37,3 +37,4 @@ Use [`template.md`](template.md) for new records. Name files `NNNN-short-title.m
 | [0029](0029-session-store-and-history.md) | Shared session primitives: a store, a history and a reducer type | Accepted; refines [0008](0008-ports-adapters-and-session.md) and [0010](0010-edits-as-commands.md) |
 | [0030](0030-tools-and-keyboard-shortcuts.md) | Tools and keyboard shortcuts | Accepted; refines [0009](0009-features-as-tools.md) |
 | [0031](0031-platform-decoders-on-the-page.md) | Platform decoders that only run on the page | Accepted; refines [0012](0012-hostile-input-and-no-network.md) and [0020](0020-file-policy.md) |
+| [0032](0032-duration-format-and-hertz-unit.md) | A duration format for messages and a hertz unit for limits | Accepted; refines [0019](0019-message-catalogues.md) and [0020](0020-file-policy.md) |
