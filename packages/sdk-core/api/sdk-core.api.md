@@ -77,6 +77,9 @@ export interface CreateMessagesOptions<Overrides> {
 }
 
 // @public
+export function createShortcutRegistry(options: ShortcutRegistryOptions): ShortcutRegistry;
+
+// @public
 export function createStore<S>(initial: S): Store<S>;
 
 // @public
@@ -134,6 +137,17 @@ export interface ExposeWorkerOptions {
 }
 
 // @public
+export type FamilyAction = "undo" | "redo" | "delete" | "select-all" | "zoom-in" | "zoom-out" | "zoom-reset" | "cancel" | "play-pause";
+
+// @public
+export const familyShortcuts: {
+    readonly [Action in FamilyAction]: {
+        readonly all: readonly ShortcutChord[];
+        readonly other?: readonly ShortcutChord[];
+    };
+};
+
+// @public
 export interface FilePolicy<Definitions extends LimitDefinitions> {
     check<Limit extends keyof Definitions & string>(limit: Limit, actual: number): LimitCheck;
     error<Limit extends keyof Definitions & string>(limit: Limit, actual: number): SdkError<Definitions[Limit]["code"]>;
@@ -174,6 +188,21 @@ export interface HistoryStep<C> {
 
 // @public
 export function isSdkError<Code extends string = string>(value: unknown, code?: Code): value is SdkError<Code>;
+
+// @public
+export interface KeyboardEventLike {
+    readonly altKey?: boolean;
+    readonly code?: string;
+    composedPath?(): readonly unknown[];
+    readonly ctrlKey?: boolean;
+    readonly defaultPrevented?: boolean;
+    readonly isComposing?: boolean;
+    readonly key: string;
+    readonly metaKey?: boolean;
+    readonly repeat?: boolean;
+    readonly shiftKey?: boolean;
+    readonly target?: unknown;
+}
 
 // @public
 export type LimitCheck = "warning" | undefined;
@@ -248,6 +277,24 @@ export interface Messages<Catalogue extends MessageCatalogue> {
 export type MessageValue = string | PluralMessage;
 
 // @public
+export type Modifier = "Control" | "Alt" | "Shift" | "Meta";
+
+// @public
+export interface NavigatorLike {
+    readonly platform?: string;
+    readonly userAgent?: string;
+    readonly userAgentData?: {
+        readonly platform?: string;
+    } | undefined;
+}
+
+// @public
+export type Platform = "apple" | "other";
+
+// @public
+export function platformOf(navigatorLike: NavigatorLike | undefined): Platform;
+
+// @public
 export function plural<const Selector extends string, const Forms extends {
     readonly other: string;
 } & {
@@ -304,6 +351,28 @@ export const sdkCoreMessages: {
     readonly "warnings.maxFiles": "Adding {actual} files at once may be slow.";
     readonly "warnings.maxDecodedSize": "This file is very large once opened and may be slow to process.";
     readonly "warnings.maxProcessingTime": "This is taking longer than usual.";
+    readonly "keys.control": "Ctrl";
+    readonly "keys.alt": "Alt";
+    readonly "keys.shift": "Shift";
+    readonly "keys.meta": "Meta";
+    readonly "keys.apple.control": "⌃";
+    readonly "keys.apple.alt": "⌥";
+    readonly "keys.apple.shift": "⇧";
+    readonly "keys.apple.meta": "⌘";
+    readonly "keys.space": "Space";
+    readonly "keys.enter": "Enter";
+    readonly "keys.escape": "Esc";
+    readonly "keys.tab": "Tab";
+    readonly "keys.delete": "Delete";
+    readonly "keys.backspace": "Backspace";
+    readonly "keys.arrowUp": "↑";
+    readonly "keys.arrowDown": "↓";
+    readonly "keys.arrowLeft": "←";
+    readonly "keys.arrowRight": "→";
+    readonly "keys.home": "Home";
+    readonly "keys.end": "End";
+    readonly "keys.pageUp": "Page Up";
+    readonly "keys.pageDown": "Page Down";
 };
 
 // @public
@@ -343,6 +412,40 @@ export interface SerializeErrorOptions {
 }
 
 // @public
+export interface ShortcutChord {
+    readonly inEditable?: boolean;
+    readonly keys: string;
+    readonly repeat?: boolean;
+}
+
+// @public
+export interface ShortcutPart {
+    readonly kind: "modifier" | "key";
+    readonly message?: `keys.${string}`;
+    readonly value: string;
+}
+
+// @public
+export interface ShortcutRegistry {
+    ariaKeyShortcuts(id: string): string | undefined;
+    describe(id: string): readonly (readonly ShortcutPart[])[];
+    match(event: KeyboardEventLike): string | undefined;
+    register(id: string, shortcuts: ShortcutSpec): void;
+}
+
+// @public
+export interface ShortcutRegistryOptions {
+    readonly platform: Platform;
+    readonly tools?: readonly {
+        readonly id: string;
+        readonly shortcuts?: ShortcutSpec;
+    }[];
+}
+
+// @public
+export type ShortcutSpec = FamilyAction | readonly (string | ShortcutChord)[];
+
+// @public
 export interface Store<S> {
     getSnapshot(): S;
     set(next: S | ((current: S) => S)): void;
@@ -363,7 +466,7 @@ export interface ToolDefinition<State = unknown, Context = unknown, View = unkno
     readonly label: string;
     readonly requires?: readonly string[];
     readonly run: (context: Context) => void | Promise<void>;
-    readonly shortcuts?: string | readonly string[];
+    readonly shortcuts?: ShortcutSpec;
     readonly view?: View;
 }
 
