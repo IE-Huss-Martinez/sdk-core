@@ -67,18 +67,61 @@ describe("dependency-cruiser preset", () => {
     ]);
   });
 
-  it("keeps React and ui out of the adapters, the workers and everything the . entry reaches (ADR 0036)", async () => {
+  it("keeps React and ui out of the core, adapters and workers (ADR 0017, ADR 0036)", async () => {
     // The fixture installs no packages, so its npm imports are also unresolvable.
-    expect(withoutRule(await violations("ui-reach"), "not-to-unresolvable")).toEqual([
+    expect(withRule(await violations("ui-reach"), "core-no-ui")).toEqual([
       "core-no-ui: adapters/engine/engine.ts -> react",
+      // Even ui's root entry, and even as types.
+      "core-no-ui: core/session/icons.ts -> @hussmartinez/ui",
       "core-no-ui: workers/render.worker.ts -> @hussmartinez/ui",
-      // Reached through the toolbar feature, which may import ui itself;
-      // react.ts reaching the same feature is allowed, so it isn't listed.
-      "entry-no-ui: index.ts -> @hussmartinez/ui/react",
     ]);
   });
 
-  it("names the path from the . entry to ui", async () => {
+  it("keeps React and ui's React entry out of everything the . entry reaches, even as types", async () => {
+    expect(withRule(await violations("ui-reach"), "entry-no-react")).toEqual([
+      "entry-no-react: index.ts -> @hussmartinez/ui/react",
+      "entry-no-react: index.ts -> react",
+    ]);
+  });
+
+  it("lets a feature the . entry reaches import ui's root entry, types and values", async () => {
+    const reported = withoutRule(await violations("ui-reach"), "not-to-unresolvable");
+    expect(
+      reported.filter((violation) => violation.includes("features/tools/rotate.tool.ts")),
+    ).toEqual([]);
+    // Nothing reports the root entry itself as reached from index.ts.
+    expect(reported).not.toContain("entry-no-react: index.ts -> @hussmartinez/ui");
+  });
+
+  it("matches React and ui's React entry as installed, but not ui's root entry", () => {
+    const rule = /** @type {{ to: { path?: string | string[] } } | undefined} */ (
+      (config.forbidden ?? []).find(({ name }) => name === "entry-no-react")
+    );
+    const patterns = [rule?.to.path ?? []].flat().map((path) => new RegExp(path));
+    const matches = (/** @type {string} */ path) => patterns.some((pattern) => pattern.test(path));
+    const ui = "node_modules/.pnpm/@hussmartinez+ui@0.3.0/node_modules/@hussmartinez/ui";
+    for (const path of [
+      "react",
+      "react-dom/client",
+      "node_modules/.pnpm/react@19.3.1/node_modules/react/index.js",
+      "@hussmartinez/ui/react",
+      `${ui}/dist/react.js`,
+      `${ui}/dist/react.d.ts`,
+    ]) {
+      expect(matches(path), path).toBe(true);
+    }
+    for (const path of [
+      "@hussmartinez/ui",
+      `${ui}/dist/index.js`,
+      `${ui}/dist/index.d.ts`,
+      `${ui}/dist/shared/pair-BrwWt2Rz.js`,
+      "node_modules/react-markdown/index.js",
+    ]) {
+      expect(matches(path), path).toBe(false);
+    }
+  });
+
+  it("names the path from the . entry to React", async () => {
     const baseDir = fileURLToPath(new URL("../../test/fixtures/ui-reach", import.meta.url));
     const { output } = await cruise(["src"], {
       ...config.options,
@@ -89,11 +132,15 @@ describe("dependency-cruiser preset", () => {
     if (typeof output === "string") {
       throw new TypeError("expected a structured cruise result");
     }
-    const entry = output.summary.violations.find(({ rule }) => rule.name === "entry-no-ui");
-    expect(entry?.via?.map(({ name }) => name)).toEqual([
-      "src/features/toolbar/toolbar.ts",
-      "@hussmartinez/ui/react",
-    ]);
+    const paths = output.summary.violations
+      .filter(({ rule }) => rule.name === "entry-no-react")
+      .map(({ via }) => via?.map(({ name }) => name));
+    expect(paths).toEqual(
+      expect.arrayContaining([
+        ["src/features/toolbar/toolbar.ts", "@hussmartinez/ui/react"],
+        ["src/features/tools/render.ts", "react"],
+      ]),
+    );
   });
 
   it("reports cycles", async () => {

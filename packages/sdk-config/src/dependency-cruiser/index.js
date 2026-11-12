@@ -18,6 +18,16 @@ const TEST_FILE = "\\.test\\.[cm]?[jt]sx?$";
 const npmPackage = (names) => `(?:^|/node_modules/)(?:${names})(?:/|$)`;
 
 const UI_PACKAGES = npmPackage("react|react-dom|@hussmartinez/ui");
+
+/**
+ * React, and ui's React entry: `@hussmartinez/ui/react` as written, or
+ * `dist/react.*` once resolved into the installed package. ui's root entry
+ * isn't included: it's server-safe and has no React (ADR 0036).
+ */
+const REACT_LAYER = [
+  npmPackage("react|react-dom"),
+  "(?:^|/node_modules/)@hussmartinez/ui/(?:react(?:/|$)|dist/react\\.)",
+];
 const SDK_CORE = npmPackage("@hussmartinez/sdk-core");
 
 /**
@@ -125,12 +135,12 @@ const config = {
       to: { path: UI_PACKAGES },
     },
     {
-      name: "entry-no-ui",
+      name: "entry-no-react",
       comment:
-        "Nothing the . entry reaches may import React or ui: headless users install them but must never load them (ADR 0036).",
+        "Nothing the . entry reaches may import React or ui's React entry, even as types: headless users never load React (ADR 0036). ui's root entry may be reached through features/.",
       severity: "error",
       from: { path: ROOT_ENTRY },
-      to: { path: UI_PACKAGES, reachable: true },
+      to: { path: REACT_LAYER, reachable: true },
     },
     {
       name: "no-circular",
