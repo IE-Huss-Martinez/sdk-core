@@ -255,7 +255,7 @@ export type LimitSetting = number | {
 };
 
 // @public
-export type LimitUnit = "bytes" | "count" | "milliseconds" | "pixels" | "hertz";
+export type LimitUnit = "bytes" | "count" | "milliseconds" | "pixels" | "hertz" | "bitsPerSecond";
 
 // @public
 export type MessageArgs<Message extends MessageValue> = keyof MessageParams<Message> extends never ? [] : [params: MessageParams<Message>];

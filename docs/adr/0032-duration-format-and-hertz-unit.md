@@ -4,6 +4,7 @@
 - **Date:** 2026-11-12
 - **Refines:** [ADR 0019](0019-message-catalogues.md)'s placeholder formats and [ADR 0020](0020-file-policy.md)'s limit units
 - **Amended:** 2026-11-12, to add `{name, megapixels}` for pixel counts
+- **Amended:** 2026-11-12, to add the `bitsPerSecond` limit unit for data rates
 
 ## Context
 
@@ -33,6 +34,10 @@ The audio SDK needs to show lengths, such as a file's duration or the limit it e
 ### `hertz`
 
 `LimitUnit` adds `"hertz"`, for rates such as a sample rate or a frame rate. Units are labels for `details`, not conversions, so nothing else changes.
+
+### `bitsPerSecond` (amendment)
+
+`LimitUnit` also adds `"bitsPerSecond"`, for data rates such as a video's or audio track's bitrate. The video SDK's `maxBitrate` used `count`, which says nothing about what's counted. Bits, not bytes, because bitrates are quoted in bits per second everywhere: containers, codecs and encoders.
 
 ## Alternatives considered
 
