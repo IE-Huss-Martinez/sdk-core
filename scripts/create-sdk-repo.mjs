@@ -18,7 +18,8 @@
 //   Dependabot alerts and Dependabot security updates;
 // - a read-only GITHUB_TOKEN by default, which can't approve pull requests;
 // - the `release` and `npm` environments, limited to `main`, with no secrets:
-//   the release App and its credentials are organisation-level;
+//   the release App and its credentials are organisation-level. Repositories
+//   that publish nothing to npm, such as sdk-ci, get neither;
 // - protection for `main` once it exists: pull requests with no required
 //   approvals, admins included, linear history, no force pushes or deletions,
 //   and up-to-date required checks. Each check is required once its workflow
@@ -31,8 +32,16 @@
 import { execFileSync } from "node:child_process";
 
 const ORG = "ie-huss-martinez";
-/** Shared repositories, whose names don't follow `<kind>-sdk`. */
-const SHARED = new Set(["sdk-core", "ui"]);
+/**
+ * Shared repositories, whose names don't follow `<kind>-sdk`, and whether
+ * each publishes npm packages. Every `<kind>-sdk` repository does.
+ */
+const SHARED = new Map([
+  ["sdk-core", { publishes: true }],
+  ["ui", { publishes: true }],
+  // GitHub Actions, released as tags (ADR 0026).
+  ["sdk-ci", { publishes: false }],
+]);
 const NAME = /^[a-z]+-sdk$/;
 /** The GitHub Actions app: required checks only accept its results. */
 const GITHUB_ACTIONS_APP_ID = 15368;
@@ -73,7 +82,7 @@ function parseArguments(args) {
   }
   if (!NAME.test(options.name) && !SHARED.has(options.name)) {
     fail(
-      `"${options.name}" isn't a valid repository name: use <kind>-sdk in lowercase letters, such as pdf-sdk, or one of the shared repositories (${[...SHARED].join(", ")}).`,
+      `"${options.name}" isn't a valid repository name: use <kind>-sdk in lowercase letters, such as pdf-sdk, or one of the shared repositories (${[...SHARED.keys()].join(", ")}).`,
     );
   }
   return /** @type {{ name: string, description?: string, apply: boolean }} */ (options);
@@ -124,6 +133,8 @@ function get(path) {
 
 const { name, description, apply } = parseArguments(process.argv.slice(2));
 const repo = `repos/${ORG}/${name}`;
+/** Whether the repository publishes npm packages, and so releases. */
+const publishes = SHARED.get(name)?.publishes ?? true;
 
 /** @type {Array<{ summary: string, run: () => void }>} */
 const changes = [];
@@ -254,8 +265,12 @@ if (permissions && differences(permissions, workflowPermissions).length === 0) {
   );
 }
 
-// The release and npm environments, limited to main, without secrets.
-for (const environment of ["release", "npm"]) {
+// The release and npm environments, limited to main, without secrets. A
+// repository that publishes nothing to npm gets neither.
+if (!publishes) {
+  print(`  skipped: ${name} publishes no npm packages, so it gets no release or npm environment.`);
+}
+for (const environment of publishes ? ["release", "npm"] : []) {
   const path = `${repo}/environments/${environment}`;
   const found = live ? get(path) : undefined;
   const policy = found?.deployment_branch_policy;
@@ -384,12 +399,14 @@ if (changes.length === 0) {
     `${changes.length} change${changes.length === 1 ? "" : "s"} to make. Run again with --apply to make ${changes.length === 1 ? "it" : "them"}.`,
   );
 }
-print();
-print('Still manual, on npm (CONTRIBUTING.md, "Setting up releases"), for each new package:');
-print(
-  "  1. Publish the first version with a short-lived bootstrap token, NPM_TOKEN in the npm environment.",
-);
-print(
-  `  2. Configure its trusted publisher: organisation ${ORG}, repository ${name}, workflow release.yml, environment npm.`,
-);
-print("  3. Delete the token, and require two-factor authentication with tokens disallowed.");
+if (publishes) {
+  print();
+  print('Still manual, on npm (CONTRIBUTING.md, "Setting up releases"), for each new package:');
+  print(
+    "  1. Publish the first version with a short-lived bootstrap token, NPM_TOKEN in the npm environment.",
+  );
+  print(
+    `  2. Configure its trusted publisher: organisation ${ORG}, repository ${name}, workflow release.yml, environment npm.`,
+  );
+  print("  3. Delete the token, and require two-factor authentication with tokens disallowed.");
+}

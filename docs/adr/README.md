@@ -7,7 +7,7 @@ Use [`template.md`](template.md) for new records. Name files `NNNN-short-title.m
 | # | Decision | Status |
 |---|---|---|
 | [0001](0001-record-architecture-decisions.md) | Record architecture decisions | Accepted |
-| [0002](0002-one-repository-per-sdk.md) | One repository per SDK, with shared `sdk-core` and `ui` | Accepted; repositories moved to an organisation by [0024](0024-github-organisation-for-the-sdk-family.md) |
+| [0002](0002-one-repository-per-sdk.md) | One repository per SDK, with shared `sdk-core` and `ui` | Accepted; repositories moved to an organisation by [0024](0024-github-organisation-for-the-sdk-family.md); `sdk-ci` added by [0026](0026-share-ci-steps-from-sdk-ci.md) |
 | [0003](0003-hm-namespace.md) | The `hm` namespace for everything that reaches the page | Accepted |
 | [0004](0004-entry-points-and-module-format.md) | Package entry points and module format | Accepted |
 | [0005](0005-plain-css-with-cascade-layers.md) | Plain CSS with cascade layers | Accepted |
@@ -31,3 +31,4 @@ Use [`template.md`](template.md) for new records. Name files `NNNN-short-title.m
 | [0023](0023-verify-releases-in-an-unprivileged-job.md) | Verify releases in an unprivileged job | Accepted; refines how [0021](0021-version-and-release-with-changesets.md) verifies releases; the image's location superseded by [0025](0025-one-browser-test-image-in-one-place.md) |
 | [0024](0024-github-organisation-for-the-sdk-family.md) | A GitHub organisation for the SDK family | Accepted; supersedes where [0021](0021-version-and-release-with-changesets.md) keeps the App's credentials |
 | [0025](0025-one-browser-test-image-in-one-place.md) | One browser test image, in one place | Accepted; supersedes where [0023](0023-verify-releases-in-an-unprivileged-job.md) keeps the image |
+| [0026](0026-share-ci-steps-from-sdk-ci.md) | Share the family's CI steps from `sdk-ci` | Accepted |

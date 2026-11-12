@@ -124,13 +124,13 @@ pnpm create-sdk-repo pdf-sdk --description "…"          # shows what it would 
 pnpm create-sdk-repo pdf-sdk --description "…" --apply  # changes it
 ```
 
-- **Names:** `<kind>-sdk` in lowercase letters, or one of the shared repositories, `sdk-core` and `ui`.
+- **Names:** `<kind>-sdk` in lowercase letters, or one of the shared repositories: `sdk-core`, `ui` and `sdk-ci`.
 - **What it sets:** it creates the public repository in `ie-huss-martinez` if it's missing, then makes its settings match `sdk-core`'s and `ui`'s:
   - squash merging only, with the pull request title and a blank message, and branches deleted on merge;
   - no wiki or projects;
   - private vulnerability reporting, secret scanning with push protection, Dependabot alerts and Dependabot security updates, all on;
   - a read-only `GITHUB_TOKEN` by default, which can't approve pull requests;
-  - the `release` and `npm` environments, limited to `main`, with no secrets: the release App and its credentials are organisation-level;
+  - the `release` and `npm` environments, limited to `main`, with no secrets: the release App and its credentials are organisation-level. `sdk-ci`, which publishes nothing to npm, gets neither, and no npm steps at the end;
   - protection for `main`: pull requests with no required approvals, admins included, linear history, no force pushes or deletions, and up-to-date required checks from GitHub Actions.
 - **Required checks follow the workflows on `main`:** `pr-title` once `pr-title.yml` is there, `verify` once `verify.yml` is, and `changeset` once `release.yml` and `.changeset/` are. **Run the script again after each setup pull request is merged,** so the next check becomes required. It's the one way to keep them in sync.
 - **It's safe to run any time.** Without `--apply`, it only reads. With it, it changes only what differs from the family's settings, and reports it. It uses the `gh` CLI with the `repo` scope.
