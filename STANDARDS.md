@@ -105,7 +105,7 @@ Programmatic control goes through a ref handle, such as `open(file)`, `export()`
 - **Ports and adapters:**
   - the core defines ports, such as `PdfEngine` and `PdfProcessor`;
   - adapters implement them and run in workers;
-  - every core layer may import `@hussmartinez/sdk-core`, but never `@hussmartinez/ui`, `react` or `react-dom`, and neither may `adapters/`, `workers/` or anything the `.` entry reaches ([ADR 0036](docs/adr/0036-ui-as-a-dependency-of-the-sdks.md));
+  - every core layer may import `@hussmartinez/sdk-core`, but never `@hussmartinez/ui`, `react` or `react-dom`, and neither may `adapters/` or `workers/`. Nothing the `.` entry reaches may import React or `ui`'s React entry, even as types; it may reach `ui`'s server-safe root entry through `features/` ([ADR 0036](docs/adr/0036-ui-as-a-dependency-of-the-sdks.md));
   - `core/errors` is a leaf: it imports only `core/model` and `@hussmartinez/sdk-core`, and every layer may import it;
   - the dependency rules are enforced with `dependency-cruiser`.
 - **Framework-agnostic session:** the store exposes `getSnapshot()`, `subscribe()` and commands. React binds with `useSyncExternalStore`, and the element binds to the same store. Sessions build on `sdk-core`'s `createStore`, `createHistory` and `Reducer` ([ADR 0029](docs/adr/0029-session-store-and-history.md)).

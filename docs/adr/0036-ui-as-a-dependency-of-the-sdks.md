@@ -3,6 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-11-12
 - **Refines:** [ADR 0004](0004-entry-points-and-module-format.md), [ADR 0005](0005-plain-css-with-cascade-layers.md) and [ADR 0017](0017-core-errors-and-shared-runtime-imports.md), by settling how an SDK depends on `ui`'s components and how hosts load their styles
+- **Amended:** 2026-11-12, to let the `.` entry reach `ui`'s root entry through `features/`, so headless tool definitions can name their icons (ADR 0030). The guarantee is now that headless users never load React or `ui`'s React layer; the `entry-no-ui` rule became `entry-no-react`
 
 ## Context
 
@@ -18,9 +19,10 @@ Until now, the SDKs have used `ui` only through its stylesheet: `pdf-sdk`'s READ
 ### A regular dependency, imported only by the UI layers
 
 - **Every SDK lists `@hussmartinez/ui` in `dependencies`,** with a caret range on the current minor, `^0.N.0` during `0.x`.
-- **Only `features/`, `react/` and `element/` import it.** The core never does ([ADR 0017](0017-core-errors-and-shared-runtime-imports.md)). Neither do `adapters/` and `workers/`, nor anything the `.` entry reaches.
-- **The `dependency-cruiser` preset in `sdk-config` enforces it.** Its `core-no-ui` rule covers `core/` today. A follow-up in `sdk-config` extends it to `adapters/` and `workers/`, and adds a rule that nothing reachable from the `.` entry module imports `@hussmartinez/ui`, `react` or `react-dom`.
-- **Headless users** install `ui` but bundle none of it. `ui` is small, its only dependency is `@hussmartinez/sdk-core`, which every SDK already depends on, and its `react` and `react-dom` peers are optional, so a headless install shows no peer warnings.
+- **Only `features/`, `react/` and `element/` import it.** The core never does ([ADR 0017](0017-core-errors-and-shared-runtime-imports.md)), and neither do `adapters/` and `workers/`, not even its types.
+- **Nothing the `.` entry reaches imports React or `ui`'s React entry,** even as types. Through `features/`, the `.` entry may reach `ui`'s root entry, types and values: it's server-safe and has no React, which `ui`'s own tests check. That's how headless tool definitions, which live in `features/` ([ADR 0009](0009-features-as-tools.md)), name their icons with `IconName`.
+- **The `dependency-cruiser` preset in `sdk-config` enforces both.** `core-no-ui` keeps `core/`, `adapters/` and `workers/` free of `ui`, and `entry-no-react` fails when the `.` entry module reaches `react`, `react-dom` or `@hussmartinez/ui/react`, naming the path.
+- **Headless users** never load React or `ui`'s React layer. `ui` is small, its only dependency is `@hussmartinez/sdk-core`, which every SDK already depends on, and its `react` and `react-dom` peers are optional, so a headless install shows no peer warnings.
 
 ### One copy of `ui` in an application
 
@@ -50,7 +52,7 @@ Until now, the SDKs have used `ui` only through its stylesheet: `pdf-sdk`'s READ
 - SDKs can build their toolbars and panels from `ui`'s accessible components, and hosts configure text, theme and announcements once, for `ui` and every SDK.
 - `ui`'s minor releases now set the pace for the SDKs during `0.x`: a `ui` minor means a release of each SDK that wants it. That's the price of one copy, and it ends with `ui` 1.0, when caret ranges allow any later minor.
 - **Follow-up work:**
-  - `sdk-config`: extend `core-no-ui` and add the `.` entry rule.
+  - `sdk-config`: extend `core-no-ui` and add the `.` entry rule. Done in `sdk-config`'s `core-no-ui` and `entry-no-react` rules.
   - `ui`: the duplicate-copy warning, and a README section on using `ui` from an SDK.
   - `pdf-sdk`: its README currently says the editor "keeps its layout and stays usable" without `ui`'s stylesheet. Its toolbar pull request, the first to render `ui`'s components, changes that line to say the stylesheet is required.
   - The element ADR applies the custom elements rule above.
