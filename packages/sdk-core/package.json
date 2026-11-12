@@ -1,6 +1,6 @@
 {
   "name": "@hussmartinez/sdk-core",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Headless runtime shared by the @hussmartinez SDK family.",
   "license": "Apache-2.0",
   "repository": {
