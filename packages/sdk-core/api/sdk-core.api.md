@@ -193,6 +193,7 @@ export function isSdkError<Code extends string = string>(value: unknown, code?: 
 export interface KeyboardEventLike {
     readonly altKey?: boolean;
     readonly code?: string;
+    composedPath?(): readonly unknown[];
     readonly ctrlKey?: boolean;
     readonly defaultPrevented?: boolean;
     readonly isComposing?: boolean;

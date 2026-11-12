@@ -216,6 +216,52 @@ describe("createShortcutRegistry", () => {
     expect(registry.match(press("˚", { altKey: true, code: "KeyL" }))).toBeUndefined();
   });
 
+  it("matches letters by physical key on non-Latin layouts", () => {
+    const registry = family("other");
+
+    // Russian: Ctrl+Z reports "я", Ctrl+Shift+Z "Я", and Ctrl+A "ф".
+    expect(registry.match(press("я", { code: "KeyZ", ctrlKey: true }))).toBe("undo");
+    expect(registry.match(press("Я", { code: "KeyZ", ctrlKey: true, shiftKey: true }))).toBe(
+      "redo",
+    );
+    expect(registry.match(press("ф", { code: "KeyA", ctrlKey: true }))).toBe("select-all");
+    // Greek and Hebrew.
+    expect(registry.match(press("ζ", { code: "KeyZ", ctrlKey: true }))).toBe("undo");
+    expect(registry.match(press("ז", { code: "KeyZ", ctrlKey: true }))).toBe("undo");
+  });
+
+  it("follows the printed letter on remapped Latin layouts", () => {
+    const registry = createShortcutRegistry({ platform: "other" });
+    registry.register("pdf.undo", "undo");
+    registry.register("pdf.quit", ["Control+Q"]);
+
+    // Dvorak: Z is printed where QWERTY has the semicolon.
+    expect(registry.match(press("z", { code: "KeySemicolon", ctrlKey: true }))).toBe("pdf.undo");
+    // AZERTY: A is printed where QWERTY has Q, so it isn't a Q chord.
+    expect(registry.match(press("a", { code: "KeyQ", ctrlKey: true }))).toBeUndefined();
+    expect(registry.match(press("q", { code: "KeyA", ctrlKey: true }))).toBe("pdf.quit");
+  });
+
+  it("reads the target from the composed path, for fields inside shadow roots", () => {
+    const registry = family("apple");
+    const host = element("HM-PDF-EDITOR");
+    const input = element("INPUT", {}, { type: "text" });
+
+    const inShadowField = press("Delete", { target: host, composedPath: () => [input, host] });
+    const inShadowButton = press(" ", {
+      target: host,
+      composedPath: () => [element("BUTTON"), host],
+    });
+
+    expect(registry.match(inShadowField)).toBeUndefined();
+    expect(registry.match(inShadowButton)).toBeUndefined();
+    // Without a composed path, or with an empty one, the target decides.
+    expect(registry.match(press("Delete", { target: host }))).toBe("delete");
+    expect(registry.match(press("Delete", { target: host, composedPath: () => [] }))).toBe(
+      "delete",
+    );
+  });
+
   it("requires Control, Meta and Alt to match exactly", () => {
     const registry = createShortcutRegistry({ platform: "other" });
     registry.register("pdf.zoom-in", ["+"]);

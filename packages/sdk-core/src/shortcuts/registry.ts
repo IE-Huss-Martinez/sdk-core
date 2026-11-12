@@ -19,7 +19,10 @@ export type ShortcutSpec = FamilyAction | readonly (string | ShortcutChord)[];
 export interface KeyboardEventLike {
   /** The character or named key, as `KeyboardEvent.key` reports it. */
   readonly key: string;
-  /** The physical key, such as `KeyZ`, used when Alt on macOS turns a letter into a symbol. */
+  /**
+   * The physical key, such as `KeyZ`. Letter chords match by it when `key`
+   * isn't a Latin letter, as on non-Latin layouts or with Option on macOS.
+   */
   readonly code?: string;
   /** Whether Control was held. */
   readonly ctrlKey?: boolean;
@@ -37,6 +40,11 @@ export interface KeyboardEventLike {
   readonly defaultPrevented?: boolean;
   /** The focused element. Fields and controls are recognised by duck typing. */
   readonly target?: unknown;
+  /**
+   * The event's composed path, whose first element is the real target when
+   * it's inside a shadow root, where `target` is the shadow host.
+   */
+  composedPath?(): readonly unknown[];
 }
 
 /**
@@ -86,7 +94,8 @@ export interface ShortcutRegistry {
    * `preventDefault` when it returns an id the editor handles.
    *
    * It ignores handled events, IME composition, and repeats unless the
-   * shortcut allows them. It never fires in fields unless the shortcut sets
+   * shortcut allows them. It classifies the target from the composed path, so
+   * fields inside shadow roots count. It never fires in fields unless the shortcut sets
    * `inEditable`, and never takes unmodified `Space`, `Enter` or arrow keys
    * from controls such as buttons and links.
    */
@@ -217,7 +226,10 @@ export function createShortcutRegistry(options: ShortcutRegistryOptions): Shortc
       if (!event || event.defaultPrevented || event.isComposing) {
         return undefined;
       }
-      const kind = targetKind(event.target);
+      // A field inside a shadow root is retargeted to its host, so the
+      // composed path's first element is the real target.
+      const path = typeof event.composedPath === "function" ? event.composedPath() : [];
+      const kind = targetKind(path[0] ?? event.target);
       const key = event.key;
       for (const binding of bindings) {
         const modifiersMatch =
@@ -231,9 +243,13 @@ export function createShortcutRegistry(options: ShortcutRegistryOptions): Shortc
         }
         const letter = /^[a-z]$/.test(binding.key);
         const keyMatches = letter
-          ? key.toLowerCase() === binding.key ||
-            // Alt on macOS turns letters into symbols; the physical key decides.
-            (Boolean(event.altKey) && event.code === `Key${binding.key.toUpperCase()}`)
+          ? // The printed Latin letter decides, so remapped Latin layouts such
+            // as Dvorak and AZERTY follow their letters. When the character
+            // isn't a Latin letter, as on Cyrillic, Greek, Hebrew or Arabic
+            // layouts, or with Option on macOS, the physical key decides.
+            /^[a-z]$/i.test(key)
+            ? key.toLowerCase() === binding.key
+            : event.code === `Key${binding.key.toUpperCase()}`
           : key === binding.key;
         if (!keyMatches) {
           continue;
