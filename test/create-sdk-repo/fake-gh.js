@@ -45,8 +45,14 @@ function newRepository(name, input) {
       squash_merge_commit_title: "COMMIT_OR_PR_TITLE",
       squash_merge_commit_message: "COMMIT_MESSAGES",
       delete_branch_on_merge: false,
+      security_and_analysis: {
+        secret_scanning: { status: "disabled" },
+        secret_scanning_push_protection: { status: "disabled" },
+      },
     },
     vulnerabilityReporting: false,
+    dependabotAlerts: false,
+    dependabotSecurityUpdates: false,
     workflowPermissions: {
       default_workflow_permissions: "write",
       can_approve_pull_request_reviews: false,
@@ -106,7 +112,11 @@ if (rest === "") {
   if (method === "GET") {
     respond(repo.settings);
   } else if (method === "PATCH") {
-    Object.assign(repo.settings, body);
+    const { security_and_analysis: analysis, ...rest } = body;
+    Object.assign(repo.settings, rest);
+    if (analysis) {
+      repo.settings.security_and_analysis = { ...repo.settings.security_and_analysis, ...analysis };
+    }
     save();
     respond(repo.settings);
   }
@@ -115,6 +125,28 @@ if (rest === "") {
     respond({ enabled: repo.vulnerabilityReporting });
   } else {
     repo.vulnerabilityReporting = method === "PUT";
+    save();
+  }
+} else if (rest === "vulnerability-alerts") {
+  // 204 with no body when on, 404 when off, as on GitHub.
+  if (method === "GET") {
+    if (!repo.dependabotAlerts) {
+      notFound();
+    }
+  } else {
+    repo.dependabotAlerts = method === "PUT";
+    save();
+  }
+} else if (rest === "automated-security-fixes") {
+  if (method === "GET") {
+    respond({ enabled: repo.dependabotSecurityUpdates, paused: false });
+  } else if (method === "PUT") {
+    // GitHub refuses security updates while the alerts are off.
+    if (!repo.dependabotAlerts) {
+      process.stderr.write("gh: Dependabot alerts must be enabled (HTTP 422)\n");
+      process.exit(1);
+    }
+    repo.dependabotSecurityUpdates = true;
     save();
   }
 } else if (rest === "actions/permissions/workflow") {

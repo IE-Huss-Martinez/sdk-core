@@ -14,7 +14,8 @@
 // - the repository, created as public if it's missing;
 // - squash merging only, with the pull request title and a blank message,
 //   branches deleted on merge, and no wiki or projects;
-// - private vulnerability reporting;
+// - private vulnerability reporting, secret scanning with push protection,
+//   Dependabot alerts and Dependabot security updates;
 // - a read-only GITHUB_TOKEN by default, which can't approve pull requests;
 // - the `release` and `npm` environments, limited to `main`, with no secrets:
 //   the release App and its credentials are organisation-level;
@@ -192,6 +193,50 @@ if (live && get(`${repo}/private-vulnerability-reporting`)?.enabled === true) {
 } else {
   change("turn on private vulnerability reporting", () =>
     api("PUT", `${repo}/private-vulnerability-reporting`),
+  );
+}
+
+// Secret scanning, and push protection, which rejects a push that contains a
+// known kind of credential.
+const scanning = ["secret_scanning", "secret_scanning_push_protection"];
+const analysis = current?.security_and_analysis;
+if (live && scanning.every((feature) => analysis?.[feature]?.status === "enabled")) {
+  ok("secret scanning and push protection are on");
+} else {
+  change("turn on secret scanning and push protection", () =>
+    api("PATCH", repo, {
+      security_and_analysis: Object.fromEntries(
+        scanning.map((feature) => [feature, { status: "enabled" }]),
+      ),
+    }),
+  );
+}
+
+// Dependabot alerts. GitHub answers 204 with no body when they're on, and
+// 404 when they're off.
+let alerts = false;
+if (live) {
+  try {
+    api("GET", `${repo}/vulnerability-alerts`);
+    alerts = true;
+  } catch (error) {
+    if (!(error instanceof NotFound)) {
+      throw error;
+    }
+  }
+}
+if (alerts) {
+  ok("Dependabot alerts are on");
+} else {
+  change("turn on Dependabot alerts", () => api("PUT", `${repo}/vulnerability-alerts`));
+}
+
+// Dependabot security updates, which need the alerts above.
+if (live && get(`${repo}/automated-security-fixes`)?.enabled === true) {
+  ok("Dependabot security updates are on");
+} else {
+  change("turn on Dependabot security updates", () =>
+    api("PUT", `${repo}/automated-security-fixes`),
   );
 }
 

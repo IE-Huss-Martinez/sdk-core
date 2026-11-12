@@ -12,8 +12,10 @@ const FAKE_GH = fileURLToPath(new URL("fake-gh.js", import.meta.url));
 const ACTIONS = 15368;
 
 /**
- * The state of sdk-core as GitHub reported it on 2026-11-12, through the same
- * endpoints the script reads. The script must find nothing to change in it.
+ * The family's settings: sdk-core's state as GitHub reported it on
+ * 2026-11-12, through the same endpoints the script reads, with secret
+ * scanning, push protection and both Dependabot features turned on. The
+ * script must find nothing to change in it.
  */
 const SDK_CORE = {
   settings: {
@@ -30,8 +32,14 @@ const SDK_CORE = {
     squash_merge_commit_title: "PR_TITLE",
     squash_merge_commit_message: "BLANK",
     delete_branch_on_merge: true,
+    security_and_analysis: {
+      secret_scanning: { status: "enabled" },
+      secret_scanning_push_protection: { status: "enabled" },
+    },
   },
   vulnerabilityReporting: true,
+  dependabotAlerts: true,
+  dependabotSecurityUpdates: true,
   workflowPermissions: {
     default_workflow_permissions: "read",
     can_approve_pull_request_reviews: false,
@@ -134,6 +142,15 @@ async function github(onTestFinished, repos = {}) {
   };
 }
 
+/** sdk-core as it is on GitHub today, with the four security features off. */
+const SDK_CORE_TODAY = structuredClone(SDK_CORE);
+SDK_CORE_TODAY.settings.security_and_analysis = {
+  secret_scanning: { status: "disabled" },
+  secret_scanning_push_protection: { status: "disabled" },
+};
+SDK_CORE_TODAY.dependabotAlerts = false;
+SDK_CORE_TODAY.dependabotSecurityUpdates = false;
+
 const writes = (calls) => calls.filter((call) => call.method !== "GET");
 const checksOf = (repo) => repo.protection?.required_status_checks?.checks ?? null;
 
@@ -180,6 +197,9 @@ describe.concurrent("create-sdk-repo", () => {
     for (const line of [
       "would change: create the public repository",
       "would change: turn on private vulnerability reporting",
+      "would change: turn on secret scanning and push protection",
+      "would change: turn on Dependabot alerts",
+      "would change: turn on Dependabot security updates",
       "would change: limit the release environment to main",
       "would change: limit the npm environment to main",
       "skipped: main doesn't exist yet",
@@ -206,6 +226,9 @@ describe.concurrent("create-sdk-repo", () => {
       description: "PDF tools",
     });
     expect(repo.vulnerabilityReporting).toBe(true);
+    expect(repo.settings.security_and_analysis).toEqual(SDK_CORE.settings.security_and_analysis);
+    expect(repo.dependabotAlerts).toBe(true);
+    expect(repo.dependabotSecurityUpdates).toBe(true);
     expect(repo.workflowPermissions).toEqual(SDK_CORE.workflowPermissions);
     for (const name of ["release", "npm"]) {
       expect(repo.environments[name].deployment_branch_policy).toEqual({
@@ -275,12 +298,40 @@ describe.concurrent("create-sdk-repo", () => {
     expect(writes(await gh.calls())).toEqual([]);
   });
 
+  it("turns on only the security features in sdk-core as it is today", async ({
+    onTestFinished,
+  }) => {
+    const gh = await github(onTestFinished, { "sdk-core": SDK_CORE_TODAY });
+
+    const dry = await gh.run(["sdk-core"]);
+
+    expect(dry.code, dry.stderr).toBe(0);
+    expect(dry.stdout.split("\n").filter((line) => line.includes("would change"))).toEqual([
+      "  would change: turn on secret scanning and push protection",
+      "  would change: turn on Dependabot alerts",
+      "  would change: turn on Dependabot security updates",
+    ]);
+    expect(writes(await gh.calls())).toEqual([]);
+
+    const applied = await gh.run(["sdk-core", "--apply"]);
+
+    expect(applied.code, applied.stderr).toBe(0);
+    // Security updates need the alerts first, which the fake enforces too.
+    expect(writes(await gh.calls()).map((call) => `${call.method} ${call.path}`)).toEqual([
+      "PATCH repos/ie-huss-martinez/sdk-core",
+      "PUT repos/ie-huss-martinez/sdk-core/vulnerability-alerts",
+      "PUT repos/ie-huss-martinez/sdk-core/automated-security-fixes",
+    ]);
+    expect(await gh.repo("sdk-core")).toEqual(SDK_CORE);
+  });
+
   it("lists drift in a dry run without changing it, and repairs it with --apply", async ({
     onTestFinished,
   }) => {
     const drifted = structuredClone(SDK_CORE);
     drifted.settings.allow_merge_commit = true;
     drifted.vulnerabilityReporting = false;
+    drifted.settings.security_and_analysis.secret_scanning_push_protection = { status: "disabled" };
     drifted.environments.npm.branches.push({ id: 200, name: "develop", type: "branch" });
     drifted.protection.allow_force_pushes = { enabled: true };
     drifted.protection.required_status_checks.checks.push({ context: "extra", app_id: 1 });
@@ -292,6 +343,7 @@ describe.concurrent("create-sdk-repo", () => {
     for (const line of [
       "would change: set allow_merge_commit",
       "would change: turn on private vulnerability reporting",
+      "would change: turn on secret scanning and push protection",
       "would change: remove develop from the npm environment's branches",
       "would change: update main's protection (required_status_checks, allow_force_pushes)",
     ]) {
@@ -305,6 +357,7 @@ describe.concurrent("create-sdk-repo", () => {
     expect(applied.code, applied.stderr).toBe(0);
     const repo = await gh.repo("sdk-core");
     expect(repo.settings).toEqual(SDK_CORE.settings);
+    expect(repo.settings.security_and_analysis).toEqual(SDK_CORE.settings.security_and_analysis);
     expect(repo.vulnerabilityReporting).toBe(true);
     expect(repo.environments.npm.branches.map((branch) => branch.name)).toEqual(["main"]);
     expect(repo.protection).toEqual(SDK_CORE.protection);
