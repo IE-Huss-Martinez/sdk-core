@@ -7,7 +7,7 @@ These rules apply to `sdk-core`, `ui` and every `<kind>-sdk` repository. Each ru
 | Repository | Publishes | Role |
 |---|---|---|
 | `ie-huss-martinez/sdk-core` | `@hussmartinez/sdk-core` | Headless shared runtime: worker messaging, errors, session primitives, tool registry, custom-element base, file policy, messages helper |
-| | `@hussmartinez/sdk-config` | Shared tsconfig, Biome, stylelint, dependency-cruiser, Vite and Playwright presets, and the test applications |
+| | `@hussmartinez/sdk-config` | Shared tsconfig, Biome, stylelint, dependency-cruiser, api-extractor, commitlint, lint-staged and secretlint presets |
 | `ie-huss-martinez/ui` | `@hussmartinez/ui` | Design system: tokens, themes, base styles, shared React components |
 | `ie-huss-martinez/<kind>-sdk` | `@hussmartinez/<kind>-sdk` | One media kind: `pdf`, `image`, `video`, `audio`, … |
 | `ie-huss-martinez/sdk-ci` | (none: GitHub Actions) | The family's shared CI and release steps, as versioned composite actions ([ADR 0026](docs/adr/0026-share-ci-steps-from-sdk-ci.md)) |
@@ -98,7 +98,7 @@ Programmatic control goes through a ref handle, such as `open(file)`, `export()`
 - No browser APIs at import time or during render. Heavy dependencies load with dynamic `import()` after mount.
 - Server and client render identical markup: IDs come from `useId`, and nothing in render depends on time or randomness.
 - `"use client"` is kept in built React entries, and a test verifies it.
-- Every repository's end-to-end tests run against the Next.js and Vite test applications from `sdk-config`.
+- Every repository's end-to-end tests run against its own Next.js and Vite applications in `examples/`, required before its first release with a React layer or custom element ([ADR 0039](docs/adr/0039-test-applications-in-each-repository.md)).
 
 ## Architecture ([ADR 0008](docs/adr/0008-ports-adapters-and-session.md), [ADR 0009](docs/adr/0009-features-as-tools.md), [ADR 0010](docs/adr/0010-edits-as-commands.md), [ADR 0011](docs/adr/0011-worker-messaging-and-assets.md), [ADR 0017](docs/adr/0017-core-errors-and-shared-runtime-imports.md))
 
