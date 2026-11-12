@@ -258,6 +258,9 @@ export type LimitSetting = number | {
 export type LimitUnit = "bytes" | "count" | "milliseconds" | "pixels" | "hertz" | "bitsPerSecond";
 
 // @public
+export function locate(offsets: readonly number[], position: number): SequenceLocation | undefined;
+
+// @public
 export type MessageArgs<Message extends MessageValue> = keyof MessageParams<Message> extends never ? [] : [params: MessageParams<Message>];
 
 // @public
@@ -420,6 +423,15 @@ export interface SdkErrorOptions {
 }
 
 // @public
+export interface SequenceLocation {
+    readonly index: number;
+    readonly within: number;
+}
+
+// @public
+export function sequenceOffsets(lengths: readonly number[]): readonly number[];
+
+// @public
 export interface SerializedError {
     readonly cause?: SerializedError;
     readonly code: string;
@@ -471,6 +483,9 @@ export interface ShortcutRegistryOptions {
 
 // @public
 export type ShortcutSpec = FamilyAction | readonly (string | ShortcutChord)[];
+
+// @public
+export function snap(position: number, targets: Iterable<number>, tolerance: number): number;
 
 // @public
 export interface Store<S> {

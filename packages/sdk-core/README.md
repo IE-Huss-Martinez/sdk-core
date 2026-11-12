@@ -145,6 +145,25 @@ const bitmap = await client.call("render", { bytes, page: 1 }, { signal, onProgr
 - **Errors:** handler errors arrive rebuilt with `deserializeError`, so `PdfError` codes survive. Errors that escape the handlers, and failures to start, arrive as `WORKER_CRASHED`, `WORKER_START_FAILED` or `WORKER_PROTOCOL_MISMATCH`.
 - **Crash reporting:** pass `onCrash` to hear about those three failures even when no call is pending. SDKs should forward it to their host's `onEvent` or error reporting. Expected shutdowns, such as the idle timeout, `destroy()` or a stuck call being stopped, don't trigger it.
 
+## Timelines
+
+Pure helpers for a sequence of items, such as the clips of an audio or video timeline, over whole units like samples or frames, never seconds ([ADR 0042](../../docs/adr/0042-timeline-sequence-helpers.md)):
+
+```ts
+import { locate, sequenceOffsets, snap } from "@hussmartinez/sdk-core";
+
+const offsets = sequenceOffsets([48_000, 24_000]); // [0, 48000, 72000]
+locate(offsets, 48_000); // { index: 1, within: 0 }
+locate(offsets, 72_000); // undefined: the total length is past the end
+snap(47_990, offsets, Math.round(8 * unitsPerPixel)); // 48000
+```
+
+- **`sequenceOffsets(lengths)`** returns every boundary, the starts and then the total, frozen. Lengths must be positive safe integers.
+- **`locate(offsets, position)`** finds the item under a position with a binary search. A position on a boundary belongs to the item that starts there, and the total length and beyond return `undefined`.
+- **`snap(position, targets, tolerance)`** returns the nearest target within the tolerance, the earlier one on a tie, or the position itself. The tolerance is in the same units, so a UI converts its pixel tolerance with its zoom.
+
+Invalid units throw `RangeError`.
+
 ## Custom elements
 
 `@hussmartinez/sdk-core/element` builds an SDK's `<hm-<kind>-editor>` element from a definition and the SDK's own mount function, so `sdk-core` imports no framework ([ADR 0040](../../docs/adr/0040-editor-element-base.md)). Importing it touches no browser API.
