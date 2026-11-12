@@ -118,11 +118,12 @@ Programmatic control goes through a ref handle, such as `open(file)`, `export()`
   - typed, versioned RPC from `sdk-core`, with cancellation, progress and error codes preserved;
   - caller buffers are copied unless `transfer: true`, and results are transferred, except views into part of a buffer, which are copied;
   - a call that can't be stopped terminates its worker, other calls on it fail with `WORKER_TERMINATED`, and none are retried automatically;
-  - `exposeWorker` runs before any heavy initialisation, and WebAssembly loads lazily.
+  - `exposeWorker` runs before any heavy initialisation, and WebAssembly loads lazily;
+  - an engine's own worker protocol, such as pdf.js's, is allowed when it can't be replaced, if its adapter gives callers the same guarantees: copied inputs, abort, time limits, termination, error codes and managed lifetimes, with contract tests for each ([ADR 0028](docs/adr/0028-third-party-engines.md)).
 - **Errors:** one `SdkError` subclass per SDK, with a stable `code`, `details` and `cause`. User-facing text comes from messages, never from error text.
 - **Contract tests:** every adapter passes the contract-test suite for its port.
 
-## Security and privacy ([ADR 0012](docs/adr/0012-hostile-input-and-no-network.md), [ADR 0020](docs/adr/0020-file-policy.md))
+## Security and privacy ([ADR 0012](docs/adr/0012-hostile-input-and-no-network.md), [ADR 0020](docs/adr/0020-file-policy.md), [ADR 0028](docs/adr/0028-third-party-engines.md))
 
 - **Treat every file as hostile** ([ADR 0020](docs/adr/0020-file-policy.md)):
   - parse only in workers;
@@ -130,11 +131,13 @@ Programmatic control goes through a ref handle, such as `open(file)`, `export()`
   - check before or while decoding, failing with specific error codes and `details` naming the limit, and warning from each limit's warning threshold;
   - hosts configure limits through `filePolicy`, and unknown limit names are an error.
 - **Harden parsers:**
-  - pdf.js runs with `isEvalSupported: false` and scripting disabled;
+  - no code is generated from file data: a build test fails if any built engine chunk contains `eval(` or `new Function`, and the documented CSP never needs `'unsafe-eval'` ([ADR 0028](docs/adr/0028-third-party-engines.md));
+  - engine options that enable code generation or scripting are off, such as pdf.js's scripting and XFA;
   - link protocols are allowlisted;
   - links get `rel="noopener noreferrer"`.
 - **Never insert file-derived strings as HTML.** Sanitise SVG, or display it only through `<img>`.
 - **No network requests** by default. End-to-end tests fail on any request to another origin.
+- **Third-party engines are proven offline** ([ADR 0028](docs/adr/0028-third-party-engines.md)): every data file an engine needs, such as character maps, fonts, colour profiles, decoders or models, comes from the SDK's asset provider, never from the engine's default URLs; fallbacks that load code by URL aren't bundled; unknown asset requests fail closed; and end-to-end fixtures exercise every data path the engines have.
 - **Supply chain:**
   - minimal, justified dependencies;
   - committed lockfiles and allowlisted install scripts;
