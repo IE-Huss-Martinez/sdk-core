@@ -1,0 +1,17 @@
+{
+  // Declarations for the test-only entries, generated from their JSDoc and
+  // committed next to them (pnpm types:update). A test checks they're
+  // current, and the repository's biome.json leaves them as tsc writes them.
+  "extends": "./tsconfig/node.json",
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "noEmit": false,
+    "declarationMap": false,
+    "rootDir": "src",
+    "outDir": "src"
+  },
+  "files": ["src/testing/audio-output.js", "src/testing/conformance.js"]
+}
