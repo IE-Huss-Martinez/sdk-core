@@ -212,6 +212,34 @@ Tests that check behaviour before any gesture, such as autoplay, run in a file t
 
 It returns `{ available, reason, clockRatio }`. `reason` is empty when audio is available, and otherwise says why, such as ` (skipped: the AudioContext stays "suspended", so there's no audio output; sdk-core ADR 0043)`. It's test code only, with TypeScript declarations: import it only from tests.
 
+### `hm-check-single-copy`
+
+Fails when `pnpm-lock.yaml` resolves more than one version of any `@hussmartinez` package ([ADR 0047](../../docs/adr/0047-one-copy-of-each-family-package.md)), which [ADR 0036](../../docs/adr/0036-ui-as-a-dependency-of-the-sdks.md) forbids. Run it in `verify`:
+
+```json
+{ "scripts": { "check:single-copy": "hm-check-single-copy" } }
+```
+
+It names every version and what brings it:
+
+```text
+@hussmartinez/sdk-core resolves to 2 versions in pnpm-lock.yaml:
+  0.3.0, through @hussmartinez/ui@0.5.0
+  0.4.1, through the workspace (.)
+```
+
+Workspace links aren't copies, and versions that differ only in their peer dependencies count once.
+
+```text
+Usage: hm-check-single-copy [--scope <scope>]... [<lockfile>]
+```
+
+| Exit code | Meaning |
+|---|---|
+| 0 | Every package resolves to one version |
+| 1 | A package resolves to more than one version |
+| 2 | Usage error, or a lockfile that can't be read |
+
 ### commitlint, lint-staged and secretlint
 
 The git hook rules of [ADR 0016](../../docs/adr/0016-git-hooks-and-merge-guards.md). commitlint accepts the same types and subject pattern as the `pr-title` workflow. lint-staged runs secretlint, Biome and stylelint on staged files.
