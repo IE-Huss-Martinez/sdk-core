@@ -43,6 +43,7 @@ It's the symptom hosts would otherwise never see: an `instanceof SdkError` check
 
 - **Extend `hm-lint-deps`:** it checks which source files import what, through a dependency-cruiser cruise. This reads only the lockfile. Keeping the two separate keeps each one's failures unambiguous.
 - **`pnpm dedupe --check`:** it reports any lockfile that could be smaller, not two versions that can't be reconciled within their ranges, which is exactly this case.
+- **The lockfile check alone, without a runtime warning in `sdk-core`:** `isSdkError` already works across copies through its `Symbol.for` brand, so a warning adds less than `ui`'s does. But only a warning reaches hosts, whose own dependencies can bring a second copy, and an `instanceof SdkError` check there fails silently. So the warning is taken, in a later pull request (see "A warning for hosts").
 - **Peer dependencies for family packages:** they'd guarantee one copy, but [ADR 0036](0036-ui-as-a-dependency-of-the-sdks.md) rejected them for `ui`, because hosts would have to install them by hand.
 
 ## Consequences
