@@ -100,5 +100,5 @@ Validating vectors and documents against their schemas is test-only. The SDKs ke
 - A port in another language can prove its behaviour by passing the same vectors, and documents can move between apps through a versioned, schema-checked format.
 - Each SDK takes on work: format records, schemas, migrations for breaking changes, stable rejection reasons, and the vectors.
 - `pdf-sdk` changes the most: it gets codes for its rejections, asset references for its images, and an integer grid for its positions.
-- `audio-sdk`, the first adopter, still has two follow-ups from section 8. Its package `files` lists only `dist`, so `formats/` must be added. And its 158 vectors have no hostile keys yet, though one of its unit tests already covers a `__proto__` source id.
+- Each adopting SDK lists `formats/` in its package `files` and includes hostile keys in its vectors. Reviewers check both when a format is added.
 - Format changes become more deliberate, because each breaking change needs a version bump and a migration.
