@@ -1,3 +1,5 @@
+import { checkSingleCopy } from "../internal/single-copy.js";
+
 /**
  * A small observable store: one immutable state, replaced on every change
  * (ADR 0029). React binds to it with `useSyncExternalStore`, and the element
@@ -56,6 +58,7 @@ function report(error: unknown): void {
  * @public
  */
 export function createStore<S>(initial: S): Store<S> {
+  checkSingleCopy();
   let state = initial;
   const listeners = new Set<() => void>();
 

@@ -122,12 +122,16 @@ async function bundleForEnvironment(
 
 // The text of the invalid-locale warning, which createMessages can print.
 const WARNING = "isn't a valid locale";
+// The second-copy warning's text, which createMessages can print (ADR 0047).
+const SECOND_COPY = "copies of @hussmartinez/sdk-core are in use";
 
 describe("development warnings in the built package", () => {
   it.each(["esbuild", "rolldown"] as const)(
     "keeps them in a development bundle from %s",
     async (bundler) => {
-      expect(await bundleForEnvironment(bundler, "development")).toContain(WARNING);
+      const code = await bundleForEnvironment(bundler, "development");
+      expect(code).toContain(WARNING);
+      expect(code).toContain(SECOND_COPY);
     },
   );
 
@@ -136,6 +140,7 @@ describe("development warnings in the built package", () => {
     async (bundler) => {
       const code = await bundleForEnvironment(bundler, "production");
       expect(code).not.toContain(WARNING);
+      expect(code).not.toContain(SECOND_COPY);
       expect(code).not.toContain("[@hussmartinez/sdk-core]");
     },
   );

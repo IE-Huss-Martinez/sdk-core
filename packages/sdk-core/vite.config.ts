@@ -1,9 +1,14 @@
+import { readFileSync } from "node:fs";
 import { defineConfig } from "vite";
+
+const manifest = JSON.parse(readFileSync(new URL("package.json", import.meta.url), "utf8"));
 
 // Library build of the headless entry and the element entry (ADR 0040): ES
 // modules, unminified so that consumers' bundlers can tree-shake and minify
 // them, with source maps. Code they share goes into a shared chunk.
 export default defineConfig({
+  // sdk-core's version, for the second-copy warning (ADR 0047).
+  define: { __HM_SDK_CORE_VERSION__: JSON.stringify(manifest.version) },
   build: {
     lib: {
       entry: { index: "src/index.ts", element: "src/element.ts" },
