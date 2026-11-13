@@ -1,5 +1,17 @@
 # @hussmartinez/sdk-config
 
+## 0.5.0
+
+### Minor Changes
+
+- [#105](https://github.com/ie-huss-martinez/sdk-core/pull/105) [`50528e2`](https://github.com/ie-huss-martinez/sdk-core/commit/50528e2af66ccb2cea1b38c32de05a9ea590bbb9) Thanks [@hussmartinez](https://github.com/hussmartinez)! - Adds `hm-check-single-copy`, which fails when `pnpm-lock.yaml` resolves more than one version of any `@hussmartinez` package (or of the scopes given with `--scope`). It names each version and what depends on it, such as `0.3.0, through @hussmartinez/ui@0.5.0`. Workspace links aren't copies, and versions that differ only in their peer dependencies count once. Add `"check:single-copy": "hm-check-single-copy"` to your scripts and run it in `verify`. It adds `yaml` as a dependency.
+
+### Patch Changes
+
+- [#103](https://github.com/ie-huss-martinez/sdk-core/pull/103) [`1b730b6`](https://github.com/ie-huss-martinez/sdk-core/commit/1b730b654f37123d198a93cedfbe90dd5c0bcadb) Thanks [@hussmartinez](https://github.com/hussmartinez)! - `testing/audio-output` and `testing/conformance` now ship TypeScript declarations, so TypeScript test projects can import them without a shim. `describeConformance` and `checkCase` take a generic `Input`, the type of the cases' inputs, instead of `any`.
+  
+  The `audioOutput()` documentation now says to probe inside the tests that need audio, never at a file's top level: the probe clicks, which gives the page user activation, so a test of behaviour before any gesture, such as autoplay, would see that click. The README shows a `needAudio(context)` helper that skips the test with the reason.
+
 ## 0.4.0
 
 ### Minor Changes
