@@ -50,3 +50,4 @@ Use [`template.md`](template.md) for new records. Name files `NNNN-short-title.m
 | [0042](0042-timeline-sequence-helpers.md) | Timeline sequence helpers: offsets, locating a position, and snapping | Accepted |
 | [0043](0043-no-audio-output-in-firefox-tests.md) | Firefox has no audio output in the browser test image | Accepted; refines [0025](0025-one-browser-test-image-in-one-place.md) |
 | [0044](0044-release-age-and-our-own-packages.md) | A one-day release age for third-party packages, but not for our own | Accepted; refines [0012](0012-hostile-input-and-no-network.md) |
+| [0045](0045-portable-formats-and-conformance-vectors.md) | Portable formats and language-neutral conformance vectors | Accepted |
