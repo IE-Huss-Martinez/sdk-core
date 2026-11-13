@@ -1,5 +1,15 @@
 # @hussmartinez/sdk-core
 
+## 0.4.2
+
+### Patch Changes
+
+- [#106](https://github.com/ie-huss-martinez/sdk-core/pull/106) [`dab5a65`](https://github.com/ie-huss-martinez/sdk-core/commit/dab5a65c80abffb4848fcbe0228839e5d3c82a60) Thanks [@hussmartinez](https://github.com/hussmartinez)! - In development, sdk-core now warns once when a second copy of it is used on the page, naming both versions. Errors from one copy aren't `instanceof SdkError` of another, so use `isSdkError`. `npm ls @hussmartinez/sdk-core` shows where each copy comes from. Production builds drop the check, and importing sdk-core still has no side effects.
+
+- [#108](https://github.com/ie-huss-martinez/sdk-core/pull/108) [`c5cf0ac`](https://github.com/ie-huss-martinez/sdk-core/commit/c5cf0acd84620ad33dd507a9caebe7be66feb776) Thanks [@hussmartinez](https://github.com/hussmartinez)! - Shortcuts no longer fire for keys pressed inside a modal `<dialog>` that sits between the key's target and the editor's root, such as an export dialog inside the editor. A key there belongs to the dialog, as it already did for text fields and controls. Before, `]` on a radio button in such a dialog could rotate an image.
+  
+  `match` takes the editor's root as a new option, `match(event, { root })`, and otherwise uses the event's `currentTarget`. From a React handler, pass the synthetic event's `currentTarget`, `match(event.nativeEvent, { root: event.currentTarget })`, so shortcuts keep working when a host renders the editor inside its own modal dialog. `KeyboardEventLike` also gains an optional `currentTarget`, which DOM events already have.
+
 ## 0.4.1
 
 ### Patch Changes
