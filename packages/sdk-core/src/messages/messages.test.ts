@@ -3,7 +3,7 @@ import { SdkError } from "../errors/sdk-error.js";
 import { sdkCoreMessages } from "./core-messages.js";
 import { clearIntlCache } from "./intl.js";
 import { createMessages, defineMessages, plural } from "./messages.js";
-import type { MessageParams } from "./types.js";
+import type { MessageOverrides, MessageParams } from "./types.js";
 
 const en = defineMessages({
   ...sdkCoreMessages,
@@ -83,6 +83,26 @@ describe("message types", () => {
     createMessages(en, { overrides: { "file.opened": "Opened", "toolbar.rotate": "Drehen" } });
     const fromJson: Record<string, string> = { "toolbar.rotate": "Drehen" };
     createMessages(en, { overrides: fromJson });
+  });
+
+  it("accept overrides typed as MessageOverrides, as an SDK's messages prop is, with no cast", () => {
+    // What an SDK receives from its host and passes on (ADR 0019, ADR 0046).
+    const fromHost: MessageOverrides<typeof en> = { "toolbar.rotate": "Drehen" };
+    const messages = createMessages(en, { locale: "de", overrides: fromHost });
+    expect(messages.t("toolbar.rotate")).toBe("Drehen");
+    // Literal overrides are still checked, plurals included.
+    createMessages(en, {
+      // @ts-expect-error {total} isn't a placeholder of "pages.selected".
+      overrides: { "pages.selected": { $plural: "total", one: "1", other: "{total}" } },
+    });
+    createMessages(en, {
+      overrides: {
+        "pages.selected": { $plural: "count", one: "1 Seite", other: "{count} Seiten" },
+      },
+    });
+    // Optional, as a component's prop is.
+    const maybe: MessageOverrides<typeof en> | undefined = undefined;
+    createMessages(en, { ...(maybe ? { overrides: maybe } : {}) });
   });
 });
 
