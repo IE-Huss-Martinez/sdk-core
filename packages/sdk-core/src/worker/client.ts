@@ -5,6 +5,7 @@ import {
   SdkError,
 } from "../errors/sdk-error.js";
 import { type DeserializeErrorOptions, deserializeError } from "../errors/serialize.js";
+import { checkSingleCopy } from "../internal/single-copy.js";
 import {
   type CallMessage,
   type CancelMessage,
@@ -211,6 +212,7 @@ interface Connection {
 export function createWorkerClient<Contract extends WorkerContract<Contract>>(
   options: WorkerClientOptions,
 ): WorkerClient<Contract> {
+  checkSingleCopy();
   const startTimeout = timeoutOption("startTimeout", options.startTimeout, DEFAULT_START_TIMEOUT);
   const cancelTimeout = timeoutOption(
     "cancelTimeout",

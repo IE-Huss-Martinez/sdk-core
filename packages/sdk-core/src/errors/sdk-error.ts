@@ -1,3 +1,5 @@
+import { checkSingleCopy } from "../internal/single-copy.js";
+
 /**
  * A value that survives `structuredClone` and `JSON.stringify` unchanged.
  *
@@ -147,6 +149,7 @@ export class SdkError<Code extends string = string> extends Error {
    */
   constructor(code: Code, message: string, options: SdkErrorOptions = {}) {
     super(message, "cause" in options ? { cause: options.cause } : undefined);
+    checkSingleCopy();
     this.code = code;
     // Set on each instance rather than once on the prototype: a module-scope
     // Object.defineProperty is a side effect that would keep this class in

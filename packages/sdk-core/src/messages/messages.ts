@@ -1,5 +1,6 @@
 import { isSdkError } from "../errors/sdk-error.js";
 import { warnInDevelopment } from "../internal/development.js";
+import { checkSingleCopy } from "../internal/single-copy.js";
 import {
   dateTimeFormat,
   formatDuration,
@@ -147,6 +148,7 @@ export function createMessages<
   catalogue: Catalogue,
   options: CreateMessagesOptions<Overrides & CheckedOverrides<Catalogue, Overrides>> = {},
 ): Messages<Catalogue> {
+  checkSingleCopy();
   const locale = resolveLocale(options.locale);
   const compiled = new Map<string, CompiledMessage>();
 
