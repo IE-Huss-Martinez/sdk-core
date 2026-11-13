@@ -127,6 +127,13 @@ Programmatic control goes through a ref handle, such as `open(file)`, `export()`
 - **Errors:** one `SdkError` subclass per SDK, with a stable `code`, `details` and `cause`. User-facing text comes from messages, never from error text.
 - **Contract tests:** every adapter passes the contract-test suite for its port.
 
+## Portable formats and conformance ([ADR 0045](docs/adr/0045-portable-formats-and-conformance-vectors.md))
+
+- **Formats:** every persisted or exchanged format is versioned JSON, `{ "format": "hm-<kind>-<thing>", "version": N, … }`, with a JSON Schema at `formats/<format>/v<N>.schema.json`. A breaking change bumps the version and ships a migration, so every earlier version stays readable.
+- **Binary data** is a content-addressed asset reference (`sha256:`), never inline. Source names are recorded only if the user opts in.
+- **Numbers:** integers wherever the model uses them, fixed integer grids for fractional positions, exact copies of floats that are only copied, and stated tolerances for computed floats. Anything hashed across languages uses RFC 8785 JSON canonicalisation.
+- **Conformance vectors:** each SDK keeps `conformance/`, JSON cases of its deterministic logic that its own tests run. Rejections are checked by error code and `details.reason`, never message text.
+
 ## Security and privacy ([ADR 0012](docs/adr/0012-hostile-input-and-no-network.md), [ADR 0020](docs/adr/0020-file-policy.md), [ADR 0028](docs/adr/0028-third-party-engines.md), [ADR 0035](docs/adr/0035-ai-core-and-host-configured-network.md))
 
 - **Treat every file as hostile** ([ADR 0020](docs/adr/0020-file-policy.md)):
