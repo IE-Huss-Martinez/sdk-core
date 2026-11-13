@@ -32,6 +32,10 @@ function ownVersion(): string {
  * Called on first use by sdk-core's most used entry points, never on import,
  * so importing sdk-core stays free of side effects. It does nothing in
  * production, and bundlers drop it there.
+ *
+ * Evaluating the module twice also counts as two copies, even with one
+ * install, such as in tests that call `vi.resetModules` or after some
+ * dev-server reloads.
  */
 export function checkSingleCopy(): void {
   if (checked) {

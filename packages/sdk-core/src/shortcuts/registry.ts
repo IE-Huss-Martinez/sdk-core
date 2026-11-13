@@ -1,6 +1,6 @@
 import { type Chord, type Modifier, type Platform, parseChord, signature } from "./chord.js";
 import { type FamilyAction, familyShortcuts, type ShortcutChord } from "./family.js";
-import { targetKind } from "./target.js";
+import { insideModalDialog, targetKind } from "./target.js";
 
 /**
  * A tool's shortcuts: the name of a family action, or its own chords.
@@ -42,10 +42,33 @@ export interface KeyboardEventLike {
   /** The focused element. Fields and controls are recognised by duck typing. */
   readonly target?: unknown;
   /**
+   * The element listening for the event. A modal `<dialog>` between the
+   * target and it keeps its keys. {@link ShortcutMatchOptions.root} takes
+   * precedence over it.
+   */
+  readonly currentTarget?: unknown;
+  /**
    * The event's composed path, whose first element is the real target when
    * it's inside a shadow root, where `target` is the shadow host.
    */
   composedPath?(): readonly unknown[];
+}
+
+/**
+ * Options for {@link ShortcutRegistry.match}.
+ *
+ * @public
+ */
+export interface ShortcutMatchOptions {
+  /**
+   * The editor's root: the element whose listener is calling `match`. A modal
+   * `<dialog>` between the event's target and it keeps its keys, and one
+   * around it, such as a host's dialog that holds the whole editor, doesn't.
+   * Defaults to the event's `currentTarget`. From a React handler, pass the
+   * synthetic event's `currentTarget`, because the native event's is React's
+   * root container: `match(event.nativeEvent, { root: event.currentTarget })`.
+   */
+  readonly root?: unknown;
 }
 
 /**
@@ -94,13 +117,14 @@ export interface ShortcutRegistry {
    * the editor's root, never on `window` (WCAG 2.1.4), and call
    * `preventDefault` when it returns an id the editor handles.
    *
-   * It ignores handled events, IME composition, and repeats unless the
-   * shortcut allows them. It classifies the target from the composed path, so
+   * It ignores handled events, IME composition, repeats unless the shortcut
+   * allows them, and keys from inside a modal `<dialog>` between the target
+   * and the editor's root, `options.root` or else the event's `currentTarget`. It classifies the target from the composed path, so
    * fields inside shadow roots count. It never fires in fields unless the shortcut sets
    * `inEditable`, and never takes unmodified `Space`, `Enter` or arrow keys
    * from controls such as buttons and links.
    */
-  match(event: KeyboardEventLike): string | undefined;
+  match(event: KeyboardEventLike, options?: ShortcutMatchOptions): string | undefined;
   /** The value of `aria-keyshortcuts` for an id, such as `Meta+Z`. */
   ariaKeyShortcuts(id: string): string | undefined;
   /** Each of an id's chords as parts, to render as labels. */
@@ -223,13 +247,19 @@ export function createShortcutRegistry(options: ShortcutRegistryOptions): Shortc
       byId.set(id, added);
     },
 
-    match(event) {
+    match(event, options = {}) {
       if (!event || event.defaultPrevented || event.isComposing) {
         return undefined;
       }
       // A field inside a shadow root is retargeted to its host, so the
       // composed path's first element is the real target.
       const path = typeof event.composedPath === "function" ? event.composedPath() : [];
+      // A modal dialog inside the editor, such as an export dialog, owns its
+      // keys: React bubbles them to the editor, where `]` would rotate.
+      const root = options.root ?? event.currentTarget;
+      if (insideModalDialog(path, event.target, root)) {
+        return undefined;
+      }
       const kind = targetKind(path[0] ?? event.target);
       const key = event.key;
       for (const binding of bindings) {

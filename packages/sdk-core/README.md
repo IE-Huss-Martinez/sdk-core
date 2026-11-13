@@ -29,6 +29,7 @@ throw new PdfError("FILE_TOO_LARGE", "The file exceeds the size limit.", {
 - **Subclasses** narrow `code` to their own union and set `name` explicitly, so it survives minification. They keep the base constructor's signature `(code, message, options)`, so errors can be rebuilt after crossing a worker boundary.
 - **`details`** accept JSON-compatible values only: strings, finite numbers, booleans, `null`, arrays and plain objects.
 - **`isSdkError(value, code?)`** narrows a caught value, optionally to one code. It recognises errors from other realms and from duplicate copies of sdk-core, where `instanceof` fails, through a shared brand. Errors that merely look similar, such as Node errors with a string `code`, aren't accepted.
+- **A second copy of sdk-core** in use on the page gets a warning, once, in development, naming both versions, because `instanceof SdkError` fails across copies ([ADR 0047](../../docs/adr/0047-one-copy-of-each-family-package.md)). Anything that evaluates sdk-core's module twice counts too, even with one install: test suites that call `vi.resetModules`, and some dev-server reloads, may warn "2 copies (0.4.1, 0.4.1)".
 
 ### Across a worker boundary
 
