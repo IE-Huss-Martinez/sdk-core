@@ -6,7 +6,7 @@
 
 ## Context
 
-[ADR 0036](0036-ui-as-a-dependency-of-the-sdks.md) requires one copy of `ui` in an application, because two copies split its React context. Two copies of `sdk-core` cost too: its code ships twice, and the copies can behave differently. For example, `ui` on 0.3.0 has no `{name, megapixels}` message format, while an SDK on 0.4.0 does. `SdkError`'s brand still works across copies, through `Symbol.for`, but nothing else is shared. Nothing checked it, and it already happened:
+[ADR 0036](0036-ui-as-a-dependency-of-the-sdks.md) requires one copy of `ui` in an application, because two copies split its React context. Two copies of `sdk-core` cost too: its code ships twice, and the copies can behave differently. For example, `ui` on 0.3.0 has no `{name, megapixels}` message format, while an SDK on 0.4.0 does. `isSdkError` still recognises errors from either copy, through a `Symbol.for` brand, but `instanceof SdkError` fails silently across copies, and nothing else is shared. Nothing checked it, and it already happened:
 
 - **`image-sdk`'s lockfile** resolves `@hussmartinez/sdk-core` to 0.3.0, through `@hussmartinez/ui@0.5.0`, and to 0.4.1, for the workspace.
 - **`video-sdk`'s lockfile** resolves it to 0.3.0, through `ui` 0.4.0, and to 0.4.0.
@@ -22,7 +22,22 @@
   - versions that differ only in their peer dependencies, such as `ui@0.6.0(react@18)` and `ui@0.6.0(react@19)`, are one copy;
   - every document in the lockfile is read, including pnpm's config document.
 - **Every repository's `verify` runs it,** after `lint:deps`, as `check:single-copy`. `verify:fast` runs it too, because it's quick and works offline.
-- **A failure blocks the change** that introduces a second copy. The usual fix is to release the dependent family package, such as `ui`, on the newer version, then bump every repository together.
+- **A failure blocks the change** that introduces a second copy.
+
+### Releases that keep one copy
+
+- **Upstream first.** When `sdk-core` releases a new minor, `ui` moves its range to that minor in its next release, before any SDK bumps `sdk-core`. `ui` sits upstream of every SDK, and during `0.x` a caret range stays within its minor, so an SDK that moved first would get two copies.
+- **SDKs bump together.** An SDK bumps `ui` and `sdk-core` in the same pull request, so `pnpm why` and `npm ls` show one copy of each. `hm-check-single-copy` enforces it: a pull request that bumps one without the other fails `verify`.
+
+### A warning for hosts, in a later pull request
+
+The lockfile check protects the family's own repositories, but not a host application, which can still end up with two copies of `sdk-core` through its own dependencies. So `sdk-core` will warn once in development when a second copy is used, naming both versions, as `ui` already does for its own copies ([ADR 0036](0036-ui-as-a-dependency-of-the-sdks.md)):
+
+- each copy registers itself under a `Symbol.for` key on `globalThis` on its first use, never on import, so importing `sdk-core` stays free of side effects ([ADR 0004](0004-entry-points-and-module-format.md));
+- it compares module identity, so two installs of the same version are caught too;
+- production builds drop it.
+
+It's the symptom hosts would otherwise never see: an `instanceof SdkError` check that silently returns `false`. It comes in its own pull request.
 
 ## Alternatives considered
 
@@ -33,5 +48,5 @@
 ## Consequences
 
 - A second copy of a family package fails `verify` in the repository that would ship it, with the dependents named.
-- Family releases are coordinated: when `sdk-core` moves to a new minor, `ui` follows before the SDKs can, or their `verify` fails.
+- Family releases are coordinated: when `sdk-core` moves to a new minor, `ui` releases on it first, and each SDK then bumps both in one pull request, or its `verify` fails.
 - Each repository adds `check:single-copy` to its `verify` in its own pull request, once `sdk-config` releases the command.
