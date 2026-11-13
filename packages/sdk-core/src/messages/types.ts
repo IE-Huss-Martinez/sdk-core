@@ -133,7 +133,11 @@ export type MessageParams<Message extends MessageValue> = Message extends string
 type ParamNames<Message> = Message extends string
   ? Placeholders<Message>[0]
   : Message extends PluralMessage
-    ? Placeholders<PluralForms<Message>>[0] | Message["$plural"]
+    ? // A plural typed only as PluralMessage, not a literal, names no
+      // particular selector: its placeholders are checked at runtime, as a
+      // plain string's are.
+        | Placeholders<PluralForms<Message>>[0]
+        | (string extends Message["$plural"] ? never : Message["$plural"])
     : never;
 
 /**
