@@ -20,6 +20,7 @@ Install, as devDependencies, the tools for the presets you use. They are optiona
 | `lint-staged` | `lint-staged`, plus `secretlint`, `@biomejs/biome` and `stylelint`, which it runs |
 | `secretlint` | `secretlint` |
 | `api-extractor/base.json`, `hm-check-api-reports` | `@microsoft/api-extractor` |
+| `testing/conformance` | `vitest`, `ajv` |
 
 ### TypeScript
 
@@ -149,6 +150,38 @@ Usage: hm-check-api-reports --main <report> --types <rollup> [<report>...]
 | 0 | Every report passes |
 | 1 | A report copies a type the main entry point doesn't export, or a class with non-public members |
 | 2 | Usage error, or a file that can't be read |
+
+### Testing: conformance vectors
+
+For the language-neutral conformance cases each SDK keeps in `conformance/` ([ADR 0045](../../docs/adr/0045-portable-formats-and-conformance-vectors.md)). A case file is an `hm-conformance` document, whose JSON Schema is `@hussmartinez/sdk-config/formats/hm-conformance/v1.schema.json`:
+
+```json
+{
+  "format": "hm-conformance",
+  "version": 1,
+  "subject": "hm-video-commands",
+  "cases": [
+    { "name": "splits a clip", "input": { "plan": {}, "command": {} }, "expected": {} },
+    { "name": "rejects a split at a clip's edge", "input": {}, "expected": { "error": { "code": "INVALID_COMMAND", "reason": "split-at-edge" } } }
+  ]
+}
+```
+
+`describeConformance(file, run)` validates the file and registers a Vitest test for each case. `run` gets the case's `input` and returns the result, or throws:
+
+```ts
+import { describeConformance } from "@hussmartinez/sdk-config/testing/conformance";
+
+describeConformance(new URL("../../conformance/commands.json", import.meta.url), (input) =>
+  applyCommand(input.plan, input.command),
+);
+```
+
+- **Results** are compared exactly, or, for numbers, within the case's `tolerance` when it has one (only for computed floats).
+- **A rejection** is matched by the thrown error's `code` and `details.reason`, never its message.
+- **`schemaValidator(schemaFile)`** checks a value against a JSON Schema 2020-12 file, such as an SDK's own format schema, and returns the problems.
+
+It's test code only, and needs `vitest` and `ajv`, which are optional peer dependencies.
 
 ### Testing: `audioOutput`
 

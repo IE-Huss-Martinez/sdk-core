@@ -22,16 +22,19 @@
     "./biome": "./biome/base.jsonc",
     "./commitlint": "./src/commitlint/index.js",
     "./dependency-cruiser": "./src/dependency-cruiser/index.js",
+    "./formats/hm-conformance/v1.schema.json": "./formats/hm-conformance/v1.schema.json",
     "./lint-staged": "./src/lint-staged/index.js",
     "./package.json": "./package.json",
     "./secretlint": "./src/secretlint/index.js",
     "./stylelint": "./src/stylelint/index.js",
     "./testing/audio-output": "./src/testing/audio-output.js",
+    "./testing/conformance": "./src/testing/conformance.js",
     "./tsconfig/*": "./tsconfig/*.json"
   },
   "files": [
     "api-extractor",
     "biome",
+    "formats",
     "src",
     "tsconfig",
     "!src/**/*.test.js"
@@ -56,11 +59,13 @@
     "@biomejs/biome": "^2.6.2",
     "@commitlint/cli": "catalog:",
     "@microsoft/api-extractor": "catalog:",
+    "ajv": "catalog:",
     "dependency-cruiser": "catalog:",
     "lint-staged": "catalog:",
     "secretlint": "catalog:",
     "stylelint": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "peerDependenciesMeta": {
     "@biomejs/biome": {
@@ -70,6 +75,9 @@
       "optional": true
     },
     "@microsoft/api-extractor": {
+      "optional": true
+    },
+    "ajv": {
       "optional": true
     },
     "dependency-cruiser": {
@@ -86,6 +94,9 @@
     },
     "typescript": {
       "optional": true
+    },
+    "vitest": {
+      "optional": true
     }
   },
   "devDependencies": {
@@ -100,6 +111,7 @@
     "@types/node": "catalog:",
     "@types/picomatch": "catalog:",
     "@vitest/browser-playwright": "catalog:",
+    "ajv": "catalog:",
     "dependency-cruiser": "catalog:",
     "lint-staged": "catalog:",
     "picomatch": "catalog:",
