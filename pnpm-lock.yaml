@@ -266,6 +266,9 @@ catalogs:
     vitest:
       specifier: ^5.1.0
       version: 5.1.0
+    yaml:
+      specifier: ^2.9.1
+      version: 2.9.1
 
 overrides:
   '@microsoft/api-extractor>minimatch': ^11.0.1
@@ -322,6 +325,9 @@ importers:
       postcss-value-parser:
         specifier: 'catalog:'
         version: 4.2.0
+      yaml:
+        specifier: 'catalog:'
+        version: 2.9.1
     devDependencies:
       '@arethetypeswrong/cli':
         specifier: 'catalog:'

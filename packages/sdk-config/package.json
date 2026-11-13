@@ -15,6 +15,7 @@
   "type": "module",
   "bin": {
     "hm-check-api-reports": "./src/api-extractor/cli.js",
+    "hm-check-single-copy": "./src/single-copy/cli.js",
     "hm-lint-deps": "./src/dependency-cruiser/cli.js"
   },
   "exports": {
@@ -61,7 +62,8 @@
     "@commitlint/config-conventional": "catalog:",
     "@secretlint/secretlint-rule-preset-recommend": "catalog:",
     "postcss-selector-parser": "catalog:",
-    "postcss-value-parser": "catalog:"
+    "postcss-value-parser": "catalog:",
+    "yaml": "catalog:"
   },
   "peerDependencies": {
     "@biomejs/biome": "^2.6.2",
