@@ -1,0 +1,21 @@
+{
+  "format": "hm-conformance",
+  "version": 1,
+  "subject": "hm-test-sequence",
+  "description": "A tiny subject, to run describeConformance itself.",
+  "cases": [
+    { "name": "sums lengths into boundaries", "input": [10, 20], "expected": [0, 10, 30] },
+    { "name": "accepts an empty sequence", "input": [], "expected": [0] },
+    {
+      "name": "rejects a zero length by code and reason",
+      "input": [10, 0],
+      "expected": { "error": { "code": "INVALID_LENGTH", "reason": "zero-length" } }
+    },
+    {
+      "name": "compares computed floats within a tolerance",
+      "input": [0.1, 0.2],
+      "expected": [0, 0.1, 0.3],
+      "tolerance": 1e-12
+    }
+  ]
+}
