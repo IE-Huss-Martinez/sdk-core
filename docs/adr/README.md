@@ -51,3 +51,4 @@ Use [`template.md`](template.md) for new records. Name files `NNNN-short-title.m
 | [0043](0043-no-audio-output-in-firefox-tests.md) | Firefox has no audio output in the browser test image | Accepted; refines [0025](0025-one-browser-test-image-in-one-place.md) |
 | [0044](0044-release-age-and-our-own-packages.md) | A one-day release age for third-party packages, but not for our own | Accepted; refines [0012](0012-hostile-input-and-no-network.md) |
 | [0045](0045-portable-formats-and-conformance-vectors.md) | Portable formats and language-neutral conformance vectors | Accepted |
+| [0046](0046-ui-text-through-the-sdk.md) | `ui`'s text through the SDK's messages | Accepted; refines [0019](0019-message-catalogues.md) and [0036](0036-ui-as-a-dependency-of-the-sdks.md) |

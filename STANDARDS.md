@@ -184,10 +184,11 @@ Programmatic control goes through a ref handle, such as `open(file)`, `export()`
   - native `<dialog>` with `showModal()`;
   - `aria-live` announcements for results;
   - target sizes of at least 24 px, and 44 px on touch.
-- **No inline text** ([ADR 0019](docs/adr/0019-message-catalogues.md)):
+- **No inline text** ([ADR 0019](docs/adr/0019-message-catalogues.md), [ADR 0046](docs/adr/0046-ui-text-through-the-sdk.md)):
   - every visible string and accessible name comes from the typed message catalogue in `src/messages/en.ts`, declared with `defineMessages` and including `sdkCoreMessages`;
   - messages are plain text with `{name}` and `{name, format}` placeholders, plurals are `{ "$plural": … }` objects, and output is never markup;
   - hosts override them with `messages`, and numbers, sizes and dates use `Intl` for the `locale` the host passes;
+  - an SDK that renders `ui`'s components also spreads `uiMessages` into its catalogue and passes its single `Messages` object to `UiMessagesProvider`, so a host's overrides reach `ui`'s strings too; a test checks that the SDK's own keys don't collide with `sdkCoreMessages` or `uiMessages`;
   - error text is looked up by code under `errors.<CODE>`, never taken from `error.message`.
 - **Automated checks:** `@axe-core/playwright` runs in every end-to-end suite.
 
