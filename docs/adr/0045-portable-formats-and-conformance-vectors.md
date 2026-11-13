@@ -3,6 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-11-13
 - **Amended:** 2026-11-13, with the conventions from the first adoption ([audio-sdk#34](https://github.com/ie-huss-martinez/audio-sdk/pull/34)): shared rejection codes for documents, strict readers, and publishing the schemas
+- **Amended:** 2026-11-13, so that every length limit counts Unicode code points ([video-sdk#49](https://github.com/ie-huss-martinez/video-sdk/pull/49))
 
 ## Context
 
@@ -85,6 +86,7 @@ Validating vectors and documents against their schemas is test-only. The SDKs ke
 - **Strict schemas and readers.** Every object in a schema sets `additionalProperties: false`. Readers and reducers refuse an unknown field rather than dropping it, so they accept exactly what the schemas accept, and a later version's document can't be misread as an earlier one. Property tests check that the runtime never accepts anything its schema refuses.
   - **A testing pitfall:** build mutated objects with own properties, such as with `Object.defineProperty`. Assigning `obj.__proto__ = …` sets the prototype instead of adding a field, so the test silently checks nothing.
 - **Hostile keys.** Maps keyed by ids, such as sources, must treat `__proto__`, `constructor` and `toString` as ordinary keys, and the vectors include each of them, so every port is checked the same way.
+- **Lengths are counted in Unicode code points.** Every length limit in a portable format counts code points, the unit JSON Schema's `maxLength` and `minLength` use. The schema, the TypeScript readers and reducers, and every port count the same unit. TypeScript counts with `[...text].length`, never `text.length`, which counts UTF-16 units, a JavaScript detail that a port in Rust or another language can't reproduce naturally. The vectors include cases at each limit with characters outside the Basic Multilingual Plane, such as emoji, which are one code point but two UTF-16 units. `video-sdk`'s adoption found the mismatch: its schema allowed text that its reader refused.
 - **Schemas ship with the package.** Each SDK lists `formats/` in its `package.json` `files`, so a host can validate documents against the schemas that match its installed reader. `conformance/` stays in the repository: it's for ports and the SDK's own tests, not for hosts.
 
 ## Alternatives considered
