@@ -2,6 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-11-13
+- **Amended:** 2026-11-13, with the conventions from the first adoption ([audio-sdk#34](https://github.com/ie-huss-martinez/audio-sdk/pull/34)): shared rejection codes for documents, strict readers, and publishing the schemas
 
 ## Context
 
@@ -68,6 +69,24 @@ Validating vectors and documents against their schemas is test-only. The SDKs ke
 - **Each SDK adds its format records, schemas and vectors in its own pull requests,** after its current work. It starts with the logic that already has property tests: the command reducers of `image-sdk` and `video-sdk`, `audio-sdk`'s reducer, and `image-sdk`'s geometry.
 - **The shared pieces come first,** in `sdk-config`, as test-only entries like `testing/audio-output` ([ADR 0043](0043-no-audio-output-in-firefox-tests.md)): the `hm-conformance` file's JSON Schema, and a small loader that runs a directory of cases in Vitest.
 
+### 8. Conventions from the first adoption
+
+`audio-sdk` adopted this record first ([audio-sdk#34](https://github.com/ie-huss-martinez/audio-sdk/pull/34), [`docs/formats/hm-audio-plan.md`](https://github.com/ie-huss-martinez/audio-sdk/blob/main/docs/formats/hm-audio-plan.md)). What it settled holds for every SDK.
+
+- **The same rejection codes everywhere,** each with a `details.reason`:
+
+  | Code | When | Reasons, for example |
+  |---|---|---|
+  | `UNSUPPORTED_FORMAT` | A document of another format, or of a later version | `unknown-format`, `unknown-format-version` |
+  | `INVALID_DOCUMENT` | Any other invalid document | `malformed-document`, `unknown-source`, `duplicate-key` |
+  | `INVALID_COMMAND` | A command that doesn't apply | the SDK's own tokens, such as `unknown-clip` |
+
+  Each SDK's reasons are its own, and listed in its format record. The codes are the same in every SDK, so a host handles them the same way.
+- **Strict schemas and readers.** Every object in a schema sets `additionalProperties: false`. Readers and reducers refuse an unknown field rather than dropping it, so they accept exactly what the schemas accept, and a later version's document can't be misread as an earlier one. Property tests check that the runtime never accepts anything its schema refuses.
+  - **A testing pitfall:** build mutated objects with own properties, such as with `Object.defineProperty`. Assigning `obj.__proto__ = …` sets the prototype instead of adding a field, so the test silently checks nothing.
+- **Hostile keys.** Maps keyed by ids, such as sources, must treat `__proto__`, `constructor` and `toString` as ordinary keys, and the vectors include each of them, so every port is checked the same way.
+- **Schemas ship with the package.** Each SDK lists `formats/` in its `package.json` `files`, so a host can validate documents against the schemas that match its installed reader. `conformance/` stays in the repository: it's for ports and the SDK's own tests, not for hosts.
+
 ## Alternatives considered
 
 - **Share code instead, such as WebAssembly built from one language:** it ties every port to one toolchain and its runtime, and still needs formats for documents to move between apps.
@@ -81,4 +100,5 @@ Validating vectors and documents against their schemas is test-only. The SDKs ke
 - A port in another language can prove its behaviour by passing the same vectors, and documents can move between apps through a versioned, schema-checked format.
 - Each SDK takes on work: format records, schemas, migrations for breaking changes, stable rejection reasons, and the vectors.
 - `pdf-sdk` changes the most: it gets codes for its rejections, asset references for its images, and an integer grid for its positions.
+- `audio-sdk`, the first adopter, still has two follow-ups from section 8. Its package `files` lists only `dist`, so `formats/` must be added. And its 158 vectors have no hostile keys yet, though one of its unit tests already covers a `__proto__` source id.
 - Format changes become more deliberate, because each breaking change needs a version bump and a migration.
