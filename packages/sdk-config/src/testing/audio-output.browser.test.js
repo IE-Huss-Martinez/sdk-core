@@ -66,7 +66,11 @@ describe("audioOutput", () => {
       });
 
       expect(result.available).toBe(false);
-      expect(result.reason).toContain(`runs at ${speed.toFixed(2)}× real time`);
+      // The ratio is measured against real timers, so it jitters a little
+      // around the fake clock's speed; the reason states it to two decimals.
+      const reported = /runs at (\d+\.\d{2})× real time/.exec(result.reason);
+      expect(reported, result.reason).not.toBeNull();
+      expect(Number(reported?.[1])).toBeCloseTo(speed, 1);
     }
   });
 
