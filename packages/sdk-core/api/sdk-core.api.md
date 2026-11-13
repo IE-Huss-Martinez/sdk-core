@@ -217,6 +217,7 @@ export interface KeyboardEventLike {
     readonly code?: string;
     composedPath?(): readonly unknown[];
     readonly ctrlKey?: boolean;
+    readonly currentTarget?: unknown;
     readonly defaultPrevented?: boolean;
     readonly isComposing?: boolean;
     readonly key: string;

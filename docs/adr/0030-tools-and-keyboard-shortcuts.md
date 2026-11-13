@@ -3,6 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-11-12
 - **Refines:** [ADR 0009](0009-features-as-tools.md), by defining `defineTool`, the tool registry and the shared shortcut registry it names
+- **Amended:** 2026-11-13, so that modal dialogs keep their keys, as fields and controls do
 
 ## Context
 
@@ -45,7 +46,7 @@ It turns the editor's props into resolved, ordered data:
 
 - **Chords** are written like `Mod+Shift+Z`, `Delete` or `Space`. `Mod` is `Meta` on Apple platforms and `Control` elsewhere. The SDK passes `platform` (`"apple"` or `"other"`), which `platformOf(navigatorLike)` derives, so the registry itself never reads `navigator`.
 - **Conflicts:** registering a chord that another tool already has, on the same platform, throws a `TypeError` naming both tools.
-- **`match(eventLike)`** returns the id of the tool a keyboard event triggers, or `undefined`. It reads only `key`, `code`, the modifier flags, `repeat`, `isComposing`, `defaultPrevented`, the event's `target` and `composedPath()`, which it inspects by duck typing. So it works with DOM events, and in tests, without importing the DOM. React handlers pass `event.nativeEvent`, because React's synthetic event has no `composedPath`. Its rules:
+- **`match(eventLike)`** returns the id of the tool a keyboard event triggers, or `undefined`. It reads only `key`, `code`, the modifier flags, `repeat`, `isComposing`, `defaultPrevented`, the event's `target`, `currentTarget` and `composedPath()`, which it inspects by duck typing. So it works with DOM events, and in tests, without importing the DOM. React handlers pass `event.nativeEvent`, because React's synthetic event has no `composedPath`. Its rules:
   - **Ignored:** events that are already handled (`defaultPrevented`), that are part of an IME composition (`isComposing`), or that repeat because a key is held down, unless the shortcut allows repeats.
   - **`Control`, `Meta` and `Alt` must match exactly.** Letters match case-insensitively, and match `Shift` exactly too, so `Mod+Z` isn't `Mod+Shift+Z`.
   - **Letters follow the printed Latin letter, then the physical key.** When `key` is a Latin letter, it decides, so remapped Latin layouts such as Dvorak and AZERTY follow their letters. When it isn't, as on Cyrillic, Greek, Hebrew or Arabic layouts, or when Option on macOS turns a letter into a symbol, the physical key (`code`) decides, so `Ctrl+Z` is still undo.
@@ -53,6 +54,7 @@ It turns the editor's props into resolved, ordered data:
   - **The target comes from the composed path.** A field inside a shadow root, such as in a web component, is retargeted to its host, so the registry classifies the first element of `composedPath()` when the event has one, and `target` otherwise.
   - **Fields keep their keys:** in an editable target (a text input, `textarea`, `select` or `contenteditable`), no shortcut fires unless it opts in with `inEditable`. `Mod+Z` in a text field is that field's own undo.
   - **Controls keep their keys:** on a button, link, checkbox, switch, menu item, tab or slider, unmodified `Space`, `Enter` and arrow keys belong to the control, so those shortcuts don't fire. Space on a focused button presses the button; it doesn't toggle playback.
+  - **Modal dialogs keep their keys:** no shortcut fires for a key whose target is inside a modal `<dialog>` (`:modal`, or open where that selector isn't supported) between the target and `currentTarget`, the element listening. React bubbles a dialog's keys to the editor, so without this rule `]` on a radio button in an export dialog rotated the image (image-sdk #31). A host's modal dialog around the whole editor contains the listening element, so shortcuts still work inside it. From a React handler, `nativeEvent.currentTarget` is React's root container: a modal dialog between the editor and that container, rather than inside the editor, would also silence shortcuts. That's no case the family has, and an SDK can listen on the editor's root instead.
 - **The editor listens on its own root, never on `window`,** so shortcuts only apply while focus is inside it. This is an accessibility requirement, not a style choice: it's what lets the family's single-character shortcuts meet WCAG 2.1.4 (see "Family shortcuts"). It calls `preventDefault` only for an event it handles.
 - **`ariaKeyShortcuts(id)`** returns the tool's chords for `aria-keyshortcuts`, such as `Meta+Z` or `Control+Z Control+Y`.
 - **`describe(id)`** returns each chord as modifier and key parts. The SDK renders them as labels from messages: `sdkCoreMessages` adds `keys.*` messages, such as `⌘` on Apple platforms and `Ctrl` elsewhere, so labels can be translated ([ADR 0014](0014-accessibility-and-translatable-text.md)).

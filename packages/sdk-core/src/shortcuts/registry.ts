@@ -1,6 +1,6 @@
 import { type Chord, type Modifier, type Platform, parseChord, signature } from "./chord.js";
 import { type FamilyAction, familyShortcuts, type ShortcutChord } from "./family.js";
-import { targetKind } from "./target.js";
+import { insideModalDialog, targetKind } from "./target.js";
 
 /**
  * A tool's shortcuts: the name of a family action, or its own chords.
@@ -41,6 +41,11 @@ export interface KeyboardEventLike {
   readonly defaultPrevented?: boolean;
   /** The focused element. Fields and controls are recognised by duck typing. */
   readonly target?: unknown;
+  /**
+   * The element listening for the event, such as the editor's root. A modal
+   * `<dialog>` between the target and it keeps its keys.
+   */
+  readonly currentTarget?: unknown;
   /**
    * The event's composed path, whose first element is the real target when
    * it's inside a shadow root, where `target` is the shadow host.
@@ -94,8 +99,9 @@ export interface ShortcutRegistry {
    * the editor's root, never on `window` (WCAG 2.1.4), and call
    * `preventDefault` when it returns an id the editor handles.
    *
-   * It ignores handled events, IME composition, and repeats unless the
-   * shortcut allows them. It classifies the target from the composed path, so
+   * It ignores handled events, IME composition, repeats unless the shortcut
+   * allows them, and keys from inside a modal `<dialog>` between the target
+   * and `currentTarget`, the element listening. It classifies the target from the composed path, so
    * fields inside shadow roots count. It never fires in fields unless the shortcut sets
    * `inEditable`, and never takes unmodified `Space`, `Enter` or arrow keys
    * from controls such as buttons and links.
@@ -230,6 +236,11 @@ export function createShortcutRegistry(options: ShortcutRegistryOptions): Shortc
       // A field inside a shadow root is retargeted to its host, so the
       // composed path's first element is the real target.
       const path = typeof event.composedPath === "function" ? event.composedPath() : [];
+      // A modal dialog inside the editor, such as an export dialog, owns its
+      // keys: React bubbles them to the editor, where `]` would rotate.
+      if (insideModalDialog(path, event.target, event.currentTarget)) {
+        return undefined;
+      }
       const kind = targetKind(path[0] ?? event.target);
       const key = event.key;
       for (const binding of bindings) {

@@ -73,3 +73,56 @@ export function targetKind(target: unknown): TargetKind {
       return "other";
   }
 }
+
+interface NodeLike {
+  readonly tagName?: unknown;
+  readonly open?: unknown;
+  readonly parentElement?: unknown;
+  matches?(selector: string): boolean;
+}
+
+/** Whether an element is a `<dialog>` shown modally. */
+function isModalDialog(node: NodeLike): boolean {
+  if (typeof node.tagName !== "string" || node.tagName.toUpperCase() !== "DIALOG") {
+    return false;
+  }
+  try {
+    if (typeof node.matches === "function") {
+      return node.matches(":modal");
+    }
+  } catch {
+    // A browser without the :modal selector: an open dialog counts as modal.
+  }
+  return node.open === true;
+}
+
+/**
+ * Whether a modal `<dialog>` lies between a key's target and the element
+ * listening for it: the dialog owns that key, as a field owns its keys.
+ * `path` runs from the target outwards, as `composedPath()` does; without
+ * one, the target's `parentElement` chain stands in for it. A modal dialog
+ * that also contains the listening element, such as a host's dialog around
+ * the whole editor, doesn't count.
+ */
+export function insideModalDialog(
+  path: readonly unknown[],
+  target: unknown,
+  listener: unknown,
+): boolean {
+  const chain: unknown[] = [...path];
+  if (chain.length === 0) {
+    for (let node = target; node !== null && typeof node === "object"; ) {
+      chain.push(node);
+      node = (node as NodeLike).parentElement ?? null;
+    }
+  }
+  for (const node of chain) {
+    if (node === listener) {
+      return false;
+    }
+    if (node !== null && typeof node === "object" && isModalDialog(node as NodeLike)) {
+      return true;
+    }
+  }
+  return false;
+}

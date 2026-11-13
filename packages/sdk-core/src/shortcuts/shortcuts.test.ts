@@ -242,6 +242,94 @@ describe("createShortcutRegistry", () => {
     expect(registry.match(press("q", { code: "KeyA", ctrlKey: true }))).toBe("pdf.quit");
   });
 
+  describe("in a modal dialog", () => {
+    const radio = element("INPUT", {}, { type: "radio" });
+    const root = element("DIV");
+    /** A dialog, modal unless told otherwise, as `:modal` reports it. */
+    const dialog = (modal = true, extra = {}) =>
+      element(
+        "DIALOG",
+        {},
+        { open: true, matches: (selector: string) => selector === ":modal" && modal, ...extra },
+      );
+
+    it("leaves keys to a modal dialog between the target and the editor's root", () => {
+      const registry = family("other");
+      const event = press("+", {
+        target: radio,
+        currentTarget: root,
+        composedPath: () => [radio, dialog(), root],
+      });
+
+      expect(registry.match(event)).toBeUndefined();
+      expect(registry.match(press("z", { ...event, ctrlKey: true }))).toBeUndefined();
+      // The same key outside the dialog still zooms.
+      expect(
+        registry.match(
+          press("+", { currentTarget: root, composedPath: () => [element("DIV"), root] }),
+        ),
+      ).toBe("zoom-in");
+    });
+
+    it("still fires when the modal dialog contains the editor, such as a host's dialog around it", () => {
+      const registry = family("other");
+
+      expect(
+        registry.match(
+          press("+", {
+            target: radio,
+            currentTarget: root,
+            composedPath: () => [radio, root, dialog()],
+          }),
+        ),
+      ).toBe("zoom-in");
+    });
+
+    it("still fires in a dialog that isn't modal", () => {
+      expect(
+        family("other").match(
+          press("+", {
+            target: radio,
+            currentTarget: root,
+            composedPath: () => [radio, dialog(false), root],
+          }),
+        ),
+      ).toBe("zoom-in");
+    });
+
+    it("counts an open dialog as modal where :modal isn't supported", () => {
+      const old = dialog(true, {
+        matches: () => {
+          throw new SyntaxError("':modal' is not a valid selector");
+        },
+      });
+      expect(
+        family("other").match(
+          press("+", {
+            target: radio,
+            currentTarget: root,
+            composedPath: () => [radio, old, root],
+          }),
+        ),
+      ).toBeUndefined();
+    });
+
+    it("walks parentElement when the event has no composed path", () => {
+      const shell = { ...root };
+      const modal = { ...dialog(), parentElement: shell };
+      const field = { ...radio, parentElement: modal };
+
+      expect(
+        family("other").match(press("+", { target: field, currentTarget: shell })),
+      ).toBeUndefined();
+      expect(
+        family("other").match(
+          press("+", { target: { ...radio, parentElement: shell }, currentTarget: shell }),
+        ),
+      ).toBe("zoom-in");
+    });
+  });
+
   it("reads the target from the composed path, for fields inside shadow roots", () => {
     const registry = family("apple");
     const host = element("HM-PDF-EDITOR");
