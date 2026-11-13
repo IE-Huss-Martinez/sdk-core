@@ -1,5 +1,11 @@
 # @hussmartinez/sdk-core
 
+## 0.4.1
+
+### Patch Changes
+
+- [#101](https://github.com/ie-huss-martinez/sdk-core/pull/101) [`4e163f9`](https://github.com/ie-huss-martinez/sdk-core/commit/4e163f99e796daa0786aa0c2a41dca62203be1d4) Thanks [@hussmartinez](https://github.com/hussmartinez)! - `createMessages` accepts overrides typed as `MessageOverrides<Catalogue>`, such as an SDK's `messages` prop, without a cast. Before, a plural typed only as `PluralMessage` made every key look like an unknown placeholder, so SDKs passed `overrides as never`. You can remove that cast. Overrides written as literals are still checked as before, plurals included, and untyped JSON is still checked at runtime.
+
 ## 0.4.0
 
 ### Minor Changes
