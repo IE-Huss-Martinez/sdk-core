@@ -138,8 +138,9 @@ function isRejection(expected) {
  * case passes. A rejection is matched by the thrown error's `code` and
  * `details.reason`, never its message.
  *
+ * @template [Input=unknown] The input's type, as the subject's cases hold it.
  * @param {ConformanceCase} testCase
- * @param {(input: any, testCase: ConformanceCase) => unknown} run
+ * @param {(input: Input, testCase: ConformanceCase) => unknown} run
  * @returns {Promise<string | undefined>}
  */
 export async function checkCase(testCase, run) {
@@ -147,7 +148,7 @@ export async function checkCase(testCase, run) {
   /** @type {unknown} */
   let actual;
   try {
-    actual = await run(testCase.input, testCase);
+    actual = await run(/** @type {Input} */ (testCase.input), testCase);
   } catch (error) {
     if (!isRejection(expected)) {
       return `it threw ${String(error)}, but a result was expected: ${JSON.stringify(expected)}`;
@@ -183,8 +184,9 @@ export async function checkCase(testCase, run) {
  * );
  * ```
  *
+ * @template [Input=unknown] The input's type, as the subject's cases hold it.
  * @param {string | URL} path The conformance file.
- * @param {(input: any, testCase: ConformanceCase) => unknown} run
+ * @param {(input: Input, testCase: ConformanceCase) => unknown} run
  */
 export function describeConformance(path, run) {
   const file = readConformance(path);

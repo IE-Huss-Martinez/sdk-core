@@ -142,7 +142,9 @@ describe("checkCase", () => {
   });
 
   it("awaits an asynchronous run", async () => {
-    await expect(checkCase(ok, async (input) => boundaries(input))).resolves.toBeUndefined();
+    await expect(
+      checkCase(ok, async (/** @type {number[]} */ input) => boundaries(input)),
+    ).resolves.toBeUndefined();
   });
 });
 

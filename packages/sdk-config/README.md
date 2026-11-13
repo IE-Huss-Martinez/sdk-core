@@ -185,20 +185,32 @@ It's test code only, and needs `vitest` and `ajv`, which are optional peer depen
 
 ### Testing: `audioOutput`
 
-For browser tests that need real-time audio output ([ADR 0043](../../docs/adr/0043-no-audio-output-in-firefox-tests.md)). Firefox in the family's test image has no sound server, so its `AudioContext` never starts. `audioOutput()` probes the browser once per test run and says whether audio plays at real-time speed, so every repository skips the same tests in the same way:
+For browser tests that need real-time audio output ([ADR 0043](../../docs/adr/0043-no-audio-output-in-firefox-tests.md)). Firefox in the family's test image has no sound server, so its `AudioContext` never starts. `audioOutput()` probes the browser once per test run and says whether audio plays at real-time speed, so every repository skips the same tests in the same way.
+
+**Probe inside the tests that need audio, never at the top of a file.** The probe clicks a button, which gives the page user activation. A probe at the top level, such as `const audio = await audioOutput(…)` before an `it.skipIf`, runs while the file is collected, before any test. A test that checks autoplay, that audio stays silent until a gesture, would then see the gesture that the probe made, and could skip itself or pass for the wrong reason without any warning. Call it from each test that needs audio instead:
 
 ```ts
 import { audioOutput } from "@hussmartinez/sdk-config/testing/audio-output";
+import { type TestContext } from "vitest";
 import { userEvent } from "vitest/browser";
 
-const audio = await audioOutput({ activate: (button) => userEvent.click(button) });
+/** Skips the calling test, with the reason, where the browser has no audio output. */
+async function needAudio(context: TestContext): Promise<void> {
+  const audio = await audioOutput({ activate: (button) => userEvent.click(button) });
+  if (!audio.available) {
+    context.skip(audio.reason.trim());
+  }
+}
 
-it.skipIf(!audio.available)(`keeps audio and video in sync${audio.reason}`, async () => {
+it("keeps audio and video in sync", async (context) => {
+  await needAudio(context);
   // …
 });
 ```
 
-It returns `{ available, reason, clockRatio }`. `reason` is empty when audio is available, and otherwise a suffix such as ` (skipped: the AudioContext stays "suspended", so there's no audio output; sdk-core ADR 0043)`. It's test code only: import it only from tests.
+Tests that check behaviour before any gesture, such as autoplay, run in a file that never calls `audioOutput()`, because the activation it grants lasts for the rest of the page.
+
+It returns `{ available, reason, clockRatio }`. `reason` is empty when audio is available, and otherwise says why, such as ` (skipped: the AudioContext stays "suspended", so there's no audio output; sdk-core ADR 0043)`. It's test code only, with TypeScript declarations: import it only from tests.
 
 ### commitlint, lint-staged and secretlint
 

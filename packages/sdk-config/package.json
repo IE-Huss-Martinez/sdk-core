@@ -27,8 +27,14 @@
     "./package.json": "./package.json",
     "./secretlint": "./src/secretlint/index.js",
     "./stylelint": "./src/stylelint/index.js",
-    "./testing/audio-output": "./src/testing/audio-output.js",
-    "./testing/conformance": "./src/testing/conformance.js",
+    "./testing/audio-output": {
+      "types": "./src/testing/audio-output.d.ts",
+      "default": "./src/testing/audio-output.js"
+    },
+    "./testing/conformance": {
+      "types": "./src/testing/conformance.d.ts",
+      "default": "./src/testing/conformance.js"
+    },
     "./tsconfig/*": "./tsconfig/*.json"
   },
   "files": [
@@ -37,7 +43,8 @@
     "formats",
     "src",
     "tsconfig",
-    "!src/**/*.test.js"
+    "!src/**/*.test.js",
+    "!src/**/*.check.ts"
   ],
   "engines": {
     "node": ">=24"
@@ -45,9 +52,10 @@
   "scripts": {
     "typecheck": "tsc",
     "test": "vitest run --project unit",
-    "check:package": "publint run --pack pnpm --strict && attw --pack . --profile esm-only",
+    "check:package": "publint run --pack pnpm --strict && attw --pack . --profile esm-only --exclude-entrypoints ./biome ./commitlint ./dependency-cruiser ./lint-staged ./secretlint ./stylelint",
     "test:browser": "vitest run --project browser",
-    "test:browser:all": "vitest run --project browser --mode all-browsers"
+    "test:browser:all": "vitest run --project browser --mode all-browsers",
+    "types:update": "tsc -p tsconfig.types.json"
   },
   "dependencies": {
     "@commitlint/config-conventional": "catalog:",

@@ -1,4 +1,4 @@
-/// <reference lib="dom" />
+/// <reference lib="dom" preserve="true" />
 // Whether the browser running the tests has a working audio output, for
 // browser tests that need real-time audio (sdk-core ADR 0043). Firefox in the
 // family's pinned test image has none: its AudioContext stays suspended
@@ -54,14 +54,18 @@ const within = (promise, ms) =>
  * real-time speed, and says why not. The result is kept in `sessionStorage`,
  * which every test file's frame shares within one browser.
  *
+ * Call it inside the tests that need audio, never at a file's top level: its
+ * probe clicks, which gives the page user activation, and a test of
+ * behaviour before any gesture, such as autoplay, would then see that click.
+ *
  * @example
  * ```ts
  * import { audioOutput } from "@hussmartinez/sdk-config/testing/audio-output";
  * import { userEvent } from "vitest/browser";
  *
- * const audio = await audioOutput({ activate: (button) => userEvent.click(button) });
- *
- * it.skipIf(!audio.available)(`keeps audio and video in sync${audio.reason}`, async () => {
+ * it("keeps audio and video in sync", async (context) => {
+ *   const audio = await audioOutput({ activate: (button) => userEvent.click(button) });
+ *   if (!audio.available) context.skip(audio.reason.trim());
  *   // …
  * });
  * ```
