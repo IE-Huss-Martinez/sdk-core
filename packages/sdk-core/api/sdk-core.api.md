@@ -459,6 +459,11 @@ export interface ShortcutChord {
 }
 
 // @public
+export interface ShortcutMatchOptions {
+    readonly root?: unknown;
+}
+
+// @public
 export interface ShortcutPart {
     readonly kind: "modifier" | "key";
     readonly message?: `keys.${string}`;
@@ -469,7 +474,7 @@ export interface ShortcutPart {
 export interface ShortcutRegistry {
     ariaKeyShortcuts(id: string): string | undefined;
     describe(id: string): readonly (readonly ShortcutPart[])[];
-    match(event: KeyboardEventLike): string | undefined;
+    match(event: KeyboardEventLike, options?: ShortcutMatchOptions): string | undefined;
     register(id: string, shortcuts: ShortcutSpec): void;
 }
 

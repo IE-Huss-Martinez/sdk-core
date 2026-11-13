@@ -70,6 +70,7 @@ export type { NavigatorLike } from "./shortcuts/platform.js";
 export { platformOf } from "./shortcuts/platform.js";
 export type {
   KeyboardEventLike,
+  ShortcutMatchOptions,
   ShortcutPart,
   ShortcutRegistry,
   ShortcutRegistryOptions,

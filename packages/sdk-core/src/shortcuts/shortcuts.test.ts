@@ -314,6 +314,21 @@ describe("createShortcutRegistry", () => {
       ).toBeUndefined();
     });
 
+    it("takes the editor's root from options.root over the event's currentTarget", () => {
+      const container = element("DIV");
+      const hostDialog = dialog();
+      // As in React: nativeEvent.currentTarget is the React container, above a
+      // host's modal dialog that holds the editor's root.
+      const event = press("+", {
+        target: radio,
+        currentTarget: container,
+        composedPath: () => [radio, root, hostDialog, container],
+      });
+
+      expect(family("other").match(event)).toBeUndefined();
+      expect(family("other").match(event, { root })).toBe("zoom-in");
+    });
+
     it("walks parentElement when the event has no composed path", () => {
       const shell = { ...root };
       const modal = { ...dialog(), parentElement: shell };
