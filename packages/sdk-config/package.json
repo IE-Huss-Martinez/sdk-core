@@ -26,6 +26,7 @@
     "./package.json": "./package.json",
     "./secretlint": "./src/secretlint/index.js",
     "./stylelint": "./src/stylelint/index.js",
+    "./testing/audio-output": "./src/testing/audio-output.js",
     "./tsconfig/*": "./tsconfig/*.json"
   },
   "files": [
@@ -40,8 +41,10 @@
   },
   "scripts": {
     "typecheck": "tsc",
-    "test": "vitest run",
-    "check:package": "publint run --pack pnpm --strict && attw --pack . --profile esm-only"
+    "test": "vitest run --project unit",
+    "check:package": "publint run --pack pnpm --strict && attw --pack . --profile esm-only",
+    "test:browser": "vitest run --project browser",
+    "test:browser:all": "vitest run --project browser --mode all-browsers"
   },
   "dependencies": {
     "@commitlint/config-conventional": "catalog:",
@@ -96,9 +99,11 @@
     "@secretlint/node": "catalog:",
     "@types/node": "catalog:",
     "@types/picomatch": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
     "dependency-cruiser": "catalog:",
     "lint-staged": "catalog:",
     "picomatch": "catalog:",
+    "playwright": "catalog:",
     "postcss": "catalog:",
     "publint": "catalog:",
     "secretlint": "catalog:",

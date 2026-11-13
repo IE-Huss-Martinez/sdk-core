@@ -48,3 +48,4 @@ Use [`template.md`](template.md) for new records. Name files `NNNN-short-title.m
 | [0040](0040-editor-element-base.md) | A shared custom-element base: `@hussmartinez/sdk-core/element` | Accepted; refines [0004](0004-entry-points-and-module-format.md); supersedes the standalone styles in `pdf-sdk`'s ADR 0005 |
 | [0041](0041-publish-the-verified-tarballs.md) | Publish the tarballs the verify job built and checked | Accepted; amends [0023](0023-verify-releases-in-an-unprivileged-job.md) |
 | [0042](0042-timeline-sequence-helpers.md) | Timeline sequence helpers: offsets, locating a position, and snapping | Accepted |
+| [0043](0043-no-audio-output-in-firefox-tests.md) | Firefox has no audio output in the browser test image | Accepted; refines [0025](0025-one-browser-test-image-in-one-place.md) |

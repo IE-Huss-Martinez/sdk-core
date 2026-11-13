@@ -150,6 +150,23 @@ Usage: hm-check-api-reports --main <report> --types <rollup> [<report>...]
 | 1 | A report copies a type the main entry point doesn't export, or a class with non-public members |
 | 2 | Usage error, or a file that can't be read |
 
+### Testing: `audioOutput`
+
+For browser tests that need real-time audio output ([ADR 0043](../../docs/adr/0043-no-audio-output-in-firefox-tests.md)). Firefox in the family's test image has no sound server, so its `AudioContext` never starts. `audioOutput()` probes the browser once per test run and says whether audio plays at real-time speed, so every repository skips the same tests in the same way:
+
+```ts
+import { audioOutput } from "@hussmartinez/sdk-config/testing/audio-output";
+import { userEvent } from "vitest/browser";
+
+const audio = await audioOutput({ activate: (button) => userEvent.click(button) });
+
+it.skipIf(!audio.available)(`keeps audio and video in sync${audio.reason}`, async () => {
+  // …
+});
+```
+
+It returns `{ available, reason, clockRatio }`. `reason` is empty when audio is available, and otherwise a suffix such as ` (skipped: the AudioContext stays "suspended", so there's no audio output; sdk-core ADR 0043)`. It's test code only: import it only from tests.
+
 ### commitlint, lint-staged and secretlint
 
 The git hook rules of [ADR 0016](../../docs/adr/0016-git-hooks-and-merge-guards.md). commitlint accepts the same types and subject pattern as the `pr-title` workflow. lint-staged runs secretlint, Biome and stylelint on staged files.
