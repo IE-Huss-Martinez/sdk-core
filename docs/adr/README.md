@@ -53,3 +53,4 @@ Use [`template.md`](template.md) for new records. Name files `NNNN-short-title.m
 | [0045](0045-portable-formats-and-conformance-vectors.md) | Portable formats and language-neutral conformance vectors | Accepted |
 | [0046](0046-ui-text-through-the-sdk.md) | `ui`'s text through the SDK's messages | Accepted; refines [0019](0019-message-catalogues.md) and [0036](0036-ui-as-a-dependency-of-the-sdks.md) |
 | [0047](0047-one-copy-of-each-family-package.md) | Check that every repository installs one copy of each family package | Accepted; refines [0036](0036-ui-as-a-dependency-of-the-sdks.md) |
+| [0048](0048-visual-regression-for-sdk-editors.md) | Visual regression tests for every SDK's editor | Accepted; refines [0039](0039-test-applications-in-each-repository.md) |
