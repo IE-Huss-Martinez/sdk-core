@@ -68,20 +68,32 @@ const FILE_SIZE_UNITS = [
  * units, macOS and most web interfaces do. Values from a kilobyte up keep
  * one decimal place.
  *
+ * Bytes use the unit's long name, such as "1 byte" and "297 bytes" in `en`,
+ * because the short one doesn't change with the number in many locales, as
+ * in "297 byte". Larger units use their short names, such as "1.3 MB".
+ *
+ * A value moves to the next unit once it would show as 1000, so 999,960
+ * bytes is "1 MB", not "1,000 kB".
+ *
  * @param locale - A canonical locale.
  * @param bytes - The size in bytes.
  */
 export function formatFileSize(locale: string, bytes: number): string {
   let value = Math.abs(bytes);
   let unit = 0;
-  while (value >= 1000 && unit < FILE_SIZE_UNITS.length - 1) {
+  while (unit < FILE_SIZE_UNITS.length - 1) {
+    // Rounded as it's shown: whole bytes, or one decimal place.
+    const shown = unit === 0 ? Math.round(value) : Math.round(value * 10) / 10;
+    if (shown < 1000) {
+      break;
+    }
     value /= 1000;
     unit += 1;
   }
   return numberFormat(locale, {
     style: "unit",
     unit: FILE_SIZE_UNITS[unit],
-    unitDisplay: "short",
+    unitDisplay: unit === 0 ? "long" : "short",
     maximumFractionDigits: unit === 0 ? 0 : 1,
   }).format(Math.sign(bytes) * value);
 }

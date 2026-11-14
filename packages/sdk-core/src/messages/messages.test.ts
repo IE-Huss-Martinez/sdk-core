@@ -127,10 +127,38 @@ describe("createMessages", () => {
     const messages = createMessages(en);
     const de = createMessages(en, { locale: "de" });
 
-    expect(messages.t("result.saved", { size: 999 })).toBe("Saved 999 byte");
+    expect(messages.t("result.saved", { size: 999 })).toBe("Saved 999 bytes");
     expect(messages.t("result.saved", { size: 1_300_000 })).toBe("Saved 1.3 MB");
     expect(messages.t("result.saved", { size: 2_000_000_000 })).toBe("Saved 2 GB");
     expect(de.t("result.saved", { size: 1_300_000 })).toBe("Saved 1,3 MB");
+  });
+
+  // Bytes take the unit's long name, whose plural follows the locale: the
+  // short name is "byte" for every count in en. French puts a no-break space
+  // (U+00A0) before "octet" and a narrow one (U+202F) before "ko" and "Mo".
+  it.each([
+    [0, "0 bytes", "0\u00a0octet"],
+    [1, "1 byte", "1\u00a0octet"],
+    [2, "2 bytes", "2\u00a0octets"],
+    [297, "297 bytes", "297\u00a0octets"],
+    [1023, "1 kB", "1\u202fko"],
+    [1024, "1 kB", "1\u202fko"],
+    [1_500_000, "1.5 MB", "1,5\u202fMo"],
+    [73_400_000, "73.4 MB", "73,4\u202fMo"],
+    [999_960, "1 MB", "1\u202fMo"],
+  ])("formats %d bytes as %s in en, and %s in fr", (size, inEnglish, inFrench) => {
+    expect(createMessages(en).t("result.saved", { size })).toBe(`Saved ${inEnglish}`);
+    expect(createMessages(en, { locale: "fr" }).t("result.saved", { size })).toBe(
+      `Saved ${inFrench}`,
+    );
+  });
+
+  it("moves to the next unit when rounding would show 1000", () => {
+    const messages = createMessages(en);
+
+    expect(messages.t("result.saved", { size: 999_949 })).toBe("Saved 999.9 kB");
+    expect(messages.t("result.saved", { size: 999_950 })).toBe("Saved 1 MB");
+    expect(messages.t("result.saved", { size: 999_999_999 })).toBe("Saved 1 GB");
   });
 
   describe("megapixels", () => {
