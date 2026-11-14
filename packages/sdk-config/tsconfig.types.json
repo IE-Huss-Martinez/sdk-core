@@ -13,5 +13,5 @@
     "rootDir": "src",
     "outDir": "src"
   },
-  "files": ["src/testing/audio-output.js", "src/testing/conformance.js"]
+  "files": ["src/testing/audio-output.js", "src/testing/conformance.js", "src/testing/visual.js"]
 }

@@ -21,6 +21,7 @@ Install, as devDependencies, the tools for the presets you use. They are optiona
 | `secretlint` | `secretlint` |
 | `api-extractor/base.json`, `hm-check-api-reports` | `@microsoft/api-extractor` |
 | `testing/conformance` | `vitest`, `ajv` |
+| `testing/visual`, `hm-test-visual` | `@playwright/test`, and Docker outside the browser test image |
 
 ### TypeScript
 
@@ -211,6 +212,70 @@ it("keeps audio and video in sync", async (context) => {
 Tests that check behaviour before any gesture, such as autoplay, run in a file that never calls `audioOutput()`, because the activation it grants lasts for the rest of the page.
 
 It returns `{ available, reason, clockRatio }`. `reason` is empty when audio is available, and otherwise says why, such as ` (skipped: the AudioContext stays "suspended", so there's no audio output; sdk-core ADR 0043)`. It's test code only, with TypeScript declarations: import it only from tests.
+
+### Testing: visual regression
+
+For every SDK's editor and element ([ADR 0048](../../docs/adr/0048-visual-regression-for-sdk-editors.md)): screenshots of each designed state on the built example page, in light and dark and both densities, compared with committed baselines on Chromium, inside the browser test image that `ci/Dockerfile` pins.
+
+`e2e/playwright.visual.config.ts` uses the preset, with the example's server as the end-to-end configuration has it:
+
+```ts
+import { defineVisualConfig } from "@hussmartinez/sdk-config/testing/visual";
+
+export default defineVisualConfig({
+  baseURL: "http://localhost:4320",
+  webServer: {
+    command: "node node_modules/vite/bin/vite.js preview --port 4320 --strictPort",
+    cwd: "../examples/vite",
+    url: "http://localhost:4320",
+    reuseExistingServer: false,
+  },
+});
+```
+
+The preset fixes the page: a 1280 × 800 viewport at a device scale factor of 1, `en-US`, `UTC` and reduced motion. Screenshots are taken without animations or carets and compared with no tolerance. Specs live in `e2e/visual/`, and each state is captured in every variant:
+
+```ts
+import { expect, test } from "@playwright/test";
+import { applyVisualVariant, visualVariants } from "@hussmartinez/sdk-config/testing/visual";
+
+for (const variant of visualVariants) {
+  test(`empty in ${variant.name}`, async ({ page }) => {
+    await page.clock.setFixedTime(new Date("2026-01-01T12:00:00Z"));
+    await page.goto("/editor.html");
+    await applyVisualVariant(page, variant);
+    await expect(page).toHaveScreenshot(`empty-${variant.name}.png`);
+  });
+}
+```
+
+Baselines go to `e2e/visual/__screenshots__/<spec>/<state>-<theme>-<density>-chromium-linux.png`. Mask content that varies by nature with `toHaveScreenshot`'s `mask` option. A state may set `maxDiffPixelRatio` up to `0.001` only for a frame drawn by a codec that can't be masked, with a comment naming the cause.
+
+Run it through `hm-test-visual`, after building the examples:
+
+```json
+{
+  "scripts": {
+    "test:visual": "hm-test-visual",
+    "test:visual:update": "hm-test-visual --update"
+  }
+}
+```
+
+```text
+Usage: hm-test-visual [--update]
+```
+
+- **Outside the image,** it needs Docker. It builds an image from `ci/Dockerfile`'s `FROM` line and the pnpm version in `packageManager`, and runs itself there. The container gets its own `node_modules` and pnpm store volumes, and hands every file it writes back to you. Without Docker, it fails with a one-line message saying how to fix it; it never skips.
+- **Inside the image,** where `HM_VISUAL_CONTAINER=1`, as in CI's verify job, it runs Playwright directly. The preset refuses to run anywhere else, so baselines can't be written outside the image.
+- **`--update`** writes every baseline afresh, so screenshots that no state produces any more are removed. A failed run keeps the previous baselines.
+- **Failures** leave the expected, actual and diff images in `e2e/test-results/visual/`.
+
+| Exit code | Meaning |
+|---|---|
+| 0 | Every screenshot matches, or the baselines were written |
+| 1 | A screenshot differs, a test fails, or Docker isn't available |
+| 2 | Usage error, or a repository it can't read |
 
 ### `hm-check-single-copy`
 

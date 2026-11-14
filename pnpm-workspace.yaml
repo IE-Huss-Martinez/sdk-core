@@ -14,6 +14,7 @@ catalog:
   "@commitlint/load": ^21.2.4
   "@commitlint/types": ^21.2.3
   "@microsoft/api-extractor": ^7.60.1
+  "@playwright/test": ^1.65.0
   "@secretlint/node": ^13.1.0
   "@secretlint/secretlint-rule-preset-recommend": ^13.1.0
   "@size-limit/file": ^14.3.0
