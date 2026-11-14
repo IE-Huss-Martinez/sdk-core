@@ -266,7 +266,7 @@ Run it through `hm-test-visual`, after building the examples:
 Usage: hm-test-visual [--update]
 ```
 
-- **Outside the image,** it needs Docker. It builds an image from `ci/Dockerfile`'s `FROM` line and the pnpm version in `packageManager`, and runs itself there. The container gets its own `node_modules` and pnpm store volumes, and hands every file it writes back to you. Without Docker, it fails with a one-line message saying how to fix it; it never skips.
+- **Outside the image,** it needs Docker. It builds an image from `ci/Dockerfile`'s `FROM` line and the pnpm version in `packageManager`, and runs itself there. pnpm and its native binary are installed from tarballs checked against the integrity that `pnpm-lock.yaml` records for them, so the lockfile must come from that pnpm version. The container gets its own `node_modules` and pnpm store volumes, and hands every file it writes back to you. Without Docker, it fails with a one-line message saying how to fix it; it never skips.
 - **Inside the image,** where `HM_VISUAL_CONTAINER=1`, as in CI's verify job, it runs Playwright directly. The preset refuses to run anywhere else, so baselines can't be written outside the image.
 - **`--update`** writes every baseline afresh, so screenshots that no state produces any more are removed. A failed run keeps the previous baselines.
 - **Failures** leave the expected, actual and diff images in `e2e/test-results/visual/`.
