@@ -1,5 +1,11 @@
 # @hussmartinez/sdk-core
 
+## 0.4.3
+
+### Patch Changes
+
+- [#117](https://github.com/ie-huss-martinez/sdk-core/pull/117) [`d2c893c`](https://github.com/ie-huss-martinez/sdk-core/commit/d2c893c6e64169d77802374426e4082b68093e7d) Thanks [@hussmartinez](https://github.com/hussmartinez)! - `{size, fileSize}` now writes sizes under a kilobyte with the locale's plural, such as "1 byte" and "297 bytes" in English, "297 octets" in French and "297 bajtów" in Polish, instead of "297 byte". Kilobytes and larger units are unchanged, such as "1.3 MB". A size that would round to 1000 of a unit moves up to the next one, so 999,960 bytes is "1 MB" rather than "1,000 kB".
+
 ## 0.4.2
 
 ### Patch Changes
