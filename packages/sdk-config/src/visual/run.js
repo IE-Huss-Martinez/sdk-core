@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, renameSync, rmSync } from "node:fs";
 import { join, posix } from "node:path";
-import { parse } from "yaml";
+import { parse, parseAllDocuments } from "yaml";
 
 /** Exit code when the screenshots match, or were written. */
 export const EXIT_OK = 0;
@@ -80,21 +80,118 @@ export function readWorkspace(root) {
   return { name: typeof manifest.name === "string" ? manifest.name : "", pnpm };
 }
 
+/** A Subresource Integrity value as pnpm records it. Checked before it's written into a Dockerfile. */
+const INTEGRITY = /^sha512-[A-Za-z0-9+/]{86}==$/;
+
+/** The pnpm binaries the browser test image can need: it's Ubuntu, on x64 or arm64. */
+const PNPM_BINARIES = /** @type {const} */ (["linux-x64", "linux-arm64"]);
+
+/**
+ * @typedef {object} PinnedPnpm
+ * @property {string} version The version, from `packageManager`.
+ * @property {string} integrity The `pnpm` package's tarball integrity.
+ * @property {Record<(typeof PNPM_BINARIES)[number], string>} binaries The
+ *   integrity of each `@pnpm/exe.<target>` tarball, which carries the native
+ *   binary the `pnpm` package runs.
+ */
+
+/**
+ * Reads the integrity of pnpm and of its Linux binaries from the document
+ * that pnpm-lock.yaml keeps for the package manager itself, so the image
+ * installs exactly what the repository's lockfile records.
+ *
+ * @param {string} root The repository.
+ * @param {string} version The pnpm version from `packageManager`.
+ * @returns {PinnedPnpm}
+ * @throws {UsageError} When the lockfile doesn't record that version of
+ *   pnpm with every integrity.
+ */
+export function readPinnedPnpm(root, version) {
+  let text;
+  try {
+    text = readFileSync(join(root, "pnpm-lock.yaml"), "utf8");
+  } catch {
+    throw new UsageError("pnpm-lock.yaml can't be read; it records pnpm's integrity.");
+  }
+  const fix = `Run pnpm install with pnpm ${version}, so pnpm-lock.yaml records it.`;
+  for (const document of parseAllDocuments(text)) {
+    const lockfile = /** @type {Record<string, any> | null} */ (
+      document.errors.length > 0 ? null : document.toJS()
+    );
+    const recorded = lockfile?.["importers"]?.["."]?.["packageManagerDependencies"]?.["pnpm"];
+    if (recorded === undefined) {
+      continue;
+    }
+    if (recorded?.version !== version) {
+      throw new UsageError(
+        `pnpm-lock.yaml records pnpm ${recorded?.version}, but packageManager is pnpm@${version}. ${fix}`,
+      );
+    }
+    const integrity = (/** @type {string} */ key) => {
+      const value = lockfile?.["packages"]?.[key]?.["resolution"]?.["integrity"];
+      if (typeof value !== "string" || !INTEGRITY.test(value)) {
+        throw new UsageError(`pnpm-lock.yaml has no sha512 integrity for ${key}. ${fix}`);
+      }
+      return value;
+    };
+    return {
+      version,
+      integrity: integrity(`pnpm@${version}`),
+      binaries: {
+        "linux-x64": integrity(`@pnpm/exe.linux-x64@${version}`),
+        "linux-arm64": integrity(`@pnpm/exe.linux-arm64@${version}`),
+      },
+    };
+  }
+  throw new UsageError(`pnpm-lock.yaml doesn't record pnpm itself. ${fix}`);
+}
+
+/** Checks tarballs against their integrity: `node -e` this with file and integrity pairs. */
+const VERIFY = [
+  'const { createHash } = require("node:crypto");',
+  'const { readFileSync } = require("node:fs");',
+  "const pairs = process.argv.slice(1);",
+  "for (let i = 0; i < pairs.length; i += 2) {",
+  '  const actual = "sha512-" + createHash("sha512").update(readFileSync(pairs[i])).digest("base64");',
+  "  if (actual !== pairs[i + 1]) {",
+  '    console.error("hm-test-visual: " + pairs[i] + " is " + actual + ", but pnpm-lock.yaml records " + pairs[i + 1] + ".");',
+  "    process.exit(1);",
+  "  }",
+  "}",
+].join(" ");
+
 /**
  * The image's Dockerfile: the browser test image, with the repository's pnpm
  * and the variable that lets the visual configuration run.
  *
+ * pnpm is installed from tarballs checked against the integrity in
+ * pnpm-lock.yaml: the `pnpm` package and the native binary for the image's
+ * architecture, both as local files, with no install scripts, so nothing
+ * else is fetched or downloaded on first use.
+ *
  * @param {string} image The browser test image.
- * @param {string} pnpm The pnpm version.
+ * @param {PinnedPnpm} pnpm The pnpm version and its integrity.
  * @returns {string}
  */
 export function dockerfile(image, pnpm) {
-  return [
-    `FROM ${image}`,
-    `RUN npm install --global --ignore-scripts pnpm@${pnpm}`,
-    `ENV ${CONTAINER_ENV}=1`,
-    "",
-  ].join("\n");
+  const { version, integrity, binaries } = pnpm;
+  const arches = PNPM_BINARIES.map(
+    (target) =>
+      `${target === "linux-x64" ? "x86_64" : "aarch64"}) target=${target}; binary_integrity=${binaries[target]};;`,
+  ).join(" ");
+  const steps = [
+    "set -eu",
+    "cd /tmp",
+    `case "$(uname -m)" in ${arches} *) echo "hm-test-visual: no pinned pnpm binary for $(uname -m)." >&2; exit 1;; esac`,
+    `wrapper=$(npm pack --silent pnpm@${version})`,
+    `binary=$(npm pack --silent "@pnpm/exe.$target@${version}")`,
+    `node -e '${VERIFY}' "$wrapper" "${integrity}" "$binary" "$binary_integrity"`,
+    'npm install --global --ignore-scripts --no-audit --no-fund "./$wrapper" "./$binary"',
+    'rm -f "$wrapper" "$binary"',
+  ];
+  return [`FROM ${image}`, `RUN ${steps.join("; \\\n  ")}`, `ENV ${CONTAINER_ENV}=1`, ""].join(
+    "\n",
+  );
 }
 
 /**
@@ -271,7 +368,8 @@ export function runInContainer({ root, update, run = defaultRun }) {
  */
 export function runInDocker({ root, update, owner, run = defaultRun, log = () => {} }) {
   const image = readImage(root);
-  const { name, pnpm } = readWorkspace(root);
+  const { name, pnpm: version } = readWorkspace(root);
+  const pnpm = readPinnedPnpm(root, version);
   if (run("docker", ["info", "--format", "{{.ServerVersion}}"], { cwd: root, quiet: true }) !== 0) {
     log(
       "Docker isn't available. Install Docker (https://docs.docker.com/get-docker/), start it, and run this again.",
