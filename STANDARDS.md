@@ -246,6 +246,7 @@ Every `<kind>-sdk` repository follows this structure:
 - **Tests:** Vitest, Playwright and `@axe-core/playwright`.
 - **Packaging and API:** `size-limit`, `api-extractor`, `publint` and `@arethetypeswrong/cli`.
   - Every entry point's api-extractor configuration extends `sdk-config`'s preset. A package with more than one entry point runs `hm-check-api-reports` after api-extractor, and never turns `ae-forgotten-export` off ([ADR 0033](docs/adr/0033-api-reports-for-several-entry-points.md)).
+- **Visual regression:** every SDK's editor and element are compared with committed screenshots of their designed states, in light and dark and both densities, on Chromium inside the pinned browser test image. `pnpm test:visual` runs them and `pnpm test:visual:update` rewrites them, both only in that image, and an intentional visual change commits its new screenshots in the same pull request ([ADR 0048](docs/adr/0048-visual-regression-for-sdk-editors.md)).
 - **Component catalogue (`ui`):** Storybook 10 with the React and Vite builder, axe checks and stories run as Vitest browser tests ([ADR 0022](docs/adr/0022-storybook-for-the-component-catalogue.md)).
 - **Git hooks:** Husky with lint-staged.
 
@@ -254,7 +255,7 @@ Each repository extends the presets in `@hussmartinez/sdk-config` instead of cop
 ## Workflow ([ADR 0015](docs/adr/0015-verification-and-releases.md), [ADR 0016](docs/adr/0016-git-hooks-and-merge-guards.md), [ADR 0021](docs/adr/0021-version-and-release-with-changesets.md), [ADR 0023](docs/adr/0023-verify-releases-in-an-unprivileged-job.md))
 
 - **Verification:**
-  - `pnpm verify` runs code checks, build, unit tests, browser tests, size budgets, the API report and package checks;
+  - `pnpm verify` runs code checks, build, unit tests, browser tests, end-to-end and visual tests, size budgets, the API report and package checks;
   - `pnpm verify:fast` runs the one-minute subset: types, unit tests, dependency rules and the API report.
 - **Git hooks** (Husky; budgets in ADR 0016):
   - `pre-commit` lints staged files and scans them for secrets;
