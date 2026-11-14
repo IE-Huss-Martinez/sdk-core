@@ -244,6 +244,7 @@ Every `<kind>-sdk` repository follows this structure:
 - **Build and language:** Vite 8 and TypeScript in strict mode.
 - **Code checks:** Biome, stylelint and `dependency-cruiser`.
 - **Tests:** Vitest, Playwright and `@axe-core/playwright`.
+- **Browser tests run in the pinned browser test image,** locally as in CI, through `sdk-config`'s `hm-in-image`, such as `"test:browser": "hm-in-image vitest run --project browser"`. On a host, Docker's network changes abort Chromium's requests ([ADR 0049](docs/adr/0049-local-browser-tests-in-the-pinned-image.md)).
 - **Packaging and API:** `size-limit`, `api-extractor`, `publint` and `@arethetypeswrong/cli`.
   - Every entry point's api-extractor configuration extends `sdk-config`'s preset. A package with more than one entry point runs `hm-check-api-reports` after api-extractor, and never turns `ae-forgotten-export` off ([ADR 0033](docs/adr/0033-api-reports-for-several-entry-points.md)).
 - **Visual regression:** every SDK's editor and element are compared with committed screenshots of their designed states, in light and dark and both densities, on Chromium inside the pinned browser test image. `pnpm test:visual` runs them and `pnpm test:visual:update` rewrites them, both only in that image, and an intentional visual change commits its new screenshots in the same pull request ([ADR 0048](docs/adr/0048-visual-regression-for-sdk-editors.md)).
