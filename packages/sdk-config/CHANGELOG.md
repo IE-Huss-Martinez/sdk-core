@@ -1,5 +1,11 @@
 # @hussmartinez/sdk-config
 
+## 0.6.1
+
+### Patch Changes
+
+- [#115](https://github.com/ie-huss-martinez/sdk-core/pull/115) [`70b7441`](https://github.com/ie-huss-martinez/sdk-core/commit/70b7441ee6bd53a194db3f917568fa141147177e) Thanks [@hussmartinez](https://github.com/hussmartinez)! - `hm-test-visual` no longer fails with "Duplicate mount point: /work/node_modules" in a workspace whose `pnpm-workspace.yaml` lists the root as `"."`, as Changesets needs. It mounts the root's `node_modules` once, and ignores entries that point outside the repository.
+
 ## 0.6.0
 
 ### Minor Changes
