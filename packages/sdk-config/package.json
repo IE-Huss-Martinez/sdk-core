@@ -16,7 +16,8 @@
   "bin": {
     "hm-check-api-reports": "./src/api-extractor/cli.js",
     "hm-check-single-copy": "./src/single-copy/cli.js",
-    "hm-lint-deps": "./src/dependency-cruiser/cli.js"
+    "hm-lint-deps": "./src/dependency-cruiser/cli.js",
+    "hm-test-visual": "./src/visual/cli.js"
   },
   "exports": {
     "./api-extractor/base.json": "./api-extractor/base.json",
@@ -35,6 +36,10 @@
     "./testing/conformance": {
       "types": "./src/testing/conformance.d.ts",
       "default": "./src/testing/conformance.js"
+    },
+    "./testing/visual": {
+      "types": "./src/testing/visual.d.ts",
+      "default": "./src/testing/visual.js"
     },
     "./tsconfig/*": "./tsconfig/*.json"
   },
@@ -69,6 +74,7 @@
     "@biomejs/biome": "^2.6.2",
     "@commitlint/cli": "catalog:",
     "@microsoft/api-extractor": "catalog:",
+    "@playwright/test": "catalog:",
     "ajv": "catalog:",
     "dependency-cruiser": "catalog:",
     "lint-staged": "catalog:",
@@ -85,6 +91,9 @@
       "optional": true
     },
     "@microsoft/api-extractor": {
+      "optional": true
+    },
+    "@playwright/test": {
       "optional": true
     },
     "ajv": {
@@ -117,6 +126,7 @@
     "@commitlint/load": "catalog:",
     "@commitlint/types": "catalog:",
     "@microsoft/api-extractor": "catalog:",
+    "@playwright/test": "catalog:",
     "@secretlint/node": "catalog:",
     "@types/node": "catalog:",
     "@types/picomatch": "catalog:",
