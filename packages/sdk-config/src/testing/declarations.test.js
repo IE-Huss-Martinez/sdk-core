@@ -15,7 +15,12 @@ it("ships declarations for the testing entries that match their JSDoc", async ()
     execFileSync(process.execPath, [TSC, "-p", "tsconfig.types.json", "--outDir", out], {
       cwd: ROOT,
     });
-    for (const name of ["audio-output.d.ts", "conformance.d.ts", "visual.d.ts"]) {
+    for (const name of [
+      "audio-output.d.ts",
+      "browser-instances.d.ts",
+      "conformance.d.ts",
+      "visual.d.ts",
+    ]) {
       const generated = await readFile(join(out, "testing", name), "utf8");
       const committed = await readFile(join(ROOT, "src", "testing", name), "utf8");
       expect(committed, `src/testing/${name} is out of date: run pnpm types:update`).toBe(

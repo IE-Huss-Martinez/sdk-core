@@ -17,6 +17,7 @@
     "hm-check-api-reports": "./src/api-extractor/cli.js",
     "hm-check-single-copy": "./src/single-copy/cli.js",
     "hm-lint-deps": "./src/dependency-cruiser/cli.js",
+    "hm-netlog-errors": "./src/netlog/cli.js",
     "hm-test-visual": "./src/visual/cli.js"
   },
   "exports": {
@@ -32,6 +33,10 @@
     "./testing/audio-output": {
       "types": "./src/testing/audio-output.d.ts",
       "default": "./src/testing/audio-output.js"
+    },
+    "./testing/browser-instances": {
+      "types": "./src/testing/browser-instances.d.ts",
+      "default": "./src/testing/browser-instances.js"
     },
     "./testing/conformance": {
       "types": "./src/testing/conformance.d.ts",
@@ -75,6 +80,7 @@
     "@commitlint/cli": "catalog:",
     "@microsoft/api-extractor": "catalog:",
     "@playwright/test": "catalog:",
+    "@vitest/browser-playwright": "catalog:",
     "ajv": "catalog:",
     "dependency-cruiser": "catalog:",
     "lint-staged": "catalog:",
@@ -94,6 +100,9 @@
       "optional": true
     },
     "@playwright/test": {
+      "optional": true
+    },
+    "@vitest/browser-playwright": {
       "optional": true
     },
     "ajv": {
