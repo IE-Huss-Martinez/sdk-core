@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { chmod, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, posix } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import {
@@ -120,6 +120,46 @@ describe("workspacePackageDirs", () => {
       "e2e",
       "examples/vite",
     ]);
+  });
+});
+
+describe("a workspace that lists its root, as Changesets needs", () => {
+  /** pnpm-workspace.yaml as most SDKs have it, with the root listed as ".", and other spellings of it. */
+  const listsRoot = {
+    "pnpm-workspace.yaml":
+      'packages:\n  - "."\n  - ./\n  - packages/..\n  - packages/*\n  - ./e2e\n  - examples/*\n',
+  };
+
+  it("leaves the root out, whatever it's spelled as, and normalises the rest", async () => {
+    expect(workspacePackageDirs(await repository(listsRoot))).toEqual([
+      "packages/image-sdk",
+      "e2e",
+      "examples/vite",
+    ]);
+  });
+
+  it("mounts each node_modules once, so Docker accepts the mounts", async () => {
+    const root = await repository(listsRoot);
+    const args = dockerRunArgs({
+      root,
+      tag: "hm-visual-x",
+      dirs: workspacePackageDirs(root),
+      owner: "1000:1000",
+      update: false,
+    });
+    const targets = args
+      .filter((_, index) => args[index - 1] === "--volume")
+      // Docker compares normalised paths: /work/./node_modules is /work/node_modules.
+      .map((volume) => posix.normalize(volume.slice(volume.indexOf(":") + 1)));
+    expect(new Set(targets).size).toBe(targets.length);
+    expect(targets.filter((target) => target === "/work/node_modules")).toHaveLength(1);
+  });
+
+  it("never mounts a folder outside the root", async () => {
+    const root = await repository({
+      "pnpm-workspace.yaml": "packages:\n  - ../elsewhere\n  - e2e\n",
+    });
+    expect(workspacePackageDirs(root)).toEqual(["e2e"]);
   });
 });
 
