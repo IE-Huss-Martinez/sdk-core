@@ -1,5 +1,6 @@
 import { playwright } from "@vitest/browser-playwright";
 import { defineConfig } from "vitest/config";
+import { browserInstances } from "./src/testing/browser-instances.js";
 
 const ALL_BROWSERS = /** @type {const} */ (["chromium", "firefox", "webkit"]);
 
@@ -29,7 +30,7 @@ export default defineConfig(({ mode }) => {
               enabled: true,
               headless: true,
               provider: playwright(),
-              instances: browsers.map((browser) => ({ browser })),
+              instances: browserInstances(browsers),
             },
           },
         },

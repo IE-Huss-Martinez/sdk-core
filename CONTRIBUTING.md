@@ -32,6 +32,12 @@ The git hooks run on their own: a secret scan and lint of staged files on commit
   - **breaking changes** take a `!`, as in `feat(sdk-core)!: …`, and explain the migration in the body.
 - **Signed commits** are preferred.
 - **Tests:** unit tests sit next to the code as `*.test.ts`. Test behaviour, not lines of code.
+- **A browser test that fails without a reason,** such as "The iframe … did not become ready" or a module worker that "failed to load": rerun it with Chromium's diagnostics, and attach the failed requests to the issue ([video-sdk#55](https://github.com/ie-huss-martinez/video-sdk/issues/55)). Repositories whose `browser.instances` come from `sdk-config`'s `browserInstances` support this:
+
+  ```sh
+  HM_BROWSER_DIAGNOSTICS=/tmp/hm-diagnostics DEBUG=pw:browser pnpm test:browser 2>&1 | tee /tmp/hm-diagnostics/run.log
+  pnpm exec hm-netlog-errors /tmp/hm-diagnostics/*.netlog.json
+  ```
 - **Public API:** fully typed, with TSDoc on every export.
 - **Dependencies:** add one only when it's clearly worth it, and justify it in the pull request.
 - **Docs:** keep the READMEs accurate.

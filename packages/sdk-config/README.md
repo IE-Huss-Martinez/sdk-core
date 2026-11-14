@@ -22,6 +22,7 @@ Install, as devDependencies, the tools for the presets you use. They are optiona
 | `api-extractor/base.json`, `hm-check-api-reports` | `@microsoft/api-extractor` |
 | `testing/conformance` | `vitest`, `ajv` |
 | `testing/visual`, `hm-test-visual` | `@playwright/test`, and Docker outside the browser test image |
+| `testing/browser-instances`, `hm-netlog-errors` | `@vitest/browser-playwright` |
 
 ### TypeScript
 
@@ -183,6 +184,34 @@ describeConformance(new URL("../../conformance/commands.json", import.meta.url),
 - **`schemaValidator(schemaFile)`** checks a value against a JSON Schema 2020-12 file, such as an SDK's own format schema, and returns the problems.
 
 It's test code only, and needs `vitest` and `ajv`, which are optional peer dependencies.
+
+### Testing: `browserInstances`
+
+For Vitest's browser mode. Some failures leave no reason: an iframe that "did not become ready within 60000ms", or a module worker that "failed to load" ([video-sdk#55](https://github.com/ie-huss-martinez/video-sdk/issues/55)). Chromium's error event for a module that failed to load carries no message, so the diagnostics record the requests themselves.
+
+Adopt it by replacing the `instances` line of the browser project, and keeping `provider: playwright()`:
+
+```ts
+import { browserInstances } from "@hussmartinez/sdk-config/testing/browser-instances";
+
+browser: {
+  enabled: true,
+  headless: true,
+  provider: playwright(),
+  instances: browserInstances(browsers), // was: browsers.map((browser) => ({ browser }))
+},
+```
+
+- **By default nothing changes:** the same browsers, with plain Playwright providers and the same output.
+- **With `HM_BROWSER_DIAGNOSTICS` set to a folder,** Chromium records every request and its network error in a net log there, `chromium-<pid>.netlog.json`, and writes its console to stderr, which Playwright prints with `DEBUG=pw:browser`. Firefox and WebKit are never changed, because they refuse to launch with Chromium's flags.
+- **`hm-netlog-errors <netlog>...`** lists the requests that failed, one line each: Chromium's error, such as `ERR_EMPTY_RESPONSE`, and the URL. It reads a log that a killed browser left unfinished, and leaves out WebSocket upgrades, which aren't failures. It exits with 0 once the logs are read, and with 2 for a usage error or a log it can't read.
+
+```sh
+HM_BROWSER_DIAGNOSTICS=/tmp/hm-diagnostics DEBUG=pw:browser pnpm test:browser 2>&1 | tee /tmp/hm-diagnostics/run.log
+pnpm exec hm-netlog-errors /tmp/hm-diagnostics/*.netlog.json
+```
+
+It's test code only: import it only from Vitest configurations.
 
 ### Testing: `audioOutput`
 
