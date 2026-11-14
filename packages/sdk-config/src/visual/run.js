@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, renameSync, rmSync } from "node:fs";
-import { join } from "node:path";
+import { join, posix } from "node:path";
 import { parse } from "yaml";
 
 /** Exit code when the screenshots match, or were written. */
@@ -114,8 +114,8 @@ export function imageTag(name) {
 
 /**
  * Every folder `pnpm-workspace.yaml` covers that has a package.json, in
- * order. It supports what the family's workspaces use: literal folders and
- * `folder/*`.
+ * order, except the root itself. It supports what the family's workspaces
+ * use: literal folders, `folder/*` and `.`.
  *
  * @param {string} root The repository.
  * @returns {string[]} Folders relative to the root, with `/` separators.
@@ -141,7 +141,14 @@ export function workspacePackageDirs(root) {
           .map((entry) => `${clean.slice(0, -2)}/${entry.name}`)
           .sort()
       : [clean];
-    for (const dir of candidates) {
+    for (const candidate of candidates) {
+      const dir = posix.normalize(candidate);
+      // The root, such as the "." that Changesets needs listed, already has
+      // its node_modules volume, and Docker refuses a second mount there.
+      // Nothing outside the root is mounted at all.
+      if (dir === "." || dir === ".." || dir.startsWith("../") || dir.startsWith("/")) {
+        continue;
+      }
       if (existsSync(join(root, dir, "package.json")) && !dirs.includes(dir)) {
         dirs.push(dir);
       }
