@@ -16,6 +16,9 @@ export function applyCommands<S, C>(reducer: Reducer<S, C>, state: S, commands: 
     readonly inverses: C[];
 };
 
+// @public
+export type AssetsResolver = (path: string) => string;
+
 // Warning: (ae-forgotten-export) The symbol "ParamNames" needs to be exported by the entry point index.d.ts
 //
 // @public
@@ -56,6 +59,9 @@ export const coreLimits: {
         readonly default: 120000;
     };
 };
+
+// @public
+export function createAssetsResolver(assetsUrl: string | URL): AssetsResolver;
 
 // @public
 export function createDecodedSizeBudget(policy: FilePolicy<CoreLimits>): DecodedSizeBudget;

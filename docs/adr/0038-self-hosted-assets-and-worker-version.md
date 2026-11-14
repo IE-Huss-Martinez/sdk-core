@@ -3,6 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-11-12
 - **Refines:** [ADR 0011](0011-worker-messaging-and-assets.md)'s self-hosted option, and [ADR 0018](0018-worker-rpc-protocol.md)'s `ready` message
+- **Amended:** 2026-11-14, so a URL relative to the page can be set during server rendering and is resolved when a worker starts ([pdf-sdk#37](https://github.com/ie-huss-martinez/pdf-sdk/pull/37), [video-sdk#56](https://github.com/ie-huss-martinez/video-sdk/pull/56))
 
 ## Context
 
@@ -16,7 +17,8 @@ Self-hosting adds a failure that inlined workers can't have. After an upgrade, a
 
 - **One option:** every SDK's self-hosted option is `assetsUrl`, the URL where the host serves the package's `dist/assets/` directory, absolute or relative to the page. The SDK documents the files under it. This replaces [ADR 0011](0011-worker-messaging-and-assets.md)'s `assets: { workerUrl, wasmUrl, … }`: one URL is less to configure, and the SDK can add or move files without changing its API.
 - **`resolveAssetsBase(assetsUrl)`** in `sdk-core` resolves it to an absolute URL ending in `/`, against the page or, inside a worker, the worker's own URL. SDKs resolve each file against it with `new URL(path, base)`.
-- **Mistakes fail when the SDK is set up,** with `TypeError`: a relative URL where there's no page to resolve it against, as during server rendering, and a URL with a query or fragment, which the resolved files would silently lose.
+- **Mistakes fail when the SDK is set up,** with `TypeError`, on a server too: a URL that can't be parsed, and a URL with a query or fragment, which the resolved files would silently lose.
+- **A URL relative to the page is resolved when it's first used** (amended 2026-11-14). Engines and processors are created while React trees render, on the server too, where there's no page to resolve `/video-sdk/` against, so resolving at setup made server rendering throw. `createAssetsResolver(assetsUrl)` checks the URL at setup and returns `(path) => string`, which resolves against the page on its first call, once, and then reuses that base. SDKs call it where a worker starts, which only happens in a browser. `resolveAssetsBase` stays for code that never runs on a server, and its error for a relative URL there names `createAssetsResolver`.
 
 ### The worker's package version
 
@@ -36,3 +38,4 @@ Self-hosting adds a failure that inlined workers can't have. After an upgrade, a
 - `pdf-sdk` and `audio-sdk` replace their `assets-url.ts` with `resolveAssetsBase`. `audio-sdk` replaces its `version` method with `packageVersion`, and `pdf-sdk` gets the check its self-hosted workers don't have yet. The image SDK starts with both.
 - Hosts that forget to copy `dist/assets/` after an upgrade get a clear start failure naming the asset and both versions, instead of subtly wrong behaviour.
 - `ExposeWorkerOptions`, `WorkerClientOptions` and `resolveAssetsBase` become public API of `@hussmartinez/sdk-core`.
+- SDKs create their engines with `createAssetsResolver`, so a host can pass a URL relative to the page to an editor rendered on the server. Workarounds such as deferring engine creation, or leaving `assetsUrl` out on the server, become unnecessary. `createAssetsResolver` and `AssetsResolver` are public API.
