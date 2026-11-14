@@ -1,5 +1,18 @@
 # @hussmartinez/sdk-config
 
+## 0.7.0
+
+### Minor Changes
+
+- [#121](https://github.com/ie-huss-martinez/sdk-core/pull/121) [`3262db1`](https://github.com/ie-huss-martinez/sdk-core/commit/3262db1404d6017002115b6e73ba542da015d43a) Thanks [@hussmartinez](https://github.com/hussmartinez)! - Add opt-in diagnostics for browser tests that fail without a reason, such as an iframe that "did not become ready" or a module worker that "failed to load".
+  
+  - `@hussmartinez/sdk-config/testing/browser-instances` exports `browserInstances(browsers)`, Vitest's `browser.instances` with Playwright. Adopt it by replacing `instances: browsers.map((browser) => ({ browser }))` with `instances: browserInstances(browsers)`. By default nothing changes. With `HM_BROWSER_DIAGNOSTICS=<folder>`, Chromium records every request and its network error in a net log in that folder, and writes its console to stderr, which `DEBUG=pw:browser` shows. Firefox and WebKit are never changed.
+  - `hm-netlog-errors <netlog>...` lists the failed requests in those logs: Chromium's error and the URL.
+
+### Patch Changes
+
+- [#119](https://github.com/ie-huss-martinez/sdk-core/pull/119) [`2c419ee`](https://github.com/ie-huss-martinez/sdk-core/commit/2c419ee925268c2997628fbcbcdc2e26532f32e9) Thanks [@hussmartinez](https://github.com/hussmartinez)! - `hm-test-visual` now installs pnpm in its image only after checking it against `pnpm-lock.yaml`. It downloads the `pnpm` package and the native binary for the image's architecture (`@pnpm/exe.linux-x64` or `linux-arm64`), checks each against the sha512 integrity that the lockfile records for the package manager, and installs those files with no install scripts. Before, it installed `pnpm@<version>` by name, trusting the registry. If `pnpm-lock.yaml` doesn't record the `packageManager` version of pnpm with these integrities, it stops with a usage error that says to run `pnpm install` with that version.
+
 ## 0.6.1
 
 ### Patch Changes
