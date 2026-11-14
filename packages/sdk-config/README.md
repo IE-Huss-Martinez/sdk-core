@@ -21,6 +21,7 @@ Install, as devDependencies, the tools for the presets you use. They are optiona
 | `secretlint` | `secretlint` |
 | `api-extractor/base.json`, `hm-check-api-reports` | `@microsoft/api-extractor` |
 | `testing/conformance` | `vitest`, `ajv` |
+| `hm-in-image` | Docker outside the browser test image |
 | `testing/visual`, `hm-test-visual` | `@playwright/test`, and Docker outside the browser test image |
 | `testing/browser-instances`, `hm-netlog-errors` | `@vitest/browser-playwright` |
 
@@ -304,6 +305,39 @@ Usage: hm-test-visual [--update]
 |---|---|
 | 0 | Every screenshot matches, or the baselines were written |
 | 1 | A screenshot differs, a test fails, or Docker isn't available |
+| 2 | Usage error, or a repository it can't read |
+
+### `hm-in-image`
+
+Runs a command in the browser test image that `ci/Dockerfile` pins, locally as CI does ([ADR 0049](../../docs/adr/0049-local-browser-tests-in-the-pinned-image.md)). On a host, Chromium aborts in-flight requests with `ERR_NETWORK_CHANGED` whenever Docker adds or removes a network interface, and browser tests fail at random. Inside the image, the host's network changes don't reach the browser. Use it for every browser step:
+
+```json
+{
+  "scripts": {
+    "test:browser": "hm-in-image vitest run --project browser",
+    "test:browser:all": "hm-in-image vitest run --project browser --mode all-browsers",
+    "test:e2e": "hm-in-image playwright test"
+  }
+}
+```
+
+```text
+Usage: hm-in-image [--] <command> [<argument>...]
+```
+
+- **Outside the image,** it needs Docker:
+  - it builds an image from `ci/Dockerfile`'s `FROM` line, with the pnpm that `packageManager` names, checked against the integrity in `pnpm-lock.yaml`;
+  - it installs the locked dependencies into the container's own `node_modules` and pnpm store volumes, so the host's binaries never mix with the container's;
+  - it runs the command through `pnpm exec`, in the same folder of the checkout, and hands every file the container wrote back to you.
+
+  `CI` and `DEBUG` are passed on. Without Docker, it fails with a one-line message saying how to fix it; it never skips.
+- **Inside the image,** where `HM_VISUAL_CONTAINER=1`, it runs the command directly. CI's verify jobs set that variable, because they run in the image already.
+- **One image and one set of volumes per repository,** `hm-browser-<workspace name>`, shared with `hm-test-visual`.
+
+| Exit code | Meaning |
+|---|---|
+| The command's | The command ran |
+| 1 | Docker isn't available, or the image didn't build |
 | 2 | Usage error, or a repository it can't read |
 
 ### `hm-check-single-copy`

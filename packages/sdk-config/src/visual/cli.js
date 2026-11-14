@@ -1,13 +1,7 @@
 #!/usr/bin/env node
 import { parseArgs } from "node:util";
-import {
-  CONTAINER_ENV,
-  EXIT_OK,
-  EXIT_USAGE,
-  runInContainer,
-  runInDocker,
-  UsageError,
-} from "./run.js";
+import { CONTAINER_ENV, EXIT_OK, EXIT_USAGE, UsageError } from "../image/run.js";
+import { runInContainer, runInDocker } from "./run.js";
 
 const USAGE = `Usage: hm-test-visual [--update]
 

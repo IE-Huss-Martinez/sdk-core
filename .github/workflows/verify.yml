@@ -46,6 +46,9 @@ jobs:
       image: ${{ needs.image.outputs.ref || 'the-image-job-failed@sha256:0000000000000000000000000000000000000000000000000000000000000000' }}
       options: --user 1001 --ipc=host --init
     env:
+      # The job runs in the browser test image, so hm-in-image runs the
+      # browser tests directly (ADR 0049).
+      HM_VISUAL_CONTAINER: "1"
       HUSKY: "0"
     steps:
       - uses: ie-huss-martinez/sdk-ci/verify@ace414beadabbad28a5e2609ebdf731a2cac473b # v2.1.0

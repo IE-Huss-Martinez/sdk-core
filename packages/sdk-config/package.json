@@ -16,6 +16,7 @@
   "bin": {
     "hm-check-api-reports": "./src/api-extractor/cli.js",
     "hm-check-single-copy": "./src/single-copy/cli.js",
+    "hm-in-image": "./src/image/cli.js",
     "hm-lint-deps": "./src/dependency-cruiser/cli.js",
     "hm-netlog-errors": "./src/netlog/cli.js",
     "hm-test-visual": "./src/visual/cli.js"
@@ -64,8 +65,8 @@
     "typecheck": "tsc",
     "test": "vitest run --project unit",
     "check:package": "publint run --pack pnpm --strict && attw --pack . --profile esm-only --exclude-entrypoints ./biome ./commitlint ./dependency-cruiser ./lint-staged ./secretlint ./stylelint",
-    "test:browser": "vitest run --project browser",
-    "test:browser:all": "vitest run --project browser --mode all-browsers",
+    "test:browser": "node src/image/cli.js vitest run --project browser",
+    "test:browser:all": "node src/image/cli.js vitest run --project browser --mode all-browsers",
     "types:update": "tsc -p tsconfig.types.json"
   },
   "dependencies": {
